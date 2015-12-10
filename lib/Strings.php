@@ -164,6 +164,29 @@ function str_rm_diacritics($str) {
 }
 
 
+function str_transliterate($str){
+    if (function_exists('iconv')) {
+        $text = iconv('utf-8', 'us-ascii//TRANSLIT', $str);
+    }
+    return $text;
+}
+/*
+@see utf8 lib
+require_once('libs/utf8/utf8.php');
+require_once('libs/utf8/utils/bad.php');
+require_once('libs/utf8/utils/validation.php');
+require_once('libs/utf8_to_ascii/utf8_to_ascii.php');
+if(!utf8_is_valid($str)){
+  $str=utf8_bad_strip($str);
+}
+$str = utf8_to_ascii($str, '' );
+*/
+function str_rm_nonascii($str){
+    $res = preg_replace('/[^\x20-\x7E]/','', $str);
+    // remove non ascii characters
+    // $res =  preg_replace('/[\x00-\x1F\x80-\xFF]/', '', $str);
+    return $res;
+}
 
 // Encodes HTML safely for UTF-8. Use instead of htmlentities.
 //
@@ -213,9 +236,34 @@ function str_template($str_template, $a_binds) {
 //  output:
 //  $startDate = 5/27/1999
 //
-function str_a_reg_replace($search, $replacePairs) {
-    return preg_replace(array_keys($replacePairs), array_values($replacePairs), $search);
+function str_a_reg_replace($str, array $a_binds) {
+    return preg_replace(array_keys($a_binds), array_values($a_binds), $str);
 }
+
+// dato un array associativo di variabili da interpolare, esegue la sostituzione
+// $a_replace = array(
+//     'apple' => 'orange'
+//     'chevy' => 'ford'
+// );
+function str_a_replace(array $a_binds, $str) {
+   return str_replace(array_keys($a_binds), array_values($a_binds), $str);
+}
+
+// sostituzione gestendo array di stringhe in input
+function str_replace_deep($search, $replace, $a_str) {
+    if (is_array($a_str)) {
+        foreach($a_str as &$_str) {
+            $_str = str_replace_deep($search, $replace, $_str);
+        }
+        unset($_str);
+
+        return $a_str;
+    } else {
+        return str_replace($search, $replace, $a_str);
+    }
+}
+
+
 
 function str_money($s) {
     $v = str_to_float($s);
@@ -372,6 +420,7 @@ function str_highlight($str, $search = null, $replacement = '<em>${0}</em>'){
     return $str;
 }
 
+/* @see utf8 lib
 // utf-8 compatible class
 class Str {
 
@@ -423,6 +472,7 @@ class Str {
     }
 
 }
+*/
 
 
 // increments a string(converted to it's numeric representation) and outputs the incremented string

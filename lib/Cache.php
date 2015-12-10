@@ -1,282 +1,24 @@
 <?php
 
 // interface storage adapter
-abstract class CacheStorage {
+interface ICacheStorage {
 
-    // TODO: salvare il numero di accessi ad ogni chiave in modo da reperire quali chiavi sono pie' spesso richieste e rendere possibili ulteriori aggiornamenti
-    // sovrascrive la chiave con un dato
-    function save($key, $data) {
 
-    }
+    public function save($key, $data);
 
     // scrive la chiave solo se non esiste
-    function add($key, $data) {
+    public function add($key, $data);
 
-    }
+    public function get($key);
 
-    function get($key) {
+    public function isExpired($key);
 
-    }
-
-    function isExpired($key) {
-
-    }
-
-    function delete($key) {
-
-    }
-
-    //Removes all entries from the cache.
-    function deleteAll() {
-
-    }
-
-}
-
-//
-// File-based cache controller.
-// Solar_Cache
-// original author Paul M. Jones <pmjones@solarphp.com>
-// license http://opensource.org/licenses/bsd-license.php BSD
-//
-//
-//
-// File-based cache storage.
-//
-// If you specify a path (for storing cache entry files) that does
-// not exist, this adapter attempts to create it for you.
-//
-// This adapter always uses [[php::flock() | ]] when reading and writing
-// cache entries; it uses a shared lock for reading, and an exclusive
-// lock for writing.  This is to help cut down on cache corruption
-// when two processes are trying to access the same cache file entry,
-// one for reading and one for writing.
-//
-// In addition, this adapter automatically serializes and unserializes
-// arrays and objects that are stored in the cache.  This means you
-// can store not only string output, but also array data and entire
-// objects in the cache ... just like Solar_Cache_Memcache.
-//
-class FileCache extends CacheStorage {
-
-    // Whether or not the cache is active.
-    var $_active = true;
-    // The lifetime of each cache entry in seconds.
-    var $_life = 86400; //24h
-    //
-    //
-    // User-provided configuration.
-    //
-    // Config keys are ...
-    //
-    // `path`
-    // : (string) The directory where cache files are located; should be
-    //   readable and writable by the script process, usually the web server
-    //   process. Default is '/Solar_Cache_File' in the system temporary
-    //   directory.  Will be created if it does not already exist.  Supports
-    //   streams, so you may specify (e.g.) 'http://cache-server/' as the
-    //   path.
-    //
-    // `mode`
-    // : (int) If the cache path does not exist, when it is created, use
-    //   this octal permission mode.  Default is `0750` (user read/write/exec,
-    //   group read, others excluded).
-    //
-    // `context`
-    // : (array|resource) A stream context resource, or an array to pass to
-    //   stream_create_context(). When empty, no context is used.  Default
-    //   null.
-    //
-    // Path to the cache directory.
-    var $path = null;
-    var $mode = 0740;
-    // A stream context resource to define how the input/output for the cache is handled.
-    var $context = null;
-
-    function __construct() {
-        // set the default cache directory location
-        $this->path = dirname(__FILE__) . '/../cache';
-        //str_replace('/',DIRECTORY_SEPARATOR,$this->path)
-        // keep local values so they can't be changed
-        // $this->path = Solar::fixdir($this->path);
-        // build the context property
-        if (is_resource($this->context)) {
-            // assume it's a context resource
-            $this->context = $this->context;
-        } elseif (is_array($this->context)) {
-            // create from scratch
-            $this->context = stream_context_create($this->context);
-        } else {
-            // not a resource, not an array, so ignore.
-            // have to use a resource of some sort, so create
-            // a blank context resource.
-            $this->context = stream_context_create(array());
-        }
-        // make sure the cache directory is there; create it if
-        // necessary.
-        if (!is_dir($this->path)) {
-            //, true, $this->context//
-            if (!mkdir($this->path, $this->mode
-                    )) {
-                echo $this->path . ' not readable';
-            }
-        }
-    }
-
-    // Inserts/updates cache entry data.
-    function save($key, $data) {
-        if (!$this->_active) {
-            return;
-        }
-        // should the data be serialized?
-        // serialize all non-scalar data: array and object
-        if (!is_scalar($data)) {
-            $data = serialize($data);
-            $serial = true;
-        } else {
-            $serial = false;
-        }
-        // open the file for over-writing. not using file_put_contents
-        // becuase we may need to write a serial file too (and avoid race
-        // conditions while doing so). don't use include path.
-        $file = $this->entry($key);
-        $fp = @fopen($file, 'wb', false, $this->context);
-        // was it opened?
-        if ($fp) {
-            // yes.  exclusive lock for writing.
-            flock($fp, LOCK_EX);
-            fwrite($fp, $data, strlen($data));
-            // add a .serial file? (do this while the file is locked to avoid
-            // race conditions)
-            if ($serial) {
-                // use this instead of touch() because it supports stream
-                // contexts.
-                //file_put_contents($file . '.serial', null, LOCK_EX, $this->context);
-                touch($file . '.serial');
-            } else {
-                // make sure no serial file is there from any previous entries
-                // with the same name
-                @unlink($file . '.serial', $this->context);
-            }
-            // unlock and close, then done.
-            flock($fp, LOCK_UN);
-            fclose($fp);
-            return true;
-        }
-        // could not open the file for writing.
-        return false;
-    }
-
-    // Inserts cache entry data, but only if the entry does not already exist.
-    function add($key, $data) {
-        if (!$this->_active) {
-            return;
-        }
-        // what file should we look for?
-        $file = $this->entry($key);
-        // if the file does not exists or is unreadable, key is available
-        if (!file_exists($file) || !is_readable($file)) {
-            return $this->save($key, $data);
-        }
-        // if the file has expired, key is available
-        if ($this->isExpired($key)) {
-            return $this->save($key, $data);
-        }
-        // key already exists
-        return false;
-    }
-
-    // if the file has expired, key is available
-    function isExpired($key) {
-        $file = $this->entry($key);
-        $expire_time = filemtime($file) + $this->_life;
-        if (time() > $expire_time) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    // gets cache entry data.
-    function get($key) {
-        if (!$this->_active) {
-            return;
-        }
-        // get the entry filename *before* validating;
-        // this avoids race conditions.
-        $file = $this->entry($key);
-        // make sure the file exists and is readable,
-        if (file_exists($file) && is_readable($file)) {
-            // has the file expired?
-            $expire_time = filemtime($file) + $this->_life;
-            if (time() > $expire_time) {
-                // expired, remove it
-                $this->delete($key);
-                return false;
-            }
-        } else {
-            return false;
-        }
-        // file exists; open it for reading
-        $fp = @fopen($file, 'rb', false, $this->context);
-        // could it be opened?
-        if ($fp) {
-            // lock the file right away
-            flock($fp, LOCK_SH);
-            // get the cache entry data.
-            // PHP caches file lengths; clear that out so we get
-            // an accurate file length.
-            clearstatcache();
-            $len = filesize($file);
-            $data = fread($fp, $len);
-            // check for serializing while file is locked
-            // to avoid race conditions
-            if (file_exists($file . '.serial')) {
-                $data = unserialize($data);
-            }
-            // unlock and close the file
-            flock($fp, LOCK_UN);
-            fclose($fp);
-            // done!
-            return $data;
-        }
-        // could not open file.
-        return false;
-    }
-
-    // Deletes an entry from the cache.
-    function delete($key) {
-        if (!$this->_active) {
-            return;
-        }
-        $file = $this->entry($key);
-        @unlink($file, $this->context);
-        @unlink($file . '.serial', $this->context);
-    }
+    public function delete($key);
 
     // Removes all entries from the cache.
-    function deleteAll() {
-        if (!$this->_active) {
-            return;
-        }
-        // get the list of files in the directory, suppress warnings.
-        $list = (array) @scandir($this->path, null, $this->context);
-        // delete each file
-        foreach ($list as $file) {
-            @unlink($this->path . $file, $this->context);
-        }
-    }
-
-    // Returns the path and filename for the entry key.
-    // @param string $key The entry ID.
-    // @return string The cache entry path and filename.
-    function entry($key) {
-        // sostituire con Path::join!
-        $path = $this->path . DIRECTORY_SEPARATOR . md5($key);
-        return $path;
-    }
-
+    public function deleteAll();
 }
+
 
 // cache di una intera pagina
 // identificata da una chiave ricavata daiparametri con cui e' stata chiamata
@@ -344,20 +86,18 @@ $__RAM_storage = array();
 // globali tipo user, db, files su disco, network.
 function memoized(Callable $f, array $args = array()) {
     global $__RAM_storage;
-
     // generic cache key
     // TODO: verificare con closure
     ksort($args);
     $k = $f . ':' . http_build_query($args);
-
     // if needed update the cache with the result
     $has_key = array_key_exists($k, $__RAM_storage);
     if (!$has_key) {
         $__RAM_storage[$k] = $f($args);
+        // TODO: call_user_func_array( $f, $args );
     } else {
         // print 'cache hit! '.$k."\n";
     }
-
     return $__RAM_storage[$k];
 }
 
@@ -436,4 +176,147 @@ class MFCache {
 
 
 
+//----------------------------------------------------------------------------
+//  sqlite based cache wrapper
+//----------------------------------------------------------------------------
+class MSqliteCache {
+    static $DB = null;
+    public function __construct(){
+        self::$DB = sqlite_open("cache.db", 0666, $sqlite_error);
+        if( !self::$DB ) {
+            die("Errore Sqlite: ".$sqlite_error);
+        }
 
+        // Test for existing DB
+        $table_name = __CLASS__;
+        $result = sqlite_query("SELECT * FROM sqlite_master WHERE name='$table_name' AND type='table'");
+        // If there is no table, create a new one
+        if (0 == count($result)) {
+            sqlite_query( self::$DB, "CREATE TABLE $table_name (key varchar(50), value_field varchar(255), create_time timestamp )");
+        }
+
+    }
+
+    public function get($key) {
+        $result = sqlite_query( self::$DB, "SELECT * FROM $table_name");
+        while($data = sqlite_fetch_array($result)) {
+            echo $data['value_field']."<br />";
+        }
+    }
+    public function set($key, $value, $tll) {
+        $table_name = __CLASS__;
+        sqlite_query( self::$DB, "INSERT INTO $table_name VALUES ('mykey'.$i, 'Prova ".$i."', ".time().")");
+    }
+
+    public function cleanup() {
+        $table_name = __CLASS__;
+        sqlite_query("DELETE FROM $table_name WHERE create_time < $expiration");
+    }
+}
+
+
+//----------------------------------------------------------------------------
+// TAG cache
+// emulazione tags non supportati nativamente dal backend APC
+// uso:
+//   APCCacheTags::clean_by_any_matching_tag([__CLASS__]);
+//   APCCacheTags::tag_set([__CLASS__]);
+class APCCacheTags {
+    //
+    // elimina dalla cache tutte le chiavi appartenenti a un tag
+    public static function clean_by_any_matching_tag( array $a_tags){
+        $cacheEngine = Zend_Registry::get('cache');
+        $a_keys = self::tag_get_keys($a_tags);
+        foreach($a_keys as $key) {
+            $cacheEngine->remove($key);
+        }
+        self::tag_remove($a_tags);
+    }
+    // setta i tags per una chiave nel tagfile
+    public static function tag_set( array $a_tags, $c_key){
+        $a_tag_keys = self::tag_get_tree();
+        foreach( $a_tags as $tag  ) {
+            if( isset($a_tag_keys[$tag]) ) {
+                if( !in_array($c_key, $a_tag_keys[$tag]) ) {
+                    $a_tag_keys[$tag][] = $c_key;
+                }
+            } else {
+                $a_tag_keys[$tag] = [$c_key];
+            }
+        }
+
+        self::tag_save_tree($a_tag_keys);
+    }
+    // ritorna le chiavi appartenenti al tag
+    public static function tag_get_keys( array $a_tags ) {
+        $a_tag_keys = self::tag_get_tree();
+        $a_result = [];
+        foreach($a_tags as $tag ) {
+            if( isset($a_tag_keys[$tag]) ) {
+                $a_keys = $a_tag_keys[$tag];
+                $a_result = array_merge( $a_result, $a_keys);
+            }
+        }
+        return $a_result;
+    }
+    // rimuove i tag (e le chiavi associate) dal tagfile
+    public static function tag_remove( array $a_tags) {
+        $a_tag_keys = self::tag_get_tree();
+        $a_result = [];
+        foreach($a_tags as $tag ) {
+            if( isset($a_tag_keys[$tag]) ) {
+                unset( $a_tag_keys[$tag] );
+            }
+        }
+        self::tag_save_tree($a_tag_keys);
+    }
+    // path su disco del file
+    public static function tag_file_path() {
+        $path = realpath( APPLICATION_PATH.'/../var' );
+        $path = $path . '/cache_tags.json';
+        return $path;
+    }
+
+    // $a_tag_keys = [ tag => [keys] ];
+    static $_a_tag_keys = [];
+    public static function tag_get_tree() {
+        // se c'è un acopia in memoria, altrimenti legge da file
+        if( !empty(self::$_a_tag_keys) ) {
+            return self::$_a_tag_keys;
+        } else {
+            $path = self::tag_file_path();
+            if( !file_exists($path) ) {
+                touch($path);
+            }
+            $json_str = file_get_contents( $path );
+            $a = json_decode($json_str, $use_assoc=true);
+            if( empty($a) ) {
+                return [];
+            } else {
+                return $a;
+            }
+        }
+    }
+    // salva su file la struttura dati intera
+    public static function tag_save_tree(array $a_tag_keys) {
+        ksort($a_tag_keys);//in-place sort!
+        // aggiorna la copia in memoria
+        self::$_a_tag_keys = $a_tag_keys;
+        // aggiorna il dato su file
+        $path = self::tag_file_path();
+        $json_str = json_encode($a_tag_keys, JSON_PRETTY_PRINT);
+        file_put_contents($path, $json_str, LOCK_EX );
+    }
+    // elimina tutto per evitare che i file diventino troppo grandi e la cache si frammenti
+    public static function gc() {
+        $a_tag_keys = self::tag_get_tree();
+        $path = self::tag_file_path();
+        $a_keys = array_keys( $a_tag_keys );
+        self::clean_by_any_matching_tag( $a_keys );
+        self::tag_save_tree($empty_a_tag_keys=[]);//sovrascrive lo store con un contenuto vuoto
+
+        // questo svuota tutta la cache
+        //   $cacheEngine->clean(Zend_Cache::CLEANING_MODE_ALL);
+
+    }
+}

@@ -1,5 +1,5 @@
 <?php
-// funzione: rccoglie funzioni per generare immagini
+// funzione: raccoglie procedure per generare immagini
 // questa è una implementazione leggera, per una implementazione più astratta
 // @see http://wideimage.sourceforge.net/
 // @see http://stefangabos.ro/php-libraries/zebra-image/#installation
@@ -44,6 +44,33 @@ class Image {
     $thumbnail->save($save_path);
     }
     */
+
+    // sends image $resource descriptor to browser and destroy the resource if headers not sent.
+    // use php constants IMAGETYPE_GIF, IMAGETYPE_JPEG, IMAGETYPE_PNG
+    final public static function show_resource($resource, $type){
+        if(!headers_sent()){
+            switch($type){
+            case IMAGETYPE_GIF :
+                header('Content-type: image/gif');
+                header('Content-Disposition: filename='.basename(__FILE__).'.gif');
+                imagegif($resource);
+                break;
+            case IMAGETYPE_JPEG :
+                header('Content-type: image/jpeg');
+                header('Content-Disposition: filename='.basename(__FILE__).'.jpg');
+                imagejpeg($resource, NULL, 99);
+                break;
+            case IMAGETYPE_PNG :
+                header('Content-type: image/png');
+                header('Content-Disposition: filename='.basename(__FILE__).'.png');
+                imagepng($resource, NULL, 0,  NULL);
+                break;
+            }
+            imagedestroy($resource);
+            exit;
+        }
+    }
+
 }
 
 
@@ -226,4 +253,190 @@ class ImageResizer {
 
     }
 
+}
+
+
+/*
+based on:
+    URL:        http://github.com/jamiebicknell/Sparkline
+    Author:     Jamie Bicknell
+    Twitter:    @jamiebicknell
+*/
+class SparklineGenerator {
+
+    function __construct(array $data, array $opt) {
+
+        // dependency check
+        if (!extension_loaded('gd')) {
+            die('GD extension is not installed');
+        }
+
+        //--- param init
+        $size = isset($opt['size']) ? str_replace('x', '', $opt['size']) != '' ? $opt['size'] : '80x20' : '80x20';
+        $back = isset($opt['back']) ? Color::isHex($opt['back']) ? $opt['back'] : 'ffffff' : 'ffffff';
+        $line = isset($opt['line']) ? Color::isHex($opt['line']) ? $opt['line'] : '1388db' : '1388db';
+        $fill = isset($opt['fill']) ? Color::isHex($opt['fill']) ? $opt['fill'] : 'e6f2fa' : 'e6f2fa';
+
+        $salt = __CLASS__;
+        $opt['data'] = implode(',',$data);// data fa parte della chiave di cache
+        ksort($opt);//in-place sort!
+        $this->hash = md5($salt . implode(',', $opt ) );
+        // if client data is ok, nothing to do
+        if (isset($_SERVER['HTTP_IF_NONE_MATCH'])) {
+            if ($_SERVER['HTTP_IF_NONE_MATCH'] == $this->hash) {
+                header($_SERVER['SERVER_PROTOCOL'] . ' 304 Not Modified');
+                die();
+            }
+        }
+
+        $path = APPLICATION_PATH.'/../var/sparkline';
+        if( !file_exists($path) ) {
+            die( "$path non esiste" )
+        }
+        $this->file_path = sprintf("%s/sparkline_%s.png", $path, $this->hash );
+    }
+
+    // legge file su disco
+    public function render() {
+        if( !file_exists($this->file_path) ) {
+            $this->generateImageFile($data, $size, $back, $line, $fill);
+        }
+        return self::cacheImg($this->file_path);
+    }
+
+
+    protected function generateImageFile(array $data, $size, $back, $line, $fill) {
+        list($w, $h) = explode('x', $size);
+        $w = floor(max(50, min(800, $w)));
+        $h = !strstr($size, 'x') ? $w : floor(max(20, min(800, $h)));
+
+        $t = 1.75;
+        $s = 4;
+
+        $w *= $s;
+        $h *= $s;
+        $t *= $s;
+
+        $data = (count($data) < 2) ? array_fill(0, 2, $data[0]) : $data;
+        $count = count($data);
+        $step = $w / ($count - 1);
+        $max = max($data);
+
+        //--- rendering
+
+        $im = imagecreatetruecolor($w, $h);
+        list($r, $g, $b) = Color::hexToRgb($back);
+        $bg = imagecolorallocate($im, $r, $g, $b);
+        list($r, $g, $b) = Color::hexToRgb($line);
+        $fg = imagecolorallocate($im, $r, $g, $b);
+        list($r, $g, $b) = Color::hexToRgb($fill);
+        $lg = imagecolorallocate($im, $r, $g, $b);
+        imagefill($im, 0, 0, $bg);
+
+        imagesetthickness($im, $t);
+
+        foreach ($data as $k => $v) {
+            $v = $v > 0 ? round($v / $max * $h) : 0;
+            $data[$k] = max($s, min($v, $h - $s));
+        }
+
+        $x1 = 0;
+        $y1 = $h - $data[0];
+        $line = array();
+        $poly = array(0, $h + 50, $x1, $y1);
+        for ($i = 1; $i < $count; $i++) {
+            $x2 = $x1 + $step;
+            $y2 = $h - $data[$i];
+            array_push($line, array($x1, $y1, $x2, $y2));
+            array_push($poly, $x2, $y2);
+            $x1 = $x2;
+            $y1 = $y2;
+        }
+        array_push($poly, $x2, $h + 50);
+
+        imagefilledpolygon($im, $poly, $count + 2, $lg);
+
+        foreach ($line as $k => $v) {
+            list($x1, $y1, $x2, $y2) = $v;
+            imageline($im, $x1, $y1, $x2, $y2, $fg);
+        }
+
+        $this->om = imagecreatetruecolor($w / $s, $h / $s);
+        imagecopyresampled($this->om, $im, 0, 0, 0, 0, $w / $s, $h / $s, $w, $h);
+        imagedestroy($im);
+
+        // scrive file su disco
+        imagepng($this->om, $this->file_path);
+        imagedestroy($this->om);
+    }
+
+
+
+    // basata sulle precedenti, assume che $path sia un'immagine
+    protected static function cacheImg($path) {
+
+        $t_mod = filemtime($path);
+        $gm_mod = gmdate('D, d M Y H:i:s', $t_mod) . ' GMT';
+
+        //--- std header con date dell'oggetto
+        header('Content-type: ' . 'image/png');
+        header('Content-length: ' . filesize($path));
+        // indichiamo a browser e proxy la data dell'immagine
+        header("Last-Modified: $gm_mod");
+
+        $file_hash = md5_file($path);
+        header('ETag: ' .$file_hash );
+
+        // set expires +1 day
+        $s_delay = (60 * 60 * 24 * 1);
+        $t_tomorrow = time() + $s_delay; //strtotime("+2 day")
+        header("Expires: " . date(DATE_RFC822, $t_tomorrow ));
+
+        // cache per n gg
+        header("Cache-Control: max-age=" . $s_delay . ', public');
+        header("Pragma: cache");
+
+
+
+        // if client data is ok, nothing to do
+        # abilita HTTP_IF_MODIFIED_SINCE in htaccess
+        # RewriteRule .* - [E=HTTP_IF_MODIFIED_SINCE:%{HTTP:If-Modified-Since}]
+        # RewriteRule .* - [E=HTTP_IF_NONE_MATCH:%{HTTP:If-None-Match}]
+        if (isset($_SERVER['HTTP_IF_NONE_MATCH'])) {
+            if ($_SERVER['HTTP_IF_NONE_MATCH'] == $file_hash) {
+                header($_SERVER['SERVER_PROTOCOL'] . ' 304 Not Modified');
+                die();
+            }
+        }
+
+        //--- controlla se l'oggetto del browser è valido e risponde con 304 o il docuemnto
+        $if_modified_since = '';
+        if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
+            $if_modified_since = preg_replace('/;.*$/', '', $_SERVER['HTTP_IF_MODIFIED_SINCE']);
+        }
+        if ($if_modified_since == $gm_mod) {
+            header("HTTP/1.0 304 Not Modified");
+            die();
+        } else {
+            fpassthru(fopen($path, 'rb'));
+            die();
+        }
+    }
+
+
+}
+
+
+class Color {
+
+    public static function isHex($string) {
+        return preg_match('/^#?+[0-9a-f]{3}(?:[0-9a-f]{3})?$/i', $string);
+    }
+
+    public static function hexToRgb($hex) {
+        $hex = ltrim(strtolower($hex), '#');
+        $hex = isset($hex[3]) ? $hex : $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+        $dec = hexdec($hex);
+        return array(0xFF & ($dec >> 0x10), 0xFF & ($dec >> 0x8), 0xFF & $dec);
+    }
 }

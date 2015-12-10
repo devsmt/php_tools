@@ -116,4 +116,23 @@ class Net {
         return $string;
     }
 
+    // verifica un IP su diversi database di IP malevoli
+    function checkDNSBL($ip) {
+        $dnsbl_check=array(
+            'bl.spamcop.net',
+            'list.dsbl.org',
+            'sbl.spamhaus.org',
+            'xbl.spamhaus.org');
+        if( !empty($ip) ){
+            $reverse_ip = implode('.',array_reverse(explode(".",$ip)));
+            $reverse_ip = idn_to_ascii( $reverse_ip );
+            foreach($dnsbl_check as $server_name){
+                if(checkdnsrr($reverse_ip.'.'.$server_name.'.','A')){
+                    return $rip.'.'.$server_name;
+                }
+            }
+        }
+        return false;
+    }
+
 }

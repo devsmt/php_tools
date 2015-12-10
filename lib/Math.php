@@ -2,7 +2,7 @@
 
 // calcola la $perc % di $v
 function perc($v, $perc, $decimal = 2) {
-    return (float) round(($v / 100) * $perc, 2);
+    return (float) round(($v / 100) * $perc, $decimal);
 }
 
 function perc_add($v, $perc, $decimal = 2) {
@@ -13,14 +13,21 @@ function perc_sub($v, $perc, $decimal = 2) {
     return $v - perc($v, $perc, $decimal);
 }
 
-// se ad un valore e' gie' stata assegnata l'iva, ritorna al valore di partenza
-function perc_extract($v, $perc = 20) {
+// se ad un valore e' gia' stata assegnata l'iva, ritorna al valore di partenza
+function perc_extract($v, $perc = 21) {
     return ($v / (100 + $perc)) * 100;
 }
-
-function iva($v, $p = 20, $decimal = 2) {
+// aggiunge 21%
+function iva($v, $p = 21, $decimal = 2) {
     return perc($v, 100 + $p, $decimal);
 }
+// dato $totale e $parziale, ritorna intero 0-100 rappresentante la percentuale
+function get_perc($totale, $parziale, $decimal=2){
+    $x = 100 / ($totale/$parziale);
+    $x = (float) round( $x, $decimal );
+    return $x;
+}
+
 
 // convert a string/int from any arbitrary base to any arbitrary base,
 // up to base 62(0-9,A-Z,a-z are 62 chars)
