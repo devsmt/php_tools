@@ -80,15 +80,15 @@ class Date {
     }
 
     // $date format 'Y-m-d' '2000-01-01'
-    public static function add($date, $days ) {
+    public static function add($date, $days) {
         $date = new DateTime($date);
-        date_add($date, date_interval_create_from_date_string($days.' days'));
+        date_add($date, date_interval_create_from_date_string($days . ' days'));
         return date_format($date, 'Y-m-d');
     }
 
-    public static function sub($date, $days ) {
+    public static function sub($date, $days) {
         $date = new DateTime($date);
-        date_sub($date, date_interval_create_from_date_string($days.' days'));
+        date_sub($date, date_interval_create_from_date_string($days . ' days'));
         return date_format($date, 'Y-m-d');
     }
 
@@ -133,51 +133,51 @@ class Date {
         return $interval->format($format);
     }
 
-
     // formatta un numero elevato di secondi(es sottrazione di due timestamp)
+    // secsToStr( time() - $_SERVER['REQUEST_TIME'] )
     public static function secsToStr($secs) {
         if ($secs >= 86400) {
             $days = floor($secs / 86400);
             $secs = $secs % 86400;
             $r = $days . ' day';
-            if ($days <> 1) {
-                $r.='s';
+            if ($days != 1) {
+                $r .= 's';
             }
             if ($secs > 0) {
-                $r.=', ';
+                $r .= ', ';
             }
         }
 
         if ($secs >= 3600) {
             $hours = floor($secs / 3600);
             $secs = $secs % 3600;
-            $r.=$hours . ' hour';
-            if ($hours <> 1) {
-                $r.='s';
+            $r .= $hours . ' hour';
+            if ($hours != 1) {
+                $r .= 's';
             }
             if ($secs > 0) {
-                $r.=', ';
+                $r .= ', ';
             }
         }
         if ($secs >= 60) {
             $minutes = floor($secs / 60);
             $secs = $secs % 60;
-            $r.=$minutes . ' minute';
-            if ($minutes <> 1) {
-                $r.='s';
+            $r .= $minutes . ' minute';
+            if ($minutes != 1) {
+                $r .= 's';
             }
             if ($secs > 0) {
-                $r.=', ';
+                $r .= ', ';
             }
         }
-        $r.=$secs . ' second';
-        if ($secs <> 1) {
-            $r.='s';
+        $r .= $secs . ' second';
+        if ($secs != 1) {
+            $r .= 's';
         }
         return $r;
     }
 
-    // dato un timestamp ritorna una stringa leggibile
+    // dato un timestamp $ts (operation begin[(es. $_SERVER['REQUEST_TIME'] )]) ritorna una stringa leggibile
     public static function duration($ts) {
         $time = time();
         $years = (int) ((($time - $ts) / (7 * 86400)) / 52.177457);
@@ -186,37 +186,49 @@ class Date {
         $days = (int) (($rem) / 86400) - $weeks * 7;
         $hours = (int) (($rem) / 3600) - $days * 24 - $weeks * 7 * 24;
         $mins = (int) (($rem) / 60) - $hours * 60 - $days * 24 * 60 - $weeks * 7 * 24 * 60;
+        $secs = (int) ($time - $ts) - ( ( $mins * 60) + ($hours * 60) + ($days * 24 * 60) + ($weeks * 7 * 24 * 60) );
         $str = '';
-        if ($years == 1)
+        if ($years == 1) {
             $str .= "$years year, ";
-        if ($years > 1)
+        }
+        if ($years > 1) {
             $str .= "$years years, ";
-        if ($weeks == 1)
+        }
+        if ($weeks == 1) {
             $str .= "$weeks week, ";
-        if ($weeks > 1)
+        }
+        if ($weeks > 1) {
             $str .= "$weeks weeks, ";
-        if ($days == 1)
+        }
+        if ($days == 1) {
             $str .= "$days day,";
-        if ($days > 1)
+        }
+        if ($days > 1) {
             $str .= "$days days,";
-        if ($hours == 1)
+        }
+        if ($hours == 1) {
             $str .= " $hours hour and";
-        if ($hours > 1)
+        }
+        if ($hours > 1) {
             $str .= " $hours hours and";
-        if ($mins == 1)
+        }
+        if ($mins == 1) {
             $str .= " 1 minute";
-        else
+        } else {
             $str .= " $mins minutes";
+        }
+        if( !empty($secs) ) {
+            $str .= " $secs secs";
+        }
         return $str;
     }
-
 
     // determina se è l'orario corrente rientra negli orari di lavoro
     function isBusinessDayAndHour() {
         $h = date('H');
-        $d = date('w');// w   Numeric representation of the day of the week, 0 (for Sunday) through 6 (for Saturday)
-        $is_h = $h>=7 && $h<23;//no la notte
-        $is_d = $d>=1;//no la domenica
+        $d = date('w'); // w   Numeric representation of the day of the week, 0 (for Sunday) through 6 (for Saturday)
+        $is_h = $h >= 7 && $h < 23; //no la notte
+        $is_d = $d >= 1; //no la domenica
         return $is_h && $is_d;
     }
 }
