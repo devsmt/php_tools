@@ -1,9 +1,8 @@
 <?php
 
-/*
-  Key Value Store, un meccanismo per persistere dati
- */
-
+//
+// Key Value Store, un meccanismo per persistere dati
+//
 class KVS {
 
     // config options

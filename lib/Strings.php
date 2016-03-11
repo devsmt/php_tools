@@ -44,6 +44,12 @@ function str_clean($s) {
     return $result;
 }
 
+// toglie tutti i caratteri non stampabili a terminale
+function str_clean_non_printable($str){
+    $str = preg_replace('/[[:^print:]]/', '', $str);
+    return $str;
+}
+
 // toglie i whitespace
 function str_clean_w($s) {
     return preg_replace(array('/\r\n|\n|\r|\t|\s\s/',), '', $s);
@@ -98,7 +104,8 @@ function str_count_matches($str, $sub_str) {
 }
 
 // random, human readable string, good for password, captcha and other codes
-function str_random_h($length = 9, $strength = 1, $readable = true) {
+// esclude i caratteri che potrebbero essere confusi, come i,l,1,I,0,o,O
+function str_random_human_readable($length = 9, $strength = 1, $readable = true) {
     // esclusi i caratteri che potrebbero essere confusi, come i,l,1,I oppure 0 e o/O
     $vowels = 'aeuy';
     $consonants = 'bdghjmnpqrstvz';
@@ -128,15 +135,57 @@ function str_random_h($length = 9, $strength = 1, $readable = true) {
     return $password;
 }
 
-function str_random($l) {
-    $dict = 'abcdefghijklmnopqrstuvwxyz0123456789';
-    $dict_len = strlen($dict);
-    $str = '';
-    for ($i = 0; $i < $l; $i++) {
-        $pos = rand(0, $dict_len);
-        $str .= $dict{$pos};
+// Generate random string
+//  param Int length of the returned string
+//  param Int used characters: <= 10 digits <= 36 + lowercase, <= 62 + uppercase
+//  return String random string
+//  copyright Jakub Vrana, http://php.vrana.cz/
+function rand_chars( $count = 8 , $chars = 36 ) {
+    $return = "" ;
+    for ( $i = 0 ; $i < $count ; $i ++) {
+        $rand = rand ( 0 , $chars - 1 );
+        $return . = chr ( $rand + ( $rand < 10 ? ord ('0'): ( $rand < 36 ? ord ( 'a' ) - 10 : ord ( 'a' ) - 36 )));
     }
-    return $str;
+    return $return ;
+}
+
+class RandStr {
+    // data una stringa di base, genera password di uguale lunghezza
+    // e assicura che almeno un carattere sia numerico e punteggiatura
+    public static function mkPassword($str, $len=10, $min_num_len=1, $len_sign=1, $upper=true) {
+        if($upper) $str = strtoupper($str);
+
+        $str = preg_replace('/[^A-Z0-9]/', '', $str);
+        $str = substr($str,0, $len );
+        $str = self::pad($str, $len );
+        $str = strtoupper($str);
+        $str = $str . self::generate($min_num_len, '123456789'  );// aggiunge caratteri di punteggiatura
+        $str = $str . self::generate($len_sign, '.,?;:!%_=-+*@' );// aggiunge caratteri di punteggiatura
+
+        if($upper) $str = strtoupper($str);
+        return $str;
+    }
+    // generara una stringa rand della lunghezza specifica
+    // il dict di default non contiene la lettera "O" perchè facile confonderla con numero 0
+    public static function generate($len, $dict='ABCDEFGHIJKLMNPQRSTUVWXYZ0123456789' ) {
+        $dict_len = strlen($dict);
+        $str = '';
+        for ($i = 0; $i < $len; $i++) {
+            $pos = rand(0, $dict_len-1 );
+            $str .= $dict{$pos};
+        }
+        return $str;
+    }
+    // random pad
+    public static function pad($str, $len) {
+        if( strlen($str) >= $len ) {
+            return $str;
+        } else {
+            $delta = $len - strlen($str);
+            $suffix = self::generate($delta);
+            return $str.$suffix;
+        }
+    }
 }
 
 function str_rm_diacritics($str) {
@@ -218,9 +267,24 @@ function str_slugify($text) {
     return $text;
 }
 
-function str_template($str_template, $a_binds) {
-    require_once __DIR__ . '/View.php';
-    return TemplateStr::staticRender($str_template, $a_binds);
+//
+// data una stringa interpola i valori passati in this->binds nei segnaposto
+// espressi con la sintassi {{nome_var}}
+function str_template($str_template, $a_binds, $default_sub='__') {
+    $substitute = function ($buffer, $name, $val) {
+        $reg = sprintf('{{%s}}', $name );
+        $reg = preg_quote($reg, '/');
+        return preg_replace('/'.$reg.'/i', $val, $buffer);
+    };
+    $cleanUnusedVars = function ($buffer) use($default_sub) {
+        return preg_replace('/\{\{[a-zA-Z0-9_]*\}\}/i', $default_sub, $buffer );
+    };
+    $buffer = $str_template;
+    foreach ($a_binds as $name => $val) {
+        $buffer = $substitute($buffer,$name, $val);
+    }
+    $buffer = $cleanUnusedVars($buffer);
+    return $buffer;
 }
 
 //
@@ -316,9 +380,9 @@ function str_to_ascii($s) {
 // usa nuova estensione senza '.'
 function str_extension_replace($filename, $new_extension) {
     // alternatives:
-    //		$info = pathinfo($filename);
-    //		return $info['filename'] . '.' . $new_extension;
-    //		return preg_replace('/\..+$/', '.' . $new_extension, $filename);
+    //   $info = pathinfo($filename);
+    //   return $info['filename'] . '.' . $new_extension;
+    //   return preg_replace('/\..+$/', '.' . $new_extension, $filename);
     return substr_replace($filename, $new_extension, 1 + strrpos($filename, '.'));
 }
 

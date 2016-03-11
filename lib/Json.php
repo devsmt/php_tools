@@ -7,53 +7,60 @@ class JSONOutput {
         if ( DEBUG ) {
             $encode_opt |= JSON_PRETTY_PRINT;
         }
+        $a_data = self::to_UTF8($a_data);
         $json = json_encode($a_data, $encode_opt);
+        // if( json_last_error() ) {
         if( empty($json) ) {
             $msg = sprintf('Errore JSON %s ',  self::lastJsonErrorStr() );
             throw new Exception($msg);
         }
         return $json;
     }
-
+    // encode alla data
+    static function to_UTF8($data) {
+        if (is_array($data)) {
+            foreach ($data as $k => $v) {
+                $data[$k] = self::to_UTF8($v);
+            }
+        } else if (is_string($data)) {
+            return utf8_encode($data);
+        }
+        return $data;
+    }
     // i caratteri fuori dal reange ASCII potrebbero causare errore JSON_ERROR_UTF8
     // una possibile soluzione consiste nel togliere tutto
     public static function rmNonASCII($str){
         $res = preg_replace('/[^\x20-\x7E]/','', $str);
         return $res;
     }
-
-
-    // str errore
-    public static function lastJsonErrorStr(){
-        $msg='';
-        switch (json_last_error()) {
+    // decode JSON error
+    public static function lastJsonErrorStr($json_error_num){
+        $json_error_num = json_last_error();
+        switch ($json_error_num) {
         case JSON_ERROR_NONE:
-            $msg='';
+            $str='No errors';
             break;
         case JSON_ERROR_DEPTH:
-            $msg=' - Maximum stack depth exceeded';
+            $str='Maximum stack depth exceeded';
             break;
         case JSON_ERROR_STATE_MISMATCH:
-            $msg=' - Underflow or the modes mismatch';
+            $str='Underflow or the modes mismatch';
             break;
         case JSON_ERROR_CTRL_CHAR:
-            $msg=' - Unexpected control character found';
+            $str='Unexpected control character found';
             break;
         case JSON_ERROR_SYNTAX:
-            $msg=' - Syntax error, malformed JSON';
+            $str='Syntax error, malformed JSON';
             break;
         case JSON_ERROR_UTF8:
-            // con questo errore usare utf8_encode() e rmNonASCII()
-            $msg=' - Malformed UTF-8 characters, possibly incorrectly encoded (do utf8_encode($data) )';
+            $str='Malformed UTF-8 characters, possibly incorrectly encoded';
             break;
         default:
-            $msg=' - Unknown error';
+            $str='Unknown error';
             break;
         }
-
-        return $msg;
+        return $str;
     }
-
     public static function println($msg) {
         echo sprintf('//%s: %s ' . "\n", date('H:i:s'), $msg);
     }

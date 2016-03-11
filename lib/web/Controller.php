@@ -14,9 +14,6 @@ class ActionController {
     var $response = null;
     var $view = null;
 
-    function ActionController($config = array()) {
-        $this->__construct($config = array());
-    }
 
     function __construct($config = array()) {
         if ($action = Request::get('action', false)) {
@@ -24,7 +21,7 @@ class ActionController {
             $action = preg_replace('/[^a-zA-Z0-9_]/', '_', $action);
             // limite alla lunghezza, previene possibili attacchi
             if (strlen($action) > 10) {
-                die('action max 10 char');
+                die(__CLASS__.' action max 10 char');
             }
 
             $this->action = $action;
@@ -49,18 +46,12 @@ class ActionController {
         }
     }
 
-    /*
-      get path to the default view
-     */
-
+    //  get path to the default view
     function defaultViewPath() {
         return Path::join(CURRENT_MODULE, $this->action . '.php');
     }
 
-    /*
-      il template di default è /template/$module/$action.php
-     */
-
+    //  il template di default è /template/$module/$action.php
     function loadView($file = '', $data = null) {
         if (is_null($this->view)) {
             if (empty($file)) {
@@ -73,21 +64,15 @@ class ActionController {
         }
     }
 
-    /*
-      method catchall
-      inizializza una view
-      inserisce nella risposta la view relativa al modulo corrente
-      e passa oltre
-     */
-
+    //  method catchall
+    //  inizializza una view
+    //  inserisce nella risposta la view relativa al modulo corrente
+    //  e passa oltre
     function ActionIndex() {
         $this->ExecuteAction();
     }
 
-    /*
-      rispondi con il template di default (/template/$module/$action.php)
-     */
-
+    //  rispondi con il template di default (/template/$module/$action.php)
     function ExecuteAction($file = '', $data = null) {
         $this->loadView($file, $data);
         $r = Weasel::getResponse();
@@ -109,5 +94,38 @@ class ActionController {
       function redirect( $controller_and_method, $arguments = false )  {
       header('Location: '.Dispatcher::getUrl( $controller_and_method, $arguments ) );
       exit;
-      } */
+      }
+      */
+}
+
+/* usage:
+class AppController extends BaseController {
+    // esempio azione
+    function loginAction(){}
+}
+ok('/mobile/login', 'loginAction');
+$controller = new XxxController();
+die( $controller->run($uri = $_SERVER['REQUEST_URI']) );
+*/
+// funzione: controller con nomenclatura simile a ZF
+class BaseController {
+    // $uri = '/mobile/login'
+    public function run($uri) {
+        $action = self::resolveAction($uri);
+        if (method_exists($this, $action)) {
+            return $this->$action();
+        } else {
+            return "unimplemented action:$action \n";
+        }
+    }
+    // logica di composizioe della action
+    public static function resolveAction($uri) {
+        if (empty($uri)) {
+            return '';
+        }
+        $action = str_replace(['/'], '', $uri);
+        $action .= 'Action';
+        return $action;
+    }
+
 }

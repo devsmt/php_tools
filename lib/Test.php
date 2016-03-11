@@ -111,7 +111,7 @@ function include_ok($module) {
 }
 
 function require_ok($module) {
-    
+
 }
 
 function skip($message, $num) {
@@ -239,7 +239,7 @@ interface ITestCommand {
 class TestSuite {
 
     public function __construct() {
-        
+
     }
 
     // classe da far girare
@@ -280,12 +280,12 @@ class TestSuite {
     // si occupa di rendere leggibile il risultato dei test nel container(cli,web)
     // di esecuzione prescelto
     public function render_result() {
-        
+
     }
 
     // uso del test
     public function render_usage() {
-        
+
     }
 
     function listAll() {
@@ -324,20 +324,28 @@ class Test {
 
     static $errc = 0;
 
-    //
+
     public static function ok($test, $label, $data = null) {
-        if ($test == false) {
-            echo "<p class=\"error\">ERROR $label: $test</p>\n\n";
-            if (!empty($data)) {
-                echo "<pre class=\" dump\">" . var_export($data, 1) . "</pre>\n\n";
+        if (PHP_SAPI != 'cli') {
+            if ($test == false) {
+                echo "<p class=\"error\">ERROR $label: $test</p>\n\n";
+                if (!empty($data)) {
+                    echo "<pre class=\" dump\">" . var_export($data, 1) . "</pre>\n\n";
+                }
+                Test::$errc++;
+            } else {
+                echo "<p class=\"success\">OK $label </p>\n\n";
             }
-            Test::$errc++;
         } else {
-            echo "<p class=\"success\">OK $label </p>\n\n";
+            if( $test ) {
+                echo "ok $label\n";
+            } else {
+                echo "ERROR($label)    " . var_export($data, 1) . " \n";
+            }
         }
     }
 
-    //
+
     public static function diag($l, $data = '') {
         if (!empty($data)) {
             echo '<pre class="dump">' . $l . '</pre>';
@@ -392,8 +400,10 @@ __END__;
 
 //  test init
 register_shutdown_function(function() {
-    echo Test::css();
-    Test::alarm();
+    if (PHP_SAPI != 'cli') {
+        echo Test::css();
+        Test::alarm();
+    }
 });
 
 

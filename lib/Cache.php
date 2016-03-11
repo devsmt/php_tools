@@ -78,13 +78,13 @@ class PageCache {
 }
 
 // TODO: versione con apc
-$__RAM_storage = array();
+$__RAM_storage = [];
 
 // mantiene in memoria il risultato di una chiamata e se possibile,
 // ritorna il risultato in memoria.
 // usare se l'output è determinabile dai parametri in input e non varia per parametri
 // globali tipo user, db, files su disco, network.
-function memoized(Callable $f, array $args = array()) {
+function memoized(Callable $f, array $args = []) {
     global $__RAM_storage;
     // generic cache key
     // TODO: verificare con closure
@@ -114,8 +114,8 @@ function ff($in){
 $m = 33;
 for($i=0; $i<5000; $i++){
     echo $i,"\n";
-    //ff( array('a'=>rand(1,$m),'b'=>rand(1,$m) ) );
-    memoized('ff', array('a'=>rand(1,$m),'b'=>rand(1,$m) ) );
+    //ff( ['a'=>rand(1,$m),'b'=>rand(1,$m) ] );
+    memoized('ff', ['a'=>rand(1,$m),'b'=>rand(1,$m) ] );
 }
 */
 
