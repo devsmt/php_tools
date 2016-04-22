@@ -27,7 +27,7 @@ class PageCache {
 
     var $_key = ''; // la chiave univoca che identifica la pagina corrente
 
-    function PageCache() {
+    function __construct() {
         $this->storage = new FileCache();
         $this->_key = $this->genKey();
     }
@@ -77,19 +77,16 @@ class PageCache {
 
 }
 
-// TODO: versione con apc
-$__RAM_storage = [];
 
 // mantiene in memoria il risultato di una chiamata e se possibile,
 // ritorna il risultato in memoria.
 // usare se l'output è determinabile dai parametri in input e non varia per parametri
 // globali tipo user, db, files su disco, network.
-function memoized(Callable $f, array $args = []) {
-    global $__RAM_storage;
+function memoized(Callable $f, array $args = [], $function_name='') {
+    static $__RAM_storage;
     // generic cache key
-    // TODO: verificare con closure
     ksort($args);
-    $k = $f . ':' . http_build_query($args);
+    $k = (is_string($f) ? $f : $function_name) . ':' . http_build_query($args);
     // if needed update the cache with the result
     $has_key = array_key_exists($k, $__RAM_storage);
     if (!$has_key) {
@@ -118,6 +115,30 @@ for($i=0; $i<5000; $i++){
     memoized('ff', ['a'=>rand(1,$m),'b'=>rand(1,$m) ] );
 }
 */
+
+define('TTL_FOREVER',  0, false);
+define('TTL_H',  60 * 60, false);
+define('TTL_8H', 8 * CACHE_H, false);
+define('TTL_D',  24 * CACHE_H, false);
+/* uso:
+$cache_key = '';//__METHOD__.'_'.json_encode(func_get_args());
+$data = cache($cache_key, function() {
+    return [];
+});
+return $data;
+*/
+function cache($cache_key, \Closure $generator, $ttl_secs = TTL_8H ) {
+    $val = apc_fetch($cache_key);
+    if (false === $val) {
+        $val = $generator();
+        apc_store($cache_key, $val, $ttl_secs );//secs, 0=forever
+    } else {
+        // from cache
+    }
+    return $val;
+}
+
+
 
 //----------------------------------------------------------------------------
 //  Minimalist File Cache
@@ -320,3 +341,49 @@ class APCCacheTags {
 
     }
 }
+
+//----------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------
+
+/*
+ * LRU is a system which cache data used last recently.
+ * uso:
+$lru = new LRUCache($cacheSize= 2);
+$data = [
+    'a' => 'dataA',
+    'b' => 'dataB',
+    'c' => 'dataC',
+];
+foreach ($data as $key => $value) {
+    $lru->set($key, $value);
+}
+var_dump($lru->get('a'));
+var_dump($lru->get('b'));
+$lru->set('d', 'data_test');
+var_dump($lru->get('c'));
+var_dump($lru->get('d'));
+
+*/
+class LRUCache {
+    protected $store = [];
+    protected $cache_size;
+    public function __construct($size) {
+        $this->cache_size = $size;
+    }
+    public function set($key, $value) {
+        $this->store[$key] = $value;
+        if (count($this->store) > $this->cache_size) {
+            array_shift($this->store);
+        }
+    }
+    public function get($key) {
+        if ( ! isset($this->store[$key]) ) {
+            return null;
+        }
+        // Put the value gotten to last.
+        $tmp = $this->store[$key];
+        unset($this->store[$key]);
+        $this->store[$key] = $tmp;
+        return $this->store[$key];
+    }

@@ -1,5 +1,12 @@
 <?php
 
+/*
+inspired by Perl Test::Simple
+
+The goal here is to have a testing utility that's simple to learn, quick to use
+and difficult to trip yourself up with while still providing some flexibility
+*/
+
 //-----------------------------------------------------------------------------------
 //  test formating
 //-----------------------------------------------------------------------------------
@@ -120,7 +127,6 @@ function skip($message, $num) {
         $num = 0;
     }
     for ($i = 0; $i < $num; $i++) {
-        # FIXME: The pound sign should replace the hyphen
         pass("# SKIP $message");
     }
     $_num_skips = $num;
@@ -131,7 +137,14 @@ function is_deeply($got, $expected, $test_name) {
     $s_got = serialize($got);
     $s_exp = serialize($expected);
     $pass = $s_got == $s_exp;
-    proclaim($pass, $desc, false, $got, $expected);
+    if ($pass) {
+        ok(true, " is_deeply $test_name");
+    } else {
+        ok(false, " !is_deeply $test_name ");
+        diag( $s_got );
+        diag( $s_exp );
+    }
+    return $pass;
 }
 
 // usa weblint per assicurarsi che html prodotto sia standard
@@ -140,7 +153,7 @@ function html_ok($str, $name = "") {
     $fh = fopen($fname, "w");
     fwrite($fh, $str);
     fclose($fh);
-    $results = Array();
+    $results = [];
     $results = shell_exec("weblint $fname");
     unlink($fname);
     if ($results) {
@@ -406,4 +419,44 @@ register_shutdown_function(function() {
     }
 });
 
+//----------------------------------------------------------------------------
+// minimalistic test for API
+//----------------------------------------------------------------------------
 
+class APIClient {
+    public static function get($method, $param=[]) {
+        $param_auth = self::getAuth();
+        $a_param = array_merge( $param_auth, $param );
+        $url = sprintf('%s/%s?%s', self::URL, $method, http_build_query($a_param) );
+        $json_str = file_get_contents($url);
+        if(DEBUG) {
+            echo "## URL: $url \n";
+        }
+        $data = json_decode($json_str, $use_assoc=true );
+
+        if( empty($data)  ) {
+            if( DEBUG ) {
+                echo "## UNPARSABLE RESPONSE --------------------------------------\n";
+                echo "$json_str\n";
+                echo "## END RESPONSE    ------------------------------------------\n";
+            }
+            return $json_str;
+        }
+        if( DEBUG && (isset($data['exec_time']) || isset($data['memory'])) ) {
+            echo sprintf('## time:%s mem:%s data_len:%s'.PHP_EOL,
+                @$data['exec_time'], @$data['memory'] , @count($data['data']) );
+        }
+        return $data;
+    }
+
+    protected static function getAuth() {
+        $time = time();
+        $hash = ''; // some hashing algorithm like sha1(self::KEY.'-'.$time);
+        $a = [
+            'client_id' => self::CLIENT_ID,
+            'time'      => $time,
+            'hash'      => $hash
+        ];
+        return $a;
+    }
+}

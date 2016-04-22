@@ -16,12 +16,8 @@ class DBTable {
         if (!is_null($db)) {
             $this->db = $db;
         } else {
-            // php 4.1 non funziona
-            if (version_compare(phpversion(), '4.1', '>')) {
-                $this->db = Weasel::getDB();
-            } else {
-                $this->db = $GLOBALS[W_DB_INSTANCE];
-            }
+            $msg = sprintf('Errore %s ', 'manca istanza database' );
+            throw new Exception($msg);
         }
     }
 

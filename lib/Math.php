@@ -18,7 +18,7 @@ function perc_extract($v, $perc = 21) {
     return ($v / (100 + $perc)) * 100;
 }
 // aggiunge 21%
-function iva($v, $p = 21, $decimal = 2) {
+function iva($v, $p = 22, $decimal = 2) {
     return perc($v, 100 + $p, $decimal);
 }
 // dato $totale e $parziale, ritorna intero 0-100 rappresentante la percentuale

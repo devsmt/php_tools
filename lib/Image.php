@@ -426,6 +426,98 @@ class SparklineGenerator {
 
 }
 
+// very basic and not secure captcha code
+// @see http://www.mperfect.net/aiCaptcha/ for more information
+//
+// some security tips:
+//   - render the characters with different colors
+//   - make some characters darker than the background, and some lighter
+//   - use gradient colors for the backgrounds and the characters
+//   - dont align all the characters vertically
+//   - dont make the answers words, so that a dictionary could be used
+//   - use more characters and symbols
+//   - use uppercase and lowercase characters
+//   - use a different number of characters each time
+//   - rotate some of the characters more drastically (i.e. upside down)
+//   - do more overlapping of characters
+//   - make some pixels of a single character not touching
+//   - have grid lines that cross over the characters with their same color
+//   - consider asking natural language questions like 2+2
+class CAPTCHA {
+
+    /*
+    <form method="POST" action="form-handler.php" onsubmit="return checkForm(this);">
+
+    ...
+
+    <p><img src="/captcha.php" width="120" height="30" border="1" alt="CAPTCHA"></p>
+    <p><input type="text" size="6" maxlength="5" name="captcha" value=""><br>
+    <small>copy the digits from the image into this box</small></p>
+
+    ...
+
+    </form>
+    <script type="text/javascript">
+    function checkForm(form) {
+    ...
+    if(!form.captcha.value.match(/^\d{5}$/)) {
+    alert('Please enter the CAPTCHA digits in the box provided');
+    form.captcha.focus();
+    return false;
+    }
+    ...
+    return true;
+    }
+    </script>
+    <?php
+    // form-handler.php
+    if($_POST && all required variables are present) {
+    ...
+
+    session_start();
+    if($_POST['captcha'] != $_SESSION['digit']) die("Sorry, the CAPTCHA code entered was incorrect!");
+    session_destroy();
+
+    ...
+    }
+    ?>
+    */
+    public static function render() {
+        // initialise image with dimensions of 120 x 30 pixels
+        $image = @imagecreatetruecolor(120, 30) or die("Cannot Initialize new GD image stream");
+
+        // set background and allocate drawing colours
+        $background = imagecolorallocate($image, 0x66, 0x99, 0x66);
+        imagefill($image, 0, 0, $background);
+        $linecolor = imagecolorallocate($image, 0x99, 0xCC, 0x99);
+        $textcolor1 = imagecolorallocate($image, 0x00, 0x00, 0x00);
+        $textcolor2 = imagecolorallocate($image, 0xFF, 0xFF, 0xFF);
+
+        // draw random lines on canvas
+        for($i=0; $i < 6; $i++) {
+            imagesetthickness($image, rand(1,3));
+            imageline($image, 0, rand(0,30), 120, rand(0,30) , $linecolor);
+        }
+
+        session_start();
+
+        // add random digits to canvas using random black/white colour
+        $digit = '';
+        for($x = 15; $x <= 95; $x += 20) {
+            $textcolor = (rand() % 2) ? $textcolor1 : $textcolor2;
+            $digit .= ($num = rand(0, 9));
+            imagechar($image, rand(3, 5), $x, rand(2, 14), $num, $textcolor);
+        }
+
+        // record digits in session variable
+        $_SESSION['digit'] = $digit;
+
+        // display image and clean up
+        header('Content-type: image/png');
+        imagepng($image);
+        imagedestroy($image);
+    }
+}
 
 class Color {
 

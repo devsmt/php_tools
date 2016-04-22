@@ -135,18 +135,30 @@ function str_random_human_readable($length = 9, $strength = 1, $readable = true)
     return $password;
 }
 
-// Generate random string
-//  param Int length of the returned string
-//  param Int used characters: <= 10 digits <= 36 + lowercase, <= 62 + uppercase
-//  return String random string
-//  copyright Jakub Vrana, http://php.vrana.cz/
-function rand_chars( $count = 8 , $chars = 36 ) {
-    $return = "" ;
-    for ( $i = 0 ; $i < $count ; $i ++) {
-        $rand = rand ( 0 , $chars - 1 );
-        $return . = chr ( $rand + ( $rand < 10 ? ord ('0'): ( $rand < 36 ? ord ( 'a' ) - 10 : ord ( 'a' ) - 36 )));
+// Generate random char sequence
+function rand_chars( $count, $chars = 36 ) {
+    return string_random($count, $chars );
+}
+// genera una stringa random della lunghezza specificata sfruttando il valore ASCII di un carattere
+// $chars <= 9 digits <= 35 lowercase, <= 61 uppercase
+// ord('0') = 48   z=a+25
+// ord('A') = 65   Z=A+25
+// ord('a') = 97
+function string_random($l=128, $chars = 35 ) {
+    $s = '';
+    for ($i = 0; $i < $l; ++$i) {
+        $r = mt_rand(0, $chars );
+        if ($r < 10) {
+            $c = chr(ord('0') + $r);//numeric
+        } elseif ($r < 36 )  {
+            $c = chr(ord('a') + $r - 26 );//alpha
+        } elseif ($r < 62 )   {
+            // alpha uppecase r=range(0,25)
+            $c = chr(ord('A') + $r - 36 );//upper alpha
+        }
+        $s .= $c;
     }
-    return $return ;
+    return $s;
 }
 
 class RandStr {

@@ -9,7 +9,7 @@ class SQL {
       ------------------------------------------------------------------------------ */
 
     // quote adatto ai nomi di campo
-    function quote($f) {
+    public static function quote($f) {
         $f = trim($f);
         // se e' gie' quotato, e' ok
         if (substr($f, 0, 1) == '`' && substr($f, -1) == '`') {
@@ -18,7 +18,7 @@ class SQL {
         return "`$f`";
     }
 
-    function quotev($v) {
+    public static function quotev($v) {
         if (!is_int($v)) {
             // non quotare se sembra una funzione come ad esempio now() o sum()
             // da aggiornare con l'uso di una reg exp?
@@ -36,7 +36,7 @@ class SQL {
     // previene sql iniection
     // al mmomento utilizza solo mysql
     //
-    function escape($s) {
+    public static function escape($s) {
         if (!isset($GLOBALS[W_DB_INSTANCE])) {
             // evitiamo di aprire una connessione solo per fare l'escape di una stringa
             return mysql_escape_string($s);
@@ -51,7 +51,7 @@ class SQL {
 
     // ritorna una stringa nella forma a=1,b=2,...
     // da un array associativo nella forma 'a'=>1,'b'=>2
-    function sequence_val($val) {
+    public static function sequence_val($val) {
         if (!is_array($val)) {
             return '';
         }
@@ -69,7 +69,7 @@ class SQL {
     // es. (a=1 || a=2 || a=3)
     //          ^$c2      ^field
     // /code
-    function where_range($field, $a_v, $c2 = '||') {
+    public static function where_range($field, $a_v, $c2 = '||') {
         $sql = '';
         if (count($a_v) > 0) {
             $a_s = array();
@@ -83,7 +83,7 @@ class SQL {
         return $sql;
     }
 
-    function where_in($field, $a_v) {
+    public static function where_in($field, $a_v) {
         $sql = '';
         // gestire tipi non interi, come le str che richiedono essere quotate
         if (!empty($a_v)) {
@@ -109,7 +109,7 @@ class SQL {
     //!(a like "sa" || a LIKE "sb" || a="sc")
     //             ^$c2              ^field
     // /code
-    function where_range_like($field, $a_v = null) {
+    public static function where_range_like($field, $a_v = null) {
         $c2 = ' || ';
         $sql = '';
         if (!is_array($field)) {
@@ -135,7 +135,7 @@ class SQL {
     }
 
     // assicura che il valore contenga il simbolo di espansione per la clausola LIKE
-    function _ensure_like_char($v) {
+    public static function _ensure_like_char($v) {
         if (strpos($v, '%') !== false) {
             return $v;
         } else {
@@ -145,7 +145,7 @@ class SQL {
 
     // ritorna sql necessario a trovare i record corrispondenti ad un intervallo
     // su di un campo date
-    function where_range_date($field, $data_da = '', $data_a = '') {
+    public static function where_range_date($field, $data_da = '', $data_a = '') {
         $field = SQL::escape($field);
         $data_da = SQL::escape($data_da);
         $data_a = SQL::escape($data_a);
@@ -163,7 +163,7 @@ class SQL {
     // array(field, field ... )
     //
     // field
-    function orderby($a = array()) {
+    public static function orderby($a = array()) {
         // assert("is_array($a)")
         // assert("is_array($a[0])")
         $sql = '';
@@ -192,7 +192,7 @@ class SQL {
         return $sql;
     }
 
-    function limit($start = 0, $offset = null) {
+    public static function limit($start = 0, $offset = null) {
         if (empty($start) && empty($offset)) {
             return '';
         } elseif (is_null($offset)) {
@@ -201,7 +201,7 @@ class SQL {
         return sprintf(" LIMIT %s,%s", SQL::escape($start), SQL::escape($offset));
     }
 
-    function page_limit($page, $offset) {
+    public static function page_limit($page, $offset) {
         $start = $page * $offset;
         return SQL::limit($start, $offset);
     }
@@ -221,7 +221,7 @@ class SQL {
     // \param $t str table name
     //
     // Query Cache does simple optimization to check if query can be cached. As I mentioned only SELECT queries are cached - so it looks at first letter of the query and if it is e'Se' it proceeds with query lookup in cache if not - skips it.
-    function select($t, $opt = array()) {
+    public static function select($t, $opt = array()) {
         extract(array_merge(array('s' => '*', 'where' => null, 'group_by' => null, 'order_by' => null, 'pos' => 0, 'limit' => null), $opt));
         if (is_array($s)) {
             $s = Arr::deleteEmpty($s);
@@ -247,7 +247,7 @@ class SQL {
     // 'b,a',
     // '0,5');
     // ritorna una str tipo: "left join table2 on a=z"
-    function join($t, $on, $join_type = 'left') {
+    public static function join($t, $on, $join_type = 'left') {
         return "\n $join_type join $t on $on";
     }
 
@@ -260,7 +260,7 @@ class SQL {
     // or  INSERT [LOW_PRIORITY | DELAYED] [IGNORE]
     // [INTO] tbl_name
     // SET col_name=expression, col_name=expression, ...
-    function insert($t, $val = array(), $flags = null) {
+    public static function insert($t, $val = array(), $flags = null) {
         return "INSERT INTO " . SQL::quote($t) . " SET " . SQL::sequence_val($val);
     }
 
@@ -268,14 +268,14 @@ class SQL {
     // SET col_name1=expr1, [col_name2=expr2, ...]
     // [WHERE where_definition]
     // [LIMIT #]
-    function update($t, $where, $val) {
+    public static function update($t, $where, $val) {
         return "UPDATE " . SQL::quote($t) . " SET " . SQL::sequence_val($val) . ' WHERE ' . $where;
     }
 
     // DELETE [LOW_PRIORITY] FROM tbl_name
     // [WHERE where_definition]
     // [LIMIT rows]
-    function delete($t, $where = '') {
+    public static function delete($t, $where = '') {
         if (empty($where)) {
             $where = '1';
         }
@@ -297,27 +297,34 @@ class SQL {
     // REPLACE works exactly like INSERT, except that if an old row in the table has the
     // same value as a new row for a PRIMARY KEY or a UNIQUE index, the old row is deleted before the new row is inserted
     //
-    function replace($t, $val = array(), $flags = null) {
+    public static function replace($t, $val = array(), $flags = null) {
         return "REPLACE INTO $t SET " . SQL::sequence_val($val);
     }
 
     // and( "field=1", "field2!=0", ... )
-    function _and_() {
+    public static function _and_() {
         $a = func_get_args();
         return '(' . implode(' && ', $a) . ')';
     }
 
     // or( "field=1", "field2!=0", ... )
-    function _or_() {
+    public static function _or_() {
         $a = func_get_args();
         return '(' . implode(' || ', $a) . ')';
     }
 
-    function ifs($condition, $sql) {
+    public static function ifs($condition, $sql) {
         if ($condition)
             return $sql;
         else
             return '';
+    }
+
+    public static function isSelect($sql) {
+        $sql = trim($sql);
+        $l = strlen('select');
+        $sql_begin = strtolower( substr($sql, 0, $l ) );
+        return $sql_begin =='select' ;
     }
 
 }
@@ -331,7 +338,7 @@ class SQLTable {
     // `id` VARCHAR( 36 ) NOT NULL ,
     // `nome` VARCHAR( 36 ) NOT NULL
     // );
-    function table_create($name, $fields, $type = 'varchar(255)') {
+    public static function table_create($name, $fields, $type = 'varchar(255)') {
         $fields_count = count($fields);
         $sql = "CREATE TABLE " . SQL::quote($name) . " (\n";
         for ($i = 0; $i < $fields_count; $i++) {
@@ -345,25 +352,25 @@ class SQLTable {
     }
 
     //
-    function table_delete($table) {
+    public static function table_delete($table) {
         $sql = "DELETE from " . SQL::quote($table);
         return $sql;
     }
 
     //
-    function table_drop($table) {
+    public static function table_drop($table) {
         $sql = "DROP TABLE IF EXISTS " . SQL::quote($table);
         return $sql;
     }
 
     //
-    function table_alter_field($table, $field, $new_tipe = 'VARCHAR( 222 )') { //NOT NULL
+    public static function table_alter_field($table, $field, $new_tipe = 'VARCHAR( 222 )') { //NOT NULL
         $sql = "ALTER TABLE " . SQL::quote($table) . " CHANGE `$field` `$field` $new_tipe ";
         return $sql;
     }
 
     // string $field field 1, field2, field3
-    function table_add_index($table, $field, $type = '') {
+    public static function table_add_index($table, $field, $type = '') {
         //ALTER [IGNORE] TABLE tbl_name
         //ADD INDEX [index_name] (index_col_name,...)
         //or    ADD PRIMARY KEY (index_col_name,...)
@@ -375,7 +382,7 @@ class SQLTable {
         return $sql;
     }
 
-    function table_add_field($t, $f, $type = 'VARCHAR( 22 )') {
+    public static function table_add_field($t, $f, $type = 'VARCHAR( 22 )') {
         $sql = "ALTER TABLE `$t` ADD `$f`
         $type NOT NULL ;";
         return $sql;
@@ -396,7 +403,7 @@ class SQLTable {
     //
     // generale per uploadare files
     //
-    function load_file($file, $table, $terminated_by = ',', $enclosed_by = '"', $lines_terminated_by = '\n') {
+    public static function load_file($file, $table, $terminated_by = ',', $enclosed_by = '"', $lines_terminated_by = '\n') {
         delete_table($table);
         $sql = "LOAD DATA  INFILE '$file'
         REPLACE
@@ -408,4 +415,46 @@ class SQLTable {
         return $sql;
     }
 
+}
+
+// funzione: filtra alcuni tipi di dato
+class SQLFilter {
+
+    // toglie caratteri pericolosi da un input che debba essere processato con SQL
+    // DB::sanitize($s);
+    public static function sanitize($s, $len=0) {
+        $s  = preg_replace('/[^a-zA-Z0-9\-_]/', '', $s );
+        // opzionalmente applica troncamento per lunghezza
+        if( !empty($len) ) {
+            $s = substr($s, 0, $len);
+        }
+        return $s;
+    }
+
+    public static function sanitize_str($s, $len=0) {
+        $s = self::quote($s);
+        $s = preg_replace('/[^a-zA-Z0-9_\,\;\-\+\*\/\(\)\[\]\:\.\!\?#= ]/', '', $s);
+        $s = filter_var($s, FILTER_SANITIZE_STRING,
+            FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH
+        );
+
+        // opzionalmente applica troncamento per lunghezza
+        if( !empty($len) ) {
+            $s = substr($s, 0, $len);
+        }
+        return $s;
+    }
+
+    public static function sanitize_int($s, $len=15) {
+        $s = preg_replace('/[^0-9]/', '', $s );
+        // elimina input eccessivo
+        $s = substr($s, 0, $len);
+        return $s;
+    }
+    public static function sanitize_float($s, $len=15) {
+        $s = preg_replace('/[^0-9\.]/', '', $s );
+        // elimina input eccessivo
+        $s = substr($s, 0, $len);
+        return $s;
+    }
 }

@@ -243,7 +243,7 @@ class File {
     }
 
     // stabilisce se il file è più vecchio di una determinata soglia
-    public static function is_older_than($file_path, $hours) {
+    public static function isOlderThan($file_path, $hours) {
         if (!file_exists($file_path)) {
             // non esiste, va ricreato
             return true;

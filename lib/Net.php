@@ -71,14 +71,14 @@ class Net {
         return false;
     }
 
-    /**
-     * Convert one or more comma separated IPs to hostnames
-     *
-     * If $conf['dnslookups'] is disabled it simply returns the input string
-     *
-     * @param  string $ips comma separated list of IP addresses
-     * @return string a comma separated list of hostnames
-     */
+    //
+    // Convert one or more comma separated IPs to hostnames
+    //
+    // If $conf['dnslookups'] is disabled it simply returns the input string
+    //
+    // @param  string $ips comma separated list of IP addresses
+    // @return string a comma separated list of hostnames
+    //
     public static function getHostsByAddrs(array $ips) {
 
         $hosts = array();
@@ -96,7 +96,7 @@ class Net {
 
     // @see https://github.com/rmccue/Requests
     // permette di ottenre il contenuto della pagina servita ad un indirizzo specifico
-    public static function getContent($url) {
+    public static function getContent($url, $opts = [] ) {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_HEADER, 0);
@@ -108,12 +108,38 @@ class Net {
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
             curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
         }
-        ob_start();
-        curl_exec($ch);
-        curl_close($ch);
-        $string = ob_get_contents();
-        ob_end_clean();
-        return $string;
+        // apply opts
+        if(is_array($opts) && $opts) {
+            foreach($opts as $key => $val) {
+                curl_setopt($ch, $key, $val);
+            }
+        }
+        // transfer
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        if(FALSE === ($retval = curl_exec($ch))) {
+            $err = curl_error($ch);
+            $msg = sprintf('Errore CURL %s ', $err );
+            throw new Exception($msg);
+        } else {
+            return $retval;
+        }
+        // cache: fare l'operazione di rete solo se necessario
+    }
+
+
+
+
+    /*
+    $endpoint = "https://graph.facebook.com/?id=" . urlencode($uri);
+    $curlopts = array( CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4 );
+    $retval = http_get_contents($endpoint, $curlopts);
+    */
+    function http_get_contents($url , $opts = array() ) {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        curl_setopt($ch, CURLOPT_USERAGENT, "{$_SERVER['SERVER_NAME']}");
+
     }
 
     // verifica un IP su diversi database di IP malevoli

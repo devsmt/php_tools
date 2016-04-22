@@ -134,11 +134,11 @@ class LoggerAdapterEcho extends LoggerAdapter {
 }
 
 class LoggerAdapterMysqlDB extends LoggerAdapter {
-    
+
 }
 
 class LoggerAdapterEmpty extends LoggerAdapter {
-    
+
 }
 
 
@@ -147,25 +147,49 @@ class MFLogger {
     const OP_KO   = 'error'  ;
     const OP_OK   = 'success';
     const OP_INFO = 'info'   ;
-    public static function log($operaton_type, $operaton_status, $params=[], $result = []) {
-        $path = APPLICATION_PATH.'/../var/logs/app_'.date('Y_m').'.log';
 
-        $log_data = [
-            date('Y-m-d H:i:s'),
-            'session:'.session_id(),
-            'operation:'.$operaton_type,
-            'status:'.$operaton_status,
-            !empty($params) ? 'params:'.json_encode($params):'',
-            !empty($identity_info) ? 'result:'.json_encode($identity_info):''
-        ];
+        public static function log($ns, $operation_name, $msg, $params=[], $identity_info = []) {
 
-        $str  = implode(' ', array_filter($log_data,
-            function ($s){
+            $path = self::path($ns);
+
+            $pack = function($str, $label){
+                if( empty($str) ) {
+                    return '';
+                }
+                if( is_array($str) ) {
+                    $str = json_encode($str);
+                    // subset per impedire scritture di dati arbitrari
+                    $str = substr($str, 0, 200);
+                }
+                return "$label:$str";
+            };
+
+            $log_data = [
+                date('Y-m-d H:i:s'),
+                $pack($operation_name, 'operation'),
+                $pack($msg, 'msg'),
+                $pack($params, 'params'),
+                $pack($identity_info, 'identity'),
+            ];
+
+            $str = implode(' ', array_filter($log_data, function ($s){
                 return !empty($s);
-            })
-        )."\n";
+            }) );
 
-        file_put_contents($path, $str, FILE_APPEND | LOCK_EX);
+            // implementa una soglia massima
+            $bytes = filesize($path);
+            $MB = pow(1024, $factor=2);
+            if( $bytes > 500 * $MB ) {
+                return ;
+            }
+
+            file_put_contents($path, $str."\n", FILE_APPEND | LOCK_EX);
+        }
+
+    // dipende dall'applicazione
+    public static function path($ns) {
+        $path = APPLICATION_PATH.'/../var/logs/'.$ns.'_'.date('Y_m').'.log';
+        return $path;
     }
 }
 
