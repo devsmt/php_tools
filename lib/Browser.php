@@ -206,26 +206,53 @@ class Browser {
         return 'en';
     }
 
-    /**
-     * Check if the browser is on a OLD mobile device
-     *
-    public static function isMobile() {
-        if (isset($_SERVER['HTTP_X_WAP_PROFILE'])) {
-            return true;
+
+    public static function isMobile($UA='') {
+        if( empty($UA) ) {
+            $UA = $_SERVER['HTTP_USER_AGENT'];
         }
-        if (preg_match('/wap\.|\.wap/i', $_SERVER['HTTP_ACCEPT'])) {
+        $iPod    = strpos($UA, 'iPod'    ) !== false;
+        $iPhone  = strpos($UA, 'iPhone'  ) !== false;
+        $iPad    = strpos($UA, 'iPad'    ) !== false;
+        $android = strpos($UA, 'Android' ) !== false;
+        //
+        // log per trovare UA particolari
+        // file_put_contents('./public/upload/install_log/agent',$_SERVER['HTTP_USER_AGENT']);
+        //
+        if( $iPad || $iPhone || $iPod || $android ) {
             return true;
-        }
-        if (!isset(self::getAgent())) {
+        } else {
             return false;
         }
-        $uamatches = 'midp|j2me|avantg|docomo|novarra|palmos|palmsource|240x320|opwv|chtml|pda|windows ce|mmp\/|blackberry|mib\/|symbian|wireless|nokia|hand|mobi|phone|cdm|up\.b|audio|SIE\-|SEC\-|samsung|HTC|mot\-|mitsu|sagem|sony|alcatel|lg|erics|vx|NEC|philips|mmm|xx|panasonic|sharp|wap|sch|rover|pocket|benq|java|pt|pg|vox|amoi|bird|compal|kg|voda|sany|kdd|dbt|sendo|sgh|gradi|jb|\d\d\di|moto';
-        if (preg_match("/$uamatches/i", self::getAgent())) {
-            return true;
-        }
-        return false;
     }
-    */
+    public static function isAndroid($UA='') {
+        if( empty($UA) ) {
+            $UA = $_SERVER['HTTP_USER_AGENT'];
+        }
+
+        return strpos($UA, 'Android' ) !== false;
+    }
+    public static function isIOS($UA='') {
+        if( empty($UA) ) {
+            $UA = $_SERVER['HTTP_USER_AGENT'];
+        }
+
+        $iPod   = strpos($UA, 'iPod'   ) !== false;
+        $iPhone = strpos($UA, 'iPhone' ) !== false;
+        $iPad   = strpos($UA, 'iPad'   ) !== false;
+        return ($iPod || $iPhone || $iPad);
+    }
+    // classe usata sul body, aiuta la getione del css
+    // @see Modernizer.js
+    public static function getCSSClass($UA='') {
+        $n = sscanf(self::translate(), "%s %s", $browser_name , $browser_version  );
+        $os = '';
+        if( self::isMobile($UA) ){
+            $os .= self::isAndroid($UA) ? 'android' : '';
+            $os .= self::isIOS($UA) ? 'ios' : '';
+        }
+        return " $os $browser_name";
+    }
 
     // posiziona un cookie contenente la dimensione massima dello schermo, in questo modo la variabile è sempre disponibile
     // in alternativa si può usare anche una veriabile di sessione

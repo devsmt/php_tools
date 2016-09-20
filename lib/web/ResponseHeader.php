@@ -243,7 +243,11 @@ class ResponseHeader {
             header("HTTP/1.1 {$code} {$text}", true, $code);
         }
     }
-
+    //
+    public static function hidePHP() {
+        header_remove('X-Powered-By');
+        ini_set('expose_php', 'off');
+    }
 }
 
 //----------------------------------------------------------------------------

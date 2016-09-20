@@ -170,6 +170,9 @@ class MFLogger {
                 $pack($msg, 'msg'),
                 $pack($params, 'params'),
                 $pack($identity_info, 'identity'),
+
+                $pack(coalesce(@$_SERVER['HTTP_X_REAL_IP'], $_SERVER['REMOTE_ADDR']), 'IP'      ),
+                $pack(Browser::translate()                                          , 'BROWSER' ),
             ];
 
             $str = implode(' ', array_filter($log_data, function ($s){
@@ -191,6 +194,33 @@ class MFLogger {
         $path = APPLICATION_PATH.'/../var/logs/'.$ns.'_'.date('Y_m').'.log';
         return $path;
     }
+
+
+    //----------------------------------------------------------------------------
+    // log procedure apposita per programmi CLI
+    //----------------------------------------------------------------------------
+    public static function flog($isOK, $message, array $errors=[]) {
+        $log_msg =  sprintf('%s %s msg:"%s" errors:%s params:%s '.PHP_EOL,
+            date('Y-m-d H:i:s'),
+            $isOK ? 'OK' : 'KO',
+            $message,
+            json_encode($errors),
+            $request =  implode(' ', array_slice($GLOBALS['argv'], $pos=1 ) )
+            );
+        $pgm_name = str_replace('.php','', basename( $GLOBALS['argv'][0] ) );
+        $_log_path = sprintf('%s/../var/logs', APPLICATION_PATH );
+        $_log_file = sprintf('%s_%s.log', $pgm_name, date('my') );
+
+        $log_path = realpath( $_log_path );
+        if( empty($log_path) ) {
+            echo "log_path non valido $_log_path \n";
+            return;
+        } else {
+            $log_path = "$log_path/$_log_file";
+            return file_put_contents($log_path, $log_msg, (FILE_APPEND | LOCK_EX) );
+        }
+    }
+
 }
 
 

@@ -114,6 +114,7 @@ class Net {
                 curl_setopt($ch, $key, $val);
             }
         }
+
         // transfer
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         if(FALSE === ($retval = curl_exec($ch))) {
@@ -121,9 +122,37 @@ class Net {
             $msg = sprintf('Errore CURL %s ', $err );
             throw new Exception($msg);
         } else {
+            curl_close($ch);
             return $retval;
         }
-        // cache: fare l'operazione di rete solo se necessario
+    }
+
+    // richiama una url con dati in post
+    protected static function post($url, array $fields ) {
+
+        foreach($fields as $key=>$value) {
+            $value = urlencode($value);
+            $fields_string .= $key.'='.$value.'&';
+        }
+        rtrim($fields_string, '&');
+
+        // open connection
+        $ch = curl_init();
+
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_POST, count($fields));
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $fields_string);
+
+        // transfer
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        if(FALSE === ($retval = curl_exec($ch))) {
+            $err = curl_error($ch);
+            $msg = sprintf('Errore CURL %s ', $err );
+            throw new Exception($msg);
+        } else {
+            curl_close($ch);
+            return $retval;
+        }
     }
 
 
@@ -159,6 +188,18 @@ class Net {
             }
         }
         return false;
+    }
+    // verifica se una porta locale è aperta o chiusa
+    function portIsOpen($port=25){
+        $fp = fsockopen('127.0.0.1', $port, $errno, $errstr, 5);
+        if (!$fp) {
+            // port is closed or blocked
+            return false;
+        } else {
+            // port is open and available
+            fclose($fp);
+            return true;
+        }
     }
 
 }

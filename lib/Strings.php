@@ -279,10 +279,9 @@ function str_slugify($text) {
     return $text;
 }
 
-//
 // data una stringa interpola i valori passati in this->binds nei segnaposto
 // espressi con la sintassi {{nome_var}}
-function str_template($str_template, $a_binds, $default_sub='__') {
+function str_template($str_template, array $a_binds, $default_sub='__') {
     $substitute = function ($buffer, $name, $val) {
         $reg = sprintf('{{%s}}', $name );
         $reg = preg_quote($reg, '/');
@@ -292,12 +291,34 @@ function str_template($str_template, $a_binds, $default_sub='__') {
         return preg_replace('/\{\{[a-zA-Z0-9_]*\}\}/i', $default_sub, $buffer );
     };
     $buffer = $str_template;
+    // TODO: gestire il caso in cui si passi un oggetto come $a_bind
+    // $obj->view_$name || $obj->view_$name()
     foreach ($a_binds as $name => $val) {
-        $buffer = $substitute($buffer,$name, $val);
+        $buffer = $substitute($buffer, $name, $val);
     }
     $buffer = $cleanUnusedVars($buffer);
     return $buffer;
 }
+
+// bypass heredoc limitation to not be able to call functions
+// an alternative method to
+// $fn = function($a){ return $a };
+// $html = <<<__END__
+// {$fn('aa')}
+// __END__;
+class HEREDOCHelpers {
+    public function __call($name, $args) {
+        if (function_exists($name)) {
+            return call_user_func_array($name, $args);
+        }
+    }
+}
+// USO:
+// $_fn = new HEREDOCHelpers();
+// in a heredoc with {$_fn->time()}
+
+
+
 
 //
 //  Returns subject replaced with regular expression matchs

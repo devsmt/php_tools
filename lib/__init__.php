@@ -24,6 +24,10 @@ class Bootstrap {
 
         // include minum set of functionality
         self::useLib('Strings', 'Request', 'Path');
+
+        header_remove("X-Powered-By");
+        ini_set('expose_php', 'off');
+
     }
 
     public static function Error($line, $file, $msg) {

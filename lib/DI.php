@@ -46,7 +46,7 @@ class InstanceDIC {
         return $this->registry[$name]();
     }
 }
-
+/* uso:
 $c = new DIC;
 $c->mailer = function() {
     // create new instance of service and configure it
@@ -56,3 +56,4 @@ $c->mailer = function() {
 
 // Fetch, boy
 $mailer = $c->mailer; // mailer instance
+*/

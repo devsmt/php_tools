@@ -4,9 +4,13 @@ ini_set('register_argc_argv', true);
 ini_set('max_execution_time', 0);
 ini_set('html_errors', false);
 ini_set('implicit_flush', false);
+ini_set('apc.enable_cli', 1);
 
 class CLI {
-
+    //
+    public static function std_error($msg) {
+        fputs(STDERR, $msg);
+    }
     // normalmente non vogliamo permettere l'accesso da web
     public static function checkAccess() {
         if (PHP_SAPI != 'cli') {
@@ -15,9 +19,9 @@ class CLI {
     }
 
     // determina se chi sta lanciando lo script è l'utente root
-    public static function userIsRoot() {
+    public static function userIsRoot($user='root') {
         $processUser = posix_getpwuid(posix_geteuid());
-        return $processUser['name'] == 'root';
+        return $processUser['name'] == $user;
     }
 
     // nome della macchia su cui si sta eseguendo
@@ -120,8 +124,6 @@ class CLI {
     //  colored output / CliUI
     //------------------------------------------------------------------------------
 
-
-
     // stampa stringa colorata
     public static function colored($str, $foreground_color = '', $background_color = '') {
         // ForeGround
@@ -155,11 +157,10 @@ class CLI {
         'cyan' => '46',
         'light_gray' => '47',
         ];
-
         $str_result = '';
         // FG color
         if (isset( $a_fg[$foreground_color])) {
-            $s .= sprintf("\e[%sm", $a_fg[$foreground_color] );
+            $str_result .= sprintf("\e[%sm", $a_fg[$foreground_color] );
         }
         // BG color
         if (isset( $a_bg[$background_color])) {

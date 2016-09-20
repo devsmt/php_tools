@@ -112,7 +112,7 @@ class Template {
         // remove the partial name from local scope
         unset($name);
         // save partial vars externally. special cases for different types.
-        // if ($vars instanceof Solar_Struct) { $this->_partial_vars = $vars->toArray(); } else
+        // if ($vars instanceof Solar_Struct) { $this->_partial_vars = $vars->to[]; } else
         if (is_object($vars)) {
             $this->_partial_vars = get_object_vars($vars);
         } else {
