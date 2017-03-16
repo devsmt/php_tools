@@ -91,9 +91,9 @@ class LoggerAdapterFile extends LoggerAdapter {
 
     function __construct($context) {
         parent::__construct();
-        $this->file = dirname(__FILE__) .
-                $this->subDir .
-                sprintf('%s_%s.log', $context, date('m_Y'));
+        $this->file = __DIR__ .
+        $this->subDir .
+        sprintf('%s_%s.log', $context, date('m_Y'));
         $this->open();
     }
 
@@ -141,88 +141,101 @@ class LoggerAdapterEmpty extends LoggerAdapter {
 
 }
 
-
+define('OP_KO', 'error', false);
+define('OP_OK', 'success', false);
+define('OP_INFO', 'info', false);
 // minimal file logger implementation
 class MFLogger {
-    const OP_KO   = 'error'  ;
-    const OP_OK   = 'success';
-    const OP_INFO = 'info'   ;
 
-        public static function log($ns, $operation_name, $msg, $params=[], $identity_info = []) {
-
-            $path = self::path($ns);
-
-            $pack = function($str, $label){
-                if( empty($str) ) {
-                    return '';
-                }
-                if( is_array($str) ) {
-                    $str = json_encode($str);
-                    // subset per impedire scritture di dati arbitrari
-                    $str = substr($str, 0, 200);
-                }
-                return "$label:$str";
-            };
-
-            $log_data = [
-                date('Y-m-d H:i:s'),
-                $pack($operation_name, 'operation'),
-                $pack($msg, 'msg'),
-                $pack($params, 'params'),
-                $pack($identity_info, 'identity'),
-
-                $pack(coalesce(@$_SERVER['HTTP_X_REAL_IP'], $_SERVER['REMOTE_ADDR']), 'IP'      ),
-                $pack(Browser::translate()                                          , 'BROWSER' ),
-            ];
-
-            $str = implode(' ', array_filter($log_data, function ($s){
-                return !empty($s);
-            }) );
-
-            // implementa una soglia massima
-            $bytes = filesize($path);
-            $MB = pow(1024, $factor=2);
-            if( $bytes > 500 * $MB ) {
-                return ;
-            }
-
-            file_put_contents($path, $str."\n", FILE_APPEND | LOCK_EX);
+    //\Mobile\Logger::log('order', $op = __METHOD__, 'error '.$msg, $res);
+    //\Mobile\Logger::log('order', $op = __METHOD__, false, $msg);
+    // $params può essere $_REQUEST o parametri di funzione
+    public static function log(string $ns, string $operation_name, string $msg, array $params = [], array $identity_info = []) {
+        if (is_bool($msg)) {
+            $msg = $msg ? 'success' : 'error';
         }
+        $path = self::path($ns);
 
-    // dipende dall'applicazione
-    public static function path($ns) {
-        $path = APPLICATION_PATH.'/../var/logs/'.$ns.'_'.date('Y_m').'.log';
-        return $path;
+        $pack = function ($str, $label) {
+            if (empty($str)) {
+                return '';
+            } elseif (is_array($str)) {
+                $str = array_map(function ($val) {
+                    if (is_string($val)) {
+                        return trim($val);
+                    } else {
+                        return $val;
+                    }
+
+                }, $str);
+
+                $str = json_encode($str);
+                // subset per impedire scritture di dati arbitrari
+                $str = substr($str, 0, 200);
+            } else {
+                $str = trim($str);
+            }
+            return "$label:$str";
+        };
+
+        $log_data = [
+            date('Y-m-d H:i:s'),
+            $pack($operation_name, 'operation'),
+            $pack($msg, 'msg'),
+            $pack($params, 'params'),
+            $pack($identity_info, 'identity'),
+        ];
+
+        $str = implode(' ', array_filter($log_data, function ($s) {
+            return !empty($s);
+        }));
+
+        // implementa una soglia massima
+        if ( file_exists($path) ) {
+            $bytes = filesize($path);
+            $MB = pow(1024, $factor = 2);
+            if ($bytes > 500 * $MB) {
+                // TODO: this should never happen, send email to mantainers
+                return;
+            }
+        }
+        file_put_contents($path, $str . "\n", FILE_APPEND | LOCK_EX);
     }
 
+    // dipende dall'applicazione
+    public static function path(string $ns): string {
+        $path = realpath(__DIR__ . '/../data/log');
+        if (empty($path)) {
+            $msg = sprintf('Errore %s ', './data/log not exists');
+            throw new \Exception($msg);
+        }
+        $path = sprintf('%s/%s_%s.log', $path, $ns, date('Y_m'));
+        return $path;
+    }
 
     //----------------------------------------------------------------------------
     // log procedure apposita per programmi CLI
     //----------------------------------------------------------------------------
-    public static function flog($isOK, $message, array $errors=[]) {
-        $log_msg =  sprintf('%s %s msg:"%s" errors:%s params:%s '.PHP_EOL,
+    public static function flog($isOK, $message, array $errors = []) {
+        $log_msg = sprintf('%s %s msg:"%s" errors:%s params:%s ' . PHP_EOL,
             date('Y-m-d H:i:s'),
             $isOK ? 'OK' : 'KO',
             $message,
             json_encode($errors),
-            $request =  implode(' ', array_slice($GLOBALS['argv'], $pos=1 ) )
-            );
-        $pgm_name = str_replace('.php','', basename( $GLOBALS['argv'][0] ) );
-        $_log_path = sprintf('%s/../var/logs', APPLICATION_PATH );
-        $_log_file = sprintf('%s_%s.log', $pgm_name, date('my') );
-
-        $log_path = realpath( $_log_path );
-        if( empty($log_path) ) {
+            $request = implode(' ', array_slice($GLOBALS['argv'], $pos = 1))
+        );
+        $pgm_name = str_replace('.php', '', basename($GLOBALS['argv'][0]));
+        $_log_path = sprintf('%s/../var/logs', APPLICATION_PATH);
+        $_log_file = sprintf('%s_%s.log', $pgm_name, date('my'));
+        //
+        $log_path = realpath($_log_path);
+        if (empty($log_path)) {
             echo "log_path non valido $_log_path \n";
             return;
         } else {
             $log_path = "$log_path/$_log_file";
-            return file_put_contents($log_path, $log_msg, (FILE_APPEND | LOCK_EX) );
+            return file_put_contents($log_path, $log_msg, (FILE_APPEND | LOCK_EX));
         }
     }
 
 }
-
-
-
-

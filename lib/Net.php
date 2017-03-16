@@ -4,34 +4,12 @@
 class Net {
 
     // IP anche se dietro un proxy
-    public static function getIP() {
-        $IP = '';
-        if ($_SERVER['HTTP_CLIENT_IP']) {
-            $IP = $_SERVER['HTTP_CLIENT_IP'];
-        } elseif ($_SERVER['HTTP_X_FORWARDED_FOR']) {
-            $IP = $_SERVER['HTTP_X_FORWARDED_FOR'];
-        } elseif ($_SERVER['HTTP_X_FORWARDED']) {
-            $IP = $_SERVER['HTTP_X_FORWARDED'];
-        } elseif ($_SERVER['HTTP_FORWARDED_FOR']) {
-            $IP = $_SERVER['HTTP_FORWARDED_FOR'];
-        } elseif ($_SERVER['HTTP_FORWARDED']) {
-            $IP = $_SERVER['HTTP_FORWARDED'];
-        } elseif ($_SERVER['REMOTE_ADDR']) {
-            $IP = $_SERVER['REMOTE_ADDR'];
-        } else {
-            $IP = 'UNKNOWN';
-        }
-        return $IP;
-    }
-
-
-    // Returns the user IP address
-    public function getUserHostAddress() {
-        static $ip = 0;
-        if ( !empty($ip) ) {
+    public static function getIP($def = 'UNKNOWN'):string {
+        static $ip = null;
+        if( !empty($ip) ) {
             return $ip;
         }
-        $a_k = array(
+        $a_k = [
             'HTTP_X_REAL_IP',
             'HTTP_CLIENT_IP',
             'HTTP_X_FORWARDED_FOR',
@@ -40,25 +18,24 @@ class Net {
             'HTTP_FORWARDED_FOR',
             'HTTP_FORWARDED',
             'REMOTE_ADDR'
-        );
-        foreach ($a_k as $key) {
-            if( true === array_key_exists($key, $_SERVER)) {
-                foreach( explode(',', $_SERVER[$key]) as $ip) {
-                    $ip = trim($ip);
-                    // Allow only IPv4 address, Deny reserved addresses, Deny private addresses
-                    if (filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 | FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false) {
-                        return ($ip = $ip);
-                    }
-                }
+        ];
+        foreach($a_k as $k ) {
+            if( isset( $_SERVER[$k] ) && !empty($_SERVER[$k])  ) {
+                // server with multiple interfaces, contains the ',' char
+                // foreach( explode(',', $_SERVER[$k]) as $ip) { }
+                $ip = $_SERVER[$k];
+                $ip = trim($ip);
+                // Allow only IPv4 address, Deny reserved addresses, Deny private addresses
+                // $is_valid = filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4 | FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false;
+                return $ip;
             }
         }
-        return ($ip = '0.0.0.0');
+        return $def ;
     }
 
-
-
-    // es.  188.135.166.0 - 188.135.167.255
+    // es.  111.112.113.0 - 111.112.113.255
     // $wlist = array( '188.135.166.', '188.135.167.');
+    // Net::checkWhiteList($wlist, Net::getIP() );
     public static function checkWhiteList(array $a, $IP = null) {
         if (empty($IP)) {
             $IP = Net::getIP();

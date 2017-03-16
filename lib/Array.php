@@ -25,15 +25,26 @@ class Arr {
             }
         }
     }
-
+    // se c'è anche solo una chiave int è assoc
     function isAssociative($a) {
-        $k = array_keys($a);
-        for ($i = 0; $i < count($k); $i++) {
-            if (is_int($k[$i])) {
+        $a_k = array_keys($a);
+        for ($i = 0; $i < count($a_k); $i++) {
+            if (is_int($a_k[$i])) {
                 return false;
             }
         }
         return true;
+    }
+
+    // se c'è una chiave che non sia un int in sequenza di scorrimento, è associativo
+    function isAssociative2(array<mixed, mixed> $a): bool {
+        $i = 0;
+        foreach ($a as $k => $v) {
+            if ($k !== $i++) {
+                return true;
+            }
+        }
+        return false;
     }
 
     function isSequential($var) {
@@ -189,7 +200,7 @@ class Arr {
         return self::pluck($key, $input);
     }
 
-    // COALESCE returns the first argument that is not empty
+    // returns the first argument that is not empty()
     function coalesce() {
         $args = func_get_args();
         foreach ($args as $arg) {
@@ -200,13 +211,13 @@ class Arr {
         return null;
     }
 
-    // COALESCE returns the first argument that is not == false.
-    function coalescef() {
+    // returns the first argument that is not == false.
+    function coalesce_f() {
         return array_shift(array_filter(func_get_args()));
     }
 
-    // COALESCE returns the first argument that is not strictly NULL
-    function coalescen() {
+    // returns the first argument that is not strictly NULL
+    function coalesce_n() {
         $args = func_get_args();
         foreach ($args as $arg) {
             if (!is_null($arg)) {
@@ -215,7 +226,17 @@ class Arr {
         }
         return null;
     }
-
+    // se non ci sono match ritorna l'ultimo argomento passato
+    // coalesce_l(null, [] ) => []
+    function coalesce_l() {
+        $args = func_get_args();
+        foreach ($args as $arg) {
+            if (!empty($arg)) {
+                return $arg;
+            }
+        }
+        return $args[ $i =count($args) -1 ];
+    }
 }
 
 class ArrayPaginator {
@@ -260,4 +281,63 @@ class ArrayPaginator {
         return $html;
     }
 
+}
+
+// persiste un array in un hash file database
+// $pa = new PersistentArray(__DIR__.'/test.cdb');
+// $pa['key'] = time();
+// foreach( $pa as $k => $v) { }
+class PersistentArrayF implements ArrayAccess, Iterator {
+    private $db;
+    private $current;
+    function __construct($path) {
+        $this->db = dba_popen($path, "c", "flatfile");
+        if (!$this->db) {
+            throw new Exception("$path could not be opened");
+        }
+    }
+    function __destruct() {
+        dba_close($this->db);
+    }
+    function offsetExists($index) {
+        return dba_exists($index, $this->db);
+    }
+    function offsetGet($index) {
+        return unserialize(dba_fetch($index, $this->db));
+    }
+    function offsetSet($index, $newval) {
+        dba_replace($index, serialize($newval), $this->db);
+        return $newval;
+    }
+    function offsetUnset($index) {
+        return dba_delete($index, $this->db);
+    }
+    function rewind() {
+        $this->current = dba_firstkey($this->db);
+    }
+    function current() {
+        $key = $this->current;
+        if ($key !== false) {
+            return $this->offsetGet($key);
+        }
+    }
+    function next() {
+        $this->current = dba_nextkey($this->db);
+    }
+    function valid() {
+        return ($this->current == false) ? false : true;
+    }
+    function key() {
+        return $this->current;
+    }
+    // aggiunge i valori povenienti da un altro hash
+    function merge(array $a_hash){
+        foreach($a_hash as $k => $v) {
+            $this->offsetSet($k, $v);
+        }
+    }
+}
+
+// persist an array in memory using APC
+class PersistentArrayM implements ArrayAccess, Iterator {
 }

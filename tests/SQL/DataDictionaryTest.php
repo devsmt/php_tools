@@ -1,7 +1,7 @@
 <?php
 
-require_once dirname(__FILE__).'/../lib/DataDictionary.php';
-require_once dirname(__FILE__).'/../lib/Test.php';
+require_once __DIR__.'/../lib/DataDictionary.php';
+require_once __DIR__.'/../lib/Test.php';
 
 
 

@@ -1,8 +1,8 @@
 <?php
 
 //header('Content-Type: text/plain');
-require_once dirname(__FILE__).'/../lib/Test.php';
-require_once dirname(__FILE__).'/../lib/Session.php';
+require_once __DIR__.'/../lib/Test.php';
+require_once __DIR__.'/../lib/Session.php';
 
 SessionDriverPHP5::set('var', 'test');
 $v = SessionDriverPHP5::get('var',0);

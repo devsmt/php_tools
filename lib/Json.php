@@ -61,7 +61,16 @@ class JSONOutput {
         }
         return $str;
     }
+
+    function _json_check_error(): void {
+        if (\json_last_error() !== \JSON_ERROR_NONE) {
+            throw new JSONException(\json_last_error_msg(), \json_last_error());
+        }
+    }
+
     public static function println($msg) {
         echo sprintf('//%s: %s ' . "\n", date('H:i:s'), $msg);
     }
 }
+
+class JSONException extends \Exception {}

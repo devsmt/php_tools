@@ -475,7 +475,8 @@ class CAPTCHA {
     ...
 
     session_start();
-    if($_POST['captcha'] != $_SESSION['digit']) die("Sorry, the CAPTCHA code entered was incorrect!");
+    if($_POST['captcha'] != $_SESSION['digit'])
+        die("Sorry, the CAPTCHA code entered was incorrect!");
     session_destroy();
 
     ...
@@ -502,21 +503,32 @@ class CAPTCHA {
         session_start();
 
         // add random digits to canvas using random black/white colour
-        $digit = '';
+        $rand_str = '';
         for($x = 15; $x <= 95; $x += 20) {
             $textcolor = (rand() % 2) ? $textcolor1 : $textcolor2;
-            $digit .= ($num = rand(0, 9));
-            imagechar($image, rand(3, 5), $x, rand(2, 14), $num, $textcolor);
+            $rand_char = self::get_rand_char();
+            $rand_str .= $rand_char;
+            imagechar($image, rand(3, 5), $x, rand(2, 14), $rand_char, $textcolor);
         }
 
         // record digits in session variable
-        $_SESSION['digit'] = $digit;
+        $_SESSION['digit'] = $rand_str;
 
         // display image and clean up
         header('Content-type: image/png');
         imagepng($image);
         imagedestroy($image);
     }
+    //
+    public static function get_rand_char() {
+        $s_chars = '0123456789qwertyuipkjhgfdsazxcvbnm';
+        $a_chars = explode('', $s_chars);
+        $i = rand(0, count($a_chars));
+        $rand_char = $a_chars[$i];
+        $rand_char = rand(0, 4) === 1 ? strtoupper($rand_char) : $rand_char;
+        return $rand_char;
+    }
+
 }
 
 class Color {

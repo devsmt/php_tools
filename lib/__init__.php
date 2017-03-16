@@ -4,7 +4,7 @@
 
 
 // global configurations
-define('LIB_PATH', dirname(__FILE__));
+define('LIB_PATH', __DIR__);
 
 // il controller sta nella dir root dell'applicazione
 define('APP_PATH', dirname($GLOBALS['_SERVER']['SCRIPT_FILENAME']));

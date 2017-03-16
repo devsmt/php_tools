@@ -4,12 +4,12 @@
 
 // sfrutta php come parser di template
 // nel template usare una ref tipo $this->chiave
+// NOTE: escape your values to prevent Cross Site Scripting (XSS)
 class Template {
 
     protected $_path = '';
     protected $_partial_file;
     protected $_partial_vars;
-
 
     function __constructor($path, array $data = []) {
         // assign default vars

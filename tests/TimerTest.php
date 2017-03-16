@@ -1,6 +1,6 @@
 <?php
-require_once dirname(__FILE__).'/../lib/Timer.php';
-require_once dirname(__FILE__).'/../lib/Test.php';
+require_once __DIR__.'/../lib/Timer.php';
+require_once __DIR__.'/../lib/Test.php';
 
 
 $stopwatch = new StopWatch();

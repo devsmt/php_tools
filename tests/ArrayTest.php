@@ -1,8 +1,8 @@
 <?php
 
 
-require_once dirname(__FILE__).'/../lib/Test.php';
-require_once dirname(__FILE__).'/../lib/Array.php';
+require_once __DIR__.'/../lib/Test.php';
+require_once __DIR__.'/../lib/Array.php';
 
 $a = array("key"=>"i'm associative");
 ok( Arr::isAssociative($a) === true , print_r($a, true) );

@@ -1,7 +1,7 @@
 <?php
 
-require_once dirname(__FILE__).'/../lib/Test.php';
-require_once dirname(__FILE__).'/../lib/Request.php';
+require_once __DIR__.'/../lib/Test.php';
+require_once __DIR__.'/../lib/Request.php';
 
 if( Request::get('test','1') == 1 ){
 

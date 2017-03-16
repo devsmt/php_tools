@@ -1,7 +1,7 @@
 <?php
 
-require_once dirname(__FILE__).'/../lib/Test.php';
-require_once dirname(__FILE__).'/../lib/Strings.php';
+require_once __DIR__.'/../lib/Test.php';
+require_once __DIR__.'/../lib/Strings.php';
 
 $r=str_template('second: {{second}}; first: {{first}}', array(
     'first'  => '1st',

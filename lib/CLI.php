@@ -73,6 +73,77 @@ class CLI {
         $substr = "--$flag";
         return strpos($s_argv, $substr) !== false;
     }
+    /* uso:
+    // example.php -r=1  --optional=text --debug
+    $cl_options_parsed = cli_getopt(
+        $a_opts = [
+            'r:' => 'required:',//:=>required
+            'o::' => 'optional::', //::=>optional
+        ],
+        $a_flags = [
+            'd' => 'debug', // flag
+        ],
+        $a_defaults=[
+            'r' => 0,
+            'o' => 'o_default',
+            'd' => false
+        ] );
+    */
+    // will stop parsing options upon the '--'
+    // arguments not listed will be ignored
+    // it keep in sync short and long
+    // better handling of flags
+    // defaults: use short version for defaults
+    public static function getopt( array $a_opts, array $a_flags, array $a_defaults=[] ):array {
+        // ottiene il valore
+        $get_result = function($a_res, $short, $long) use($a_defaults, $a_flags) {
+            // nel caso sia un parametro flag,
+            if( isset($a_flags[$short]) || isset($a_flags[$long]) ) {
+                // getopt setta la chiave se passato, atrimenti non la setta
+                if( isset($a_res[$short]) || isset($a_res[$long]) ) {
+                    return true;
+                } else {
+                    return (int)($a_defaults[$short] ?? $a_defaults[$long]);
+                }
+            } else {
+                // return the first setted
+                return
+                    $a_res[$short] ??
+                    $a_res[$long ] ??
+                    $a_defaults[$short] ??
+                    $a_defaults[$long ] ??
+                '' ;
+            }
+        };
+        // merge flags
+        $a_opts = array_merge( $a_opts, $a_flags );
+        // make map short => long
+        $a_s_l = [];
+        foreach($a_opts as $short => $long) {
+            $short = str_replace(':','',$short);
+            $long = str_replace(':','',$long);
+            $a_s_l[$short]=$long;
+        }
+        // create the short string
+        $s_p = implode('', array_keys($a_opts));
+        if ('cli' === PHP_SAPI) {
+            $a_res = getopt($s_p, array_values($a_opts) );
+            // apply defaults long <-> short values
+            $a_result = [];
+            foreach($a_s_l as $short => $long) {
+                $a_result[ $short ] = $get_result($a_res, $short, $long);
+                $a_result[ $long  ] = $get_result($a_res, $short, $long);
+            }
+            return $a_result;
+        } else {
+            die(__FUNCTION__.'/'.__LINE__.' will not parse option, not in cli');
+        }
+    }
+
+
+    //----------------------------------------------------------------------------
+    // std in/out
+    //----------------------------------------------------------------------------
 
     // legge ttutto l'input
     public static function readStdin() {
@@ -363,3 +434,7 @@ if (!function_exists('is')) {
         return $pass;
     }
 }
+
+
+
+

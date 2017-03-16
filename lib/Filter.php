@@ -25,6 +25,11 @@ class Filter {
         }
     }
 
+    // rimuove char non stampabili, fuori intervallo 32...127
+    public static function clean_ascii($s) {
+        return filter_var($s, FILTER_UNSAFE_RAW, FILTER_FLAG_STRIP_LOW|FILTER_FLAG_STRIP_HIGH);
+    }
+
     // un intero controllato
     public static function clean_i($int, $max = PHP_INT_MAX, $min = 0) {
         return (int) filter_var($int, FILTER_SANITIZE_NUMBER_INT, array("min_range" => $min, "max_range" => $max));

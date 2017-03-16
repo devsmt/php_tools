@@ -1,7 +1,7 @@
 <?php
 
-require_once dirname(__FILE__).'/../lib/Event.php';
-require_once dirname(__FILE__).'/../lib/Plugin.php';
+require_once __DIR__.'/../lib/Event.php';
+require_once __DIR__.'/../lib/Plugin.php';
 /*
 //------------------------------------------------------------------------------
 //  caso d'uso

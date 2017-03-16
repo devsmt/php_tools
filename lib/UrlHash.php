@@ -3,7 +3,7 @@
 // funzione: dato un intero, lo codifica in base 62 (usa i 62 caratteri sicuri)
 // per codificare gli ID nelle URL
 // è possibile ottenere dei risultati offuscati cambiando mappa carateri
-require_once dirname(__FILE__) . '/Math.php';
+require_once __DIR__ . '/Math.php';
 
 class UrlHash {
 

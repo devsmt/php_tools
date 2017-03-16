@@ -1,7 +1,7 @@
 <?php
 
-require_once dirname(__FILE__).'/../lib/Test.php';
-require_once dirname(__FILE__).'/../lib/Path.php';
+require_once __DIR__.'/../lib/Test.php';
+require_once __DIR__.'/../lib/Path.php';
 
 diag( "Path::real");
 is( Path::real('/var'), '/var', Path::real('/var') );
@@ -30,7 +30,7 @@ is( Path::join(array('D:\www\webroot', 'template', 'index.php')) , 'D:\www\webro
 
 //diag( "Path::toAbsUrl");
 //ok( Path::toAbsUrl(  ) == dirname($_SERVER['PHP_SELF']), Path::toAbsUrl( __FILE__ ));
-//ok( Path::toAbsUrl( ) == '/apache2-default/pweasel/tests', Path::toAbsUrl( dirname(__FILE__) ));
+//ok( Path::toAbsUrl( ) == '/apache2-default/pweasel/tests', Path::toAbsUrl( __DIR__ ));
 
 /*
 

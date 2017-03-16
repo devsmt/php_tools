@@ -1,2 +1,2 @@
 <?php
-include_once( dirname(__FILE__).'/configuration.php');
+include_once( __DIR__.'/configuration.php');

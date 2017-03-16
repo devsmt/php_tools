@@ -1,9 +1,9 @@
 <?php
 
 
-require_once dirname(__FILE__).'/../lib/Test.php';
-require_once dirname(__FILE__).'/../lib/Url.php';
-require_once dirname(__FILE__).'/../lib/Array.php';
+require_once __DIR__.'/../lib/Test.php';
+require_once __DIR__.'/../lib/Url.php';
+require_once __DIR__.'/../lib/Array.php';
 
 $u = URL::get();
 ok( $u == URL::GetSelf(), 'for self' );

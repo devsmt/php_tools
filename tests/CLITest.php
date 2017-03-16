@@ -1,8 +1,8 @@
 <?php
 
 
-require_once dirname(__FILE__).'/../lib/Test.php';
-require_once dirname(__FILE__).'/../lib/CLI.php';
+require_once __DIR__.'/../lib/Test.php';
+require_once __DIR__.'/../lib/CLI.php';
 
 $args = explode(' ','cli_test.php asdf asdf --help --dest=/var/ -asd -h --option mew arf moo -z');
 /*

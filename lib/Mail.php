@@ -2234,7 +2234,7 @@ class MailDriver {
 class MailDriverPHP extends MailDriver {
 
     function __construct($conf = array()) {
-        
+
     }
 
     function sendOne($to, $subject, $msg, $opt = array()) {
@@ -2317,7 +2317,7 @@ class MailDriverPHP extends MailDriver {
     // log delle email inviate per rivederle in seguito
     public static function log($subject, $msg) {
         /*
-          $file = dirname(__FILE__).'/../log/mail_log.txt';
+          $file = __DIR__.'/../log/mail_log.txt';
           $txt = sprintf('%s; subject:%s; message:%s;', date('Y-m-d H:i:s'), $subject, $msg);
           $txt = str_replace("\n", ',', $txt);
           file_put_contents($file, "$txt\n\n\n", FILE_APPEND);
@@ -2383,17 +2383,17 @@ class Mail {
 
     // open one connection only
     function sendMass($data, $opt = array()) {
-        
+
     }
 
     // notify site admins
     function admins($subject, $msg, $opt = array()) {
-        
+
     }
 
     // notify site managers
     function managers($subject, $msg, $opt = array()) {
-        
+
     }
 
 }

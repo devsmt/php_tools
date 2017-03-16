@@ -84,7 +84,7 @@ class Path {
           //$realpath=str_replace("\\", "/", realpath($path));
 
           // path alla cartella dove è intallata la lib
-          $lib_root_dir = Path::join(dirname(__FILE__), '..');
+          $lib_root_dir = Path::join(__DIR__, '..');
           // trova la sottocartella dove è installata la lib
           $root = str_replace($_SERVER['DOCUMENT_ROOT'], '', $lib_root_dir);
          */

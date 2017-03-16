@@ -1,8 +1,8 @@
 <?php
-require_once dirname(__FILE__).'/../lib/sql/mysql.php';
-require_once dirname(__FILE__).'/../lib/Test.php';
-require_once dirname(__FILE__).'/../lib/sql/DBTable.php';
-require_once dirname(__FILE__).'/../lib/helpers/HTML.php';
+require_once __DIR__.'/../lib/sql/mysql.php';
+require_once __DIR__.'/../lib/Test.php';
+require_once __DIR__.'/../lib/sql/DBTable.php';
+require_once __DIR__.'/../lib/helpers/HTML.php';
 
 
 

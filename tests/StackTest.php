@@ -1,6 +1,6 @@
 <?php
 
-require_once dirname(__FILE__).'/../lib/Stack.php';
+require_once __DIR__.'/../lib/Stack.php';
 $stack = new Stack();
 
 $stack->add('apples')

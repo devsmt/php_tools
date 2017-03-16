@@ -1,7 +1,7 @@
 <?php
-require_once dirname(__FILE__).'/../lib/sql/mysql.php';
-require_once dirname(__FILE__).'/../lib/Test.php';
-require_once dirname(__FILE__).'/../lib/sql/DAL.php';
+require_once __DIR__.'/../lib/sql/mysql.php';
+require_once __DIR__.'/../lib/Test.php';
+require_once __DIR__.'/../lib/sql/DAL.php';
 include_once 'UserTest.php';
 
 $DB = Weasel::getDB();

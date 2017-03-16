@@ -231,4 +231,29 @@ class Date {
         $is_d = $d >= 1; //no la domenica
         return $is_h && $is_d;
     }
+
+    function is_leap_year(int $y): bool {
+        return ($y % 4 == 0) && (($y % 100 != 0) || ($y % 400 == 0));
+    }
+    function is_valid_date(int $y, int $m, int $d): bool {
+        return $m >= 1 && $m <= 12 && $d >= 1 && $d <= days_in_month($y, $m);
+    }
 }
+
+
+function days_in_month(int $y, int $m): int {
+    // attenzione a indice 1, febbraio ha numero giorni variabile
+    static $months = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+
+    if ($m < 1 || $m > 12) {
+        throw new \Exception('Invalid month: '.$m);
+    }
+
+    // gestisce anno bisestile
+    if( is_leap_year($y) ) {
+        $months[1] = 29;
+    }
+
+    return $months[$m - 1];
+}
+

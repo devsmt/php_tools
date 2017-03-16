@@ -1,27 +1,64 @@
 <?php
 
-function str_contains($haystack, $needle) {
-    return (strpos($haystack, $needle) !== false);
+//----------------------------------------------------------------------------
+//   PHP7 str_find
+//----------------------------------------------------------------------------
+function str_find( string $str, string $substr, int $offset = 0, bool $ci = false, ): ?int {
+    // strpos()/stripos() support negative lengths as of PHP 7.1.0
+    if (\PHP_VERSION_ID < 70100 && $offset < 0) {
+        $offset += length($str);
+    }
+    if( $ci ) {
+        $ret = \stripos($str, $substr, $offset);
+    } else {
+        $ret = \strpos($str, $substr, $offset);
+    }
+    return $ret === false ? null : $ret;
+}
+function str_find_last( string $str, string $substr, int $offset = 0, bool $ci = false, ): ?int {
+    // Unlike strpos() and stripos(), strrpos() and strripos() both support
+    // negative offsets in all PHP versions.
+
+    if( $ci ) {
+        $ret = \strripos($str, $substr, $offset);
+    } else {
+        $ret = \strrpos($str, $substr, $offset);
+    }
+    return $ret === false ? null : $ret;
+}
+function str_find_count(string $str, string $substr, int $offset = 0): int {
+    // substr_count() supports negative lengths as of PHP 7.1.0
+    if (\PHP_VERSION_ID < 70100 && $offset < 0) {
+        $offset += length($str);
+    }
+    return \substr_count($str, $substr, $offset);
+}
+function str_contains(string $str, string $substr, int $offset = 0): bool {
+    return str_find($str, $substr, $offset) !== null;
+}
+// minimal implementation
+//function str_contains($str, $substr, $ci=true) {
+//    if( $ci ) {
+//        return (strpos($str, $substr) !== false);
+//    } else {
+//        return (stripos($str, $substr) !== false);
+//    }
+//}
+
+function str_begins($str, $substr, $ci=false):bool {
+    $p = '/^' . $substr . ' /i';
+    return preg_match($p, $str) > 0;
 }
 
 //
-// $str needle
-// $s  hystak
-//
-function str_begins($hystak, $needle) {
-    $p = '/^' . $needle . ' /i';
-    return preg_match($p, $hystak) > 0;
-}
-
-//
-// @param str hystak
+// @param str haystack
 // var params needle
 //
 function str_begins_with() {
-    $hystak = strtolower(func_get_arg(0));
+    $str = strtolower(func_get_arg(0));
     for ($i = 1; $i < func_num_args(); $i++) {
-        $needle = strtolower(func_get_arg($i));
-        if (str_begins($hystak, $needle)) {
+        $substr = strtolower(func_get_arg($i));
+        if (str_begins($str, $substr)) {
             return true;
         }
     }
@@ -38,13 +75,13 @@ function str_clean($s) {
         if (($p >= 32 && $p <= 254)) {
             $result.= $s[$i];
         } else {
-            $result.= "";
+            $result.= '';
         }
     }
     return $result;
 }
 
-// toglie tutti i caratteri non stampabili a terminale
+// toglie tutti i caratteri non stampabili a terminale (mantiene solo ASCII)
 function str_clean_non_printable($str){
     $str = preg_replace('/[[:^print:]]/', '', $str);
     return $str;
@@ -52,8 +89,30 @@ function str_clean_non_printable($str){
 
 // toglie i whitespace
 function str_clean_w($s) {
-    return preg_replace(array('/\r\n|\n|\r|\t|\s\s/',), '', $s);
+    return preg_replace(['/\r\n|\n|\r|\t|\s\s/'], '', $s);
 }
+
+// trying to insert a string into a utf8 mysql table.
+// The string (and its bytes) all conformed to utf8, but had several bad sequences.
+// I assume that most of them were control or formatting.
+function str_clean_utf8($string) {
+    $s = trim($string);
+    $s = iconv("UTF-8", "UTF-8//IGNORE", $s); // drop all non utf-8 characters
+    // this is some bad utf-8 byte sequence that makes mysql complain - control and formatting i think
+    $s = preg_replace('/(?>[\x00-\x1F]|\xC2[\x80-\x9F]|\xE2[\x80-\x8F]{2}|\xE2\x80[\xA4-\xA8]|\xE2\x81[\x9F-\xAF])/', ' ', $s);
+    $s = preg_replace('/\s+/', ' ', $s); // reduce all multiple whitespace to a single space
+    return $s;
+}
+
+// strip by regexp, specify what you want to include
+function str_clean_r(string $s,
+    $opt_chars = "`_.,;@#%~'\"\+\*\?\[\^\]\$\(\)\{\}\=\!\<\>\|\:\-\s\\\\",
+    array $permit_chars = []
+):string {
+    // '"
+    return preg_replace("/[^A-Z0-9$opt_chars]+/i", '', $s);
+}
+
 
 //
 // assicura che gli utenti non possano iniettare HTML(e quindi js) dalle variabili
@@ -102,6 +161,7 @@ function str_count_matches($str, $sub_str) {
     $result = strpos($str, $sub_str);
     return ($result === false) ? 0 : $result;
 }
+
 
 // random, human readable string, good for password, captcha and other codes
 // esclude i caratteri che potrebbero essere confusi, come i,l,1,I,0,o,O
@@ -249,6 +309,13 @@ function str_rm_nonascii($str){
     return $res;
 }
 
+function str_is_utf8(string $str): bool {
+    return (bool) \preg_match('//u', $str);
+}
+
+
+
+
 // Encodes HTML safely for UTF-8. Use instead of htmlentities.
 //
 // The htmlentities() function doesn't work automatically with multibyte strings. To save time, you'll want to create a wrapper function and use this instead
@@ -281,23 +348,36 @@ function str_slugify($text) {
 
 // data una stringa interpola i valori passati in this->binds nei segnaposto
 // espressi con la sintassi {{nome_var}}
+// TODO: gestire il caso in cui si passi un oggetto come $a_bind
+// $obj->view_$name || $obj->view_$name()
 function str_template($str_template, array $a_binds, $default_sub='__') {
-    $substitute = function ($buffer, $name, $val) {
+    $_substitute = function ($buffer, $name, $val) {
         $reg = sprintf('{{%s}}', $name );
         $reg = preg_quote($reg, '/');
         return preg_replace('/'.$reg.'/i', $val, $buffer);
     };
-    $cleanUnusedVars = function ($buffer) use($default_sub) {
+    $_clean_unused_vars = function ($buffer) use($default_sub) {
         return preg_replace('/\{\{[a-zA-Z0-9_]*\}\}/i', $default_sub, $buffer );
     };
     $buffer = $str_template;
-    // TODO: gestire il caso in cui si passi un oggetto come $a_bind
-    // $obj->view_$name || $obj->view_$name()
     foreach ($a_binds as $name => $val) {
-        $buffer = $substitute($buffer, $name, $val);
+        $buffer = $_substitute($buffer, $name, $val);
     }
-    $buffer = $cleanUnusedVars($buffer);
+    $buffer = $_clean_unused_vars($buffer);
     return $buffer;
+}
+// aggiunge la codifica dei caratteri per output HTML
+function html_template($str_template, array $a_binds, $default_sub='__' ) {
+    // prevent cross-site scripting attacks (XSS) escaping values
+    // escape all by default, skip vars names beginning with '_'
+    $_sanitizer = function($name, $val) {
+        $name_begins_with_underscore = substr($name,0,1) == '_';
+        return $name_begins_with_underscore ? $val : htmlspecialchars($s, ENT_QUOTES);
+    }
+    $a_binds_sanitized = array_map(function($k, $v) {
+        return $val_s = $_sanitizer($k, $v);
+    }, array_keys($a_binds), array_values($a_binds) );
+    return str_template($str_template,$a_binds_sanitized, $default_sub);
 }
 
 // bypass heredoc limitation to not be able to call functions
@@ -422,24 +502,42 @@ function str_extension_replace($filename, $new_extension) {
 // human readable per le funzioni memory_get_peak_usage() / memory_get_usage()
 function format_bytes($bytes_size, $precision = 2) {
     $base = log($bytes_size) / log(1024);
-    $suffixes = array('', 'k', 'M', 'G', 'T');
+    $suffixes = ['', 'k', 'M', 'G', 'T'];
     $b = pow(1024, $base - floor($base));
     $suffix = $suffixes[floor($base)];
     return round($b, $precision) . $suffix;
 }
 // data una grandezza in una unità specifica, ritorna la grandezza in bytes
-function format_reverse_size($size = 0, $unit = 'b') {
-    $unit = mb_strtolower($unit);
-    switch($unit) {
-    case 'kb':
-        return size * 1024;
-    case 'mb':
-        return $size * pow(1024, 2);
-    case 'gb':
-        return $size * pow(1024, 3);
-    default:
-        return $size;
+function format_bytes_size($size = 0, $unit = 'B') {
+    $unit = strtoupper( $unit );
+    $a_units = ['B'=>0, 'KB'=>1, 'MB'=>2, 'GB'=>3, 'TB'=>4, 'PB'=>5, 'EB'=>6, 'ZB'=>7, 'YB'=>8];
+    if (!in_array($str_unit, array_keys($a_units))) {
+        return false;
     }
+    if (!intval($size) < 0 ) {
+        return false;
+    }
+    $b_unit = pow(1024, $a_units[$str_unit]);
+    return $size * $b_unit;
+}
+
+function format_bytes_str($str) {
+    $str_unit = trim(substr($str, -2));
+    $str_unit = strtoupper( $str_unit );
+    if (intval($str_unit) !== 0) {
+        $str_unit = 'B';
+    }
+    $a_units = ['B'=>0, 'KB'=>1, 'MB'=>2, 'GB'=>3, 'TB'=>4, 'PB'=>5, 'EB'=>6, 'ZB'=>7, 'YB'=>8];
+    if (!in_array($str_unit, array_keys($a_units))) {
+        return false;
+    }
+    $size = trim(substr($str, 0, strlen($str) - 2));
+    if (!intval($size) == $size) {
+        return false;
+    }
+    $b_unit = pow(1024, $a_units[$str_unit]);
+
+    return $size * $b_unit;
 }
 
 
@@ -472,7 +570,7 @@ function text_auto_link($text) {
   echo "Encoded: $enc<br/>\n";
   echo 'Decoded: ' . rotate($enc, -6);
  */
-function rotate($str, $n) {
+function str_rotate($str, $n) {
 
     $length = strlen($str);
     $result = '';
@@ -632,5 +730,188 @@ class StringSequence {
          return $res;
      }
 }
-
-
+//----------------------------------------------------------------------------
+//  pcre utils
+//----------------------------------------------------------------------------
+function _pcre_get_error_message(int $error): string {
+    switch ($error) {
+    case \PREG_NO_ERROR:
+        return 'No errors';
+    case \PREG_INTERNAL_ERROR:
+        return 'Internal PCRE error';
+    case \PREG_BACKTRACK_LIMIT_ERROR:
+        return 'Backtrack limit (pcre.backtrack_limit) was exhausted';
+    case \PREG_RECURSION_LIMIT_ERROR:
+        return 'Recursion limit (pcre.recursion_limit) was exhausted';
+    case \PREG_BAD_UTF8_ERROR:
+        return 'Malformed UTF-8 data';
+    case \PREG_BAD_UTF8_OFFSET_ERROR:
+        return
+        'The offset didn\'t correspond to the beginning of a valid UTF-8 code point';
+    case 6 /* PREG_JIT_STACKLIMIT_ERROR */:
+        return 'JIT stack space limit exceeded';
+    default:
+        return 'Unknown error';
+    }
+}
+function _pcre_check_last_error(): void {
+    $error = \preg_last_error();
+    if ($error !== \PREG_NO_ERROR) {
+        throw new PCREException(_pcre_get_error_message($error), $error);
+    }
+}
+namespace PCRE {
+    use Exception;
+    const string PCRE_CASELESS = 'i';
+    const string PCRE_MULTILINE = 'm';
+    const string PCRE_DOTALL = 's';
+    const string PCRE_EXTENDED = 'x';
+    const string PCRE_ANCHORED = 'A';
+    const string PCRE_DOLLAR_ENDONLY = 'D';
+    const string PCRE_UNGREEDY = 'U';
+    const string PCRE_EXTRA = 'X';
+    const string PCRE_UTF8 = 'u';
+    const string PCRE_STUDY = 'S';
+    function pcre_quote(string $text): string {
+        return \preg_quote($text);
+    }
+    function pcre_match( string $regex, string $subject, string $options = '', int $offset = 0, ): ?PCREMatch {
+        $match = [];
+        $count = \preg_match(
+            _pcre_compose($regex, $options),
+            $subject,
+            $match,
+            \PREG_OFFSET_CAPTURE,
+            $offset,
+        );
+        _pcre_check_last_error();
+        return $count ? new PCREMatch($match) : new_null();
+    }
+    function pcre_match_all( string $regex, string $subject, string $options, int $offset = 0 ): array<PCREMatch> {
+        $matches = [];
+        \preg_match_all(
+            _pcre_compose($regex, $options),
+            $subject,
+            $matches,
+            \PREG_SET_ORDER | \PREG_OFFSET_CAPTURE,
+            $offset,
+        );
+        $f = function($match) {
+            return new PCREMatch($match);
+        };
+        return map( $matches, $f );
+    }
+    function pcre_replace( string $regex, string $subject, string $replacement, ?int $limit = null, string $options = '' ): string {
+        $result = \preg_replace(
+            _pcre_compose($regex, $options),
+            $replacement,
+            $subject,
+            $limit === null ? -1 : \max(0, $limit),
+            );
+        _pcre_check_last_error();
+        if (!\is_string($result)) {
+            throw new PCREException('preg_replace() failed');
+        }
+        return $result;
+    }
+    function pcre_split( string $regex, string $subject, ?int $limit = null, string $options = '' ): array<string> {
+        $pieces = \preg_split(
+            _pcre_compose($regex, $options),
+            $subject,
+            $limit === null ? -1 : max(1, $limit),
+            );
+        _pcre_check_last_error();
+        if (!\is_array($pieces)) {
+            throw new PCREException('preg_split() failed');
+        }
+        return $pieces;
+    }
+    final class PCREMatch {
+        public function __construct(private array<arraykey, (string, int)> $match) {
+            // A sub pattern will exist in $subPatterns if it didn't match
+            // only if a later sub pattern matched.
+            //
+            // Example:
+            //   match (a)(lol)?b against "ab"
+            //   - ["ab", 0]
+            //   - ["a", 0]
+            //   match (a)(lol)?(b) against "ab"
+            //   - ["ab", 0]
+            //   - ["a", 0]
+            //   - ["", -1]
+            //   - ["b", 1]
+            //
+            // Remove those ones.
+            foreach ($this->match as $k => $v) {
+                if ($v[1] == -1) {
+                    unset($this->match[$k]);
+                }
+            }
+        }
+        public function get(arraykey $pat = 0): string {
+            return $this->match[$pat][0];
+        }
+        public function getOrNull(arraykey $pat = 0): ?string {
+            $match = get_or_null($this->match, $pat);
+            return $match === null ? new_null() : $match[0];
+        }
+        public function getOrEmpty(arraykey $pat = 0): string {
+            $match = get_or_null($this->match, $pat);
+            return $match === null ? '' : $match[0];
+        }
+        public function getOffset(arraykey $pat = 0): int {
+            return $this->match[$pat][1];
+        }
+        public function getRange(arraykey $pat = 0): (int, int) {
+            list($text, $offset) = $this->match[$pat];
+            return tuple($offset, $offset + \strlen($text));
+        }
+        public function has(arraykey $pat): bool {
+            return key_exists($this->match, $pat);
+        }
+        public function __toString(): string {
+            return $this->get();
+        }
+        public function toArray(): array<arraykey, string> {
+            return map_assoc($this->match, $x ==> $x[0]);
+        }
+    }
+    final class PCREException extends \Exception {}
+    function _pcre_compose(string $regex, string $options = ''): string {
+        return '/'._EscapeCache::escape($regex).'/'.$options;
+    }
+    final class _EscapeCache {
+        private static array<arraykey, string> $cache = [];
+        public static function escape(string $regex): string {
+            $escaped = get_or_null(self::$cache, $regex);
+            if ($escaped !== null) {
+                return $escaped;
+            }
+            // Dumb cache policy, but it works.
+            if (size(self::$cache) >= 10000) {
+                self::$cache = [];
+            }
+            return (self::$cache[$regex] = _pcre_escape($regex));
+        }
+    }
+    function _pcre_escape(string $regex): string {
+        // Insert a "\" before each unescaped "/".
+        // I'm really hoping this simple state machine will get jitted to efficient
+        // machine code.
+        $result = '';
+        $length = length($regex);
+        $escape = false;
+        for ($i = 0; $i < $length; $i++) {
+            $char = $regex[$i];
+            if ($escape) {
+                $escape = false;
+            } else if ($char === '/') {
+                $result .= '\\';
+            } else if ($char === '\\') {
+                $escape = true;
+            }
+            $result .= $char;
+        }
+        return $result;
+    }
+}

@@ -4,104 +4,64 @@
 // which will  filter it and  abstract the retrive mechanism ( we allow only upper & lower alphas and integers )
 class Request {
 
-    function getRaw($key, $default = null, $opt = array()) {
-        $v = null;
-        //---- get from specific source
-        $type = isset($opt['type']) ? strtoupper($opt['type']) : 'REQUEST';
-        switch ($type) {
-            // possibile iniettare dati per test
-            case 'TEST':
-                $data = $opt['DATA'];
-                break;
-            case 'GET':
-                $data = $_GET;
-                break;
-            case 'POST':
-                $data = $_POST;
-                break;
-            case 'COOKIE':
-                $data = $_COOKIE;
-                break;
-            case 'REQUEST':
-            default:
-                if (isset($_REQUEST)) {
-                    $data = $_REQUEST;
-                } else {
-                    $data = array_merge($_GET, $_POST, $_COOKIE);
-                }
-        }
-        $v = (isset($data[$key]) ? $data[$key] : $default);
-        //---- decode
-        $urldecode = isset($opt['urldecode']) ? $opt['urldecode'] : false;
-        if ($urldecode) {
-            $v = urldecode($v);
-        }
-        //----- filter
-        $filter = isset($opt['filter']) ? $opt['filter'] : null;
-        if (!is_null($filter)) {
-            // will only allow upper & lower alphas and integers
-            $c = preg_replace($filter, '', $v);
-            if ($v != $c) {
-                echo ("you are trying do pass value '$v' for var '$key', but we allow only safe characters.");
-                // if( DEBUG ){ $filter }
-                return null;
-            }
-        }
-        //---- apply maxlen
-        $v = isset($opt['max_len']) ? substr($v, 0, $max_len) : $v;
-        //---- cast
-        $cast = isset($opt['cast']) ? strtoupper($opt['cast']) : 'S';
-        switch ($cast) {
-            case 'D':
-            case 'I':
-                $v = (int) $v;
-                break;
-            case 'F':
-                $v = (float) $v;
-                break;
-            // case 'A':  array!
-            case 'S':
-            default:
-            //$v = $v;
-        }
-        return $v;
-    }
 
     //----------------------------------------------------------------------------
     //
     //----------------------------------------------------------------------------
-    function has($key, $type = 'GET') {
-        return (null !== Request::getRaw($key, null, array('type' => $type)));
-    }
 
-    //----------------------------------------------------------------------------
-    //  specilized access
-    //----------------------------------------------------------------------------
-    // get a variable, with some default
-    // filterd! no ; , . - caracters allowed!
-    function getStr($key, $default = null, $max_len = 15) {
-        $opt = array();
-        $opt['urldecode'] = true;
-        $opt['filter'] = '[^a-zA-Z0-9_]';
-        $opt['max_len'] = $max_len;
-        $v = Request::getRaw($key, $default, $opt);
+    // $def string | array
+    public static function get(string $key, string $def = '', \Closure &$_cleaner = null, int $max_len=0): string{
+        $__cleaner = $_cleaner ?? function ($v) {return $v;};
+        $orig_v = isset($_REQUEST[$key]) ? $_REQUEST[$key] : $def;
+        $v = $__cleaner($orig_v);
+        $v = empty($max_len) ? $v : substr($s,0, $max_len);
         return $v;
     }
-
-    // get int
-    function getInt($k, $d = 0) {
-        $opt = array();
-        $opt['urldecode'] = true;
-        $opt['filter'] = '[^0-9]';
-        $opt['cast'] = 'I';
-        $opt['max_len'] = 14;
-        return Request::getRaw($k, $d, $opt);
+    public static function get_a(string $key, array $def = [], \Closure &$_cleaner = null): array{
+        $__cleaner = $_cleaner ?? function ($rec) { return $rec;};
+        $a_orig = isset($_REQUEST[$key]) ? $_REQUEST[$key] : $def;
+        $a_v = array_map(function($rec) use($__cleaner) {
+                $a = $__cleaner($rec);
+                return $a;
+        }, $a_orig );
+        return $a_v;
+    }
+    //----------------------------------------------------------------------------
+    //  filtred
+    //----------------------------------------------------------------------------
+    //
+    public static function geti($k, $d, $min=null, $max=null) {
+        $v = filter_input(INPUT_GET, $k, FILTER_SANITIZE_NUMBER_INT);
+        return coalesce($v,$d);
+    }
+    public static function posti($k, $d, $min=null, $max=null) {
+        $v = filter_input(INPUT_POST, $k, FILTER_SANITIZE_NUMBER_INT);
+        return coalesce($v,$d);
+    }
+    //----------------------------------------------------------------------------
+    //
+    public static function getf($k, $d, $min=null, $max=null) {
+        $v = filter_input(INPUT_GET, $k, FILTER_SANITIZE_NUMBER_FLOAT);
+        return coalesce($v,$d);
+    }
+    public static function postf($k, $d, $min=null, $max=null) {
+        $v = filter_input(INPUT_POST, $k, FILTER_SANITIZE_NUMBER_FLOAT);
+        return coalesce($v,$d);
+    }
+    //----------------------------------------------------------------------------
+    public static function gets($k, $d, $max_len=null) {
+        $flg = FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH | FILTER_FLAG_STRIP_BACKTICK ;
+        $v = filter_input(INPUT_GET, $k, FILTER_SANITIZE_STRING, $flg );
+        if( !empty($max_len)  ) {
+             $v = substr($v, 0, $max_len);
+        }
+        return coalesce($v,$d);
     }
 
-    function getArray($k, $d = array()) {
-        $opt['cast'] = 'A';
-        return Request::getRaw($k, $d, $opt);
-    }
+    // list of sanitize filters: http://php.net/manual/en/filter.filters.sanitize.php
+    // notably:
+    //   FILTER_SANITIZE_EMAIL
+    //   FILTER_SANITIZE_URL
 
     //----------------------------------------------------------------------------
     // other request info
@@ -145,7 +105,8 @@ class Request {
         for ($i = 0; $i <= 255; $i++) {
             $ip_list[] = '192.168.1.' . $i;
         }
-        return !in_array(@$_SERVER['REMOTE_ADDR'], $ip_list);
+        $IP = Net::getIP();
+        return !in_array($IP, $ip_list);
     }
 
     // determina se si tratta di una richiesta locale
