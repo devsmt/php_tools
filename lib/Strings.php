@@ -368,11 +368,16 @@ function str_template($str_template, array $a_binds, $default_sub='__') {
 }
 // aggiunge la codifica dei caratteri per output HTML
 function html_template($str_template, array $a_binds, $default_sub='__' ) {
+
+    // xss mitigation functions
+    $xss = function ($str) {
+        return htmlspecialchars($str, ENT_QUOTES | ENT_HTML401, $encoding='UTF-8' );
+    };
     // prevent cross-site scripting attacks (XSS) escaping values
     // escape all by default, skip vars names beginning with '_'
-    $_sanitizer = function($name, $val) {
+    $_sanitizer = function($name, $val) use($xss) {
         $name_begins_with_underscore = substr($name,0,1) == '_';
-        return $name_begins_with_underscore ? $val : htmlspecialchars($s, ENT_QUOTES);
+        return $name_begins_with_underscore ? $val : $xss($val);
     }
     $a_binds_sanitized = array_map(function($k, $v) {
         return $val_s = $_sanitizer($k, $v);

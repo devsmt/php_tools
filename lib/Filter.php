@@ -25,6 +25,11 @@ class Filter {
         }
     }
 
+    // xss mitigation functions
+    public static function xss_safe($str, $encoding='UTF-8') {
+        return htmlspecialchars($str, ENT_QUOTES | ENT_HTML401, $encoding);
+    }
+
     // rimuove char non stampabili, fuori intervallo 32...127
     public static function clean_ascii($s) {
         return filter_var($s, FILTER_UNSAFE_RAW, FILTER_FLAG_STRIP_LOW|FILTER_FLAG_STRIP_HIGH);

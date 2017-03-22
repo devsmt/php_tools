@@ -57,7 +57,7 @@ class Template {
         if (is_array($arg[0])) {
             foreach ($arg[0] as $key => $val) {
                 if (substr($key, 0, 1) != '_') {
-                    $this->$key = $val;
+                    $this->$key = self::xss_safe($val);
                 }
             }
             return;
@@ -72,6 +72,11 @@ class Template {
         } else {
             // errore! non puoi assegnare la var $arg[0]
         }
+    }
+
+    // xss mitigation functions
+    public static function xss_safe($str) {
+        return htmlspecialchars($str, ENT_QUOTES | ENT_HTML401, $encoding='UTF-8');
     }
 
     // lasciamo fare a php il il suo lavoro... di parser
@@ -90,16 +95,16 @@ class Template {
         require ($this->_path);
         $b = ob_get_contents();
         ob_end_clean();
-        $this->buffer = $b;
+        $this->_buffer = $b;
         ini_set('include_path', $cur_include_path);
-        $this->buffer = $this->htmlButTags($this->buffer);
-        //$this->buffer = $this->minimize($this->buffer);
-        return $this->buffer;
+        $this->_buffer = $this->htmlButTags($this->_buffer);
+        //$this->_buffer = $this->minimize($this->_buffer);
+        return $this->_buffer;
     }
 
     function render() {
         $this->parse();
-        return $this->buffer;
+        return $this->_buffer;
     }
 
     // Executes a partial template in its own scope, optionally with
@@ -142,8 +147,8 @@ class Template {
     }
 
     function addToHeader($html) {
-        $this->header_content.= $html;
-        $this->assign('header_content', $this->header_content);
+        $this->_header_content.= $html;
+        $this->assign('header_content', $this->_header_content);
     }
 
     /* --------------------------------------------------------------------------
@@ -151,7 +156,7 @@ class Template {
     -------------------------------------------------------------------------- */
     // encode entities, but preserve tags!
     function htmlButTags($str) {
-        if( $this->doEncoding ) {
+        if( $this->_doEncoding ) {
             // Take all the html entities
             $caracteres = get_html_translation_table(HTML_ENTITIES);
             // Find out the "tags" entities
@@ -165,7 +170,7 @@ class Template {
     }
 
     // function minimize($b) {
-    //   if($this->doMininize){
+    //   if($this->_doMininize){
     //     $s = $b;
     //     // strip comments
     //     // strip spaces
@@ -180,17 +185,17 @@ class Template {
     /*
     // $html_body = preg_replace("/(<\/?)(\w+)([^>]*>)/e", "'\\1'.strtoupper('\\2').'\\3'", $html_body);
     function addAfterBeginHeader($v) {
-    $this->buffer = preg_replace("/(<head)([^>]*>)/e", "'<head>\n$v'", $this->buffer);
+    $this->_buffer = preg_replace("/(<head)([^>]*>)/e", "'<head>\n$v'", $this->_buffer);
     }
     function addBeforeEndHeader($v) {
-    $this->buffer = preg_replace("/(<\/?)(head)([^>]*>)/e", "'$v\n</head>'", $this->buffer);
+    $this->_buffer = preg_replace("/(<\/?)(head)([^>]*>)/e", "'$v\n</head>'", $this->_buffer);
     }
     function addAfterBeginBody($v) {
-    $this->buffer = preg_replace("/(<body)([^>]*>)/e", "'<body'.'\\2'.'\n$v'", $this->buffer);
+    $this->_buffer = preg_replace("/(<body)([^>]*>)/e", "'<body'.'\\2'.'\n$v'", $this->_buffer);
     }
     function addBeforeEndBoby($v) {
     $rep = "'$v\n</body>'";
-    $this->buffer = preg_replace("/(<\/body)([^>]*>)/e", $rep, $this->buffer);
+    $this->_buffer = preg_replace("/(<\/body)([^>]*>)/e", $rep, $this->_buffer);
     }
     */
 }
