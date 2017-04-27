@@ -35,54 +35,116 @@ function get_perc($totale, $parziale, $decimal=2){
 /*
 usage:
 for ($i = 0;$i < 100000;$i++) {
-    $c = base_convert_x($i);
-    $j = base_convert_x($c, 62, 10);
-    echo "$i => $c => $j\n";
+    $str = base_convert_x($i, 10, 62);
+    $i2 = base_convert_x($str, 62, 10);
+    // $i == $i2
+    echo "$i => $str => $i2 \n";
 }
 */
-
-function base_convert_x($p_i = '', $p_base = 10, $p_to_base = 62) {
-    $_all_chars  = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-    $_10to62 = str_split($_all_chars);
-    $_62to10 = array_flip($_10to62);
-    //  convert from from $p_base to base 10
+function base_convert_x(string $p_num = '', int $p_base = 10, int $p_to_base = 62,
+    string $CODESET  = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+):string {
+    // $p_to_base depends from the char set choosen
+    if( $p_to_base < 0 || $p_to_base > strlen($CODESET) ){
+        throw new \Exception("$p_to_base must be < than ".strlen($CODESET) );
+    }
+    $a_chars_b62 = str_split($CODESET);// char[]
+    $h_b62to10 = array_flip($a_chars_b62);// hash<char, int> { ... 'a' =>11 ...}
+    // decode: convert from from $p_base to base 10
     if ($p_base != 10) {
-        $i_in_b10 = 0;
+        $num_b10 = 0;
         // power of from base, eg. 1, 8, 64, 512
         $pwr_of_from_base = 1;
         // split input  into chars
-        $in_as_chars = str_split($p_i);
-        $i_str_len = strlen($p_i);
-        $pos = 0;
-        while ($pos++ < $i_str_len) {
-            $c = $in_as_chars[$i_str_len - $pos];
-            $i_in_b10 += (((int) $_62to10[$c]) * $pwr_of_from_base);
+        $a_num_chars = str_split($p_num);
+        $num_strlen = strlen($p_num);
+        for ($back_pos = ($num_strlen-1); $back_pos>=0; $back_pos--) {
+            $char = $a_num_chars[$back_pos];
+            $pwr_b10 = ((int) $h_b62to10[$char]);
+            $num_b10 += ( $pwr_b10 * $pwr_of_from_base);
             $pwr_of_from_base *= $p_base;
         }
     } else {
-        $i_in_b10 = (int) $p_i;
+        $num_b10 = (int) $p_num;
     }
 
-    // Now convert from base-10 to toBase
-    // name dividend easier to follow below
-    $dividend = (int) $i_in_b10;
-    //  number string in toBase
+    // encode: convert from base-10 to $p_to_base
+    // number string in base $p_to_base
     $i_to_base = '';
-    while ($dividend > 0) {
+    while ($num_b10 > 0) {
         // eg. 789 / 62  =  12  ( C in base 62 )
-        $quotient = (int) ($dividend / $p_to_base);
+        $quotient = (int) ($num_b10 / $p_to_base);
         // 789 % 62  =  45  ( j in base 62 )
-        $remainder = '' . ($dividend % $p_to_base);
+        $remainder = '' . ($num_b10 % $p_to_base);
         // 789  (in base 10)  =    Cj  (in base 62)
-        $i_to_base = $_10to62[$remainder] . $i_to_base;
+        $char = $a_chars_b62[$remainder];
+        $i_to_base = $char . $i_to_base;
         // new dividend is the quotient from base division
-        $dividend = $quotient;
+        $num_b10 = $quotient;
     }
     if ($i_to_base == '') {
         $i_to_base = '0';
     }
     return $i_to_base;
 }
+
+// similar to base_convert_x, this alg:
+// uses only readable chars, decides base from lenght of CODESET
+// works with very big INT (bc math functions)
+class BigIntToStr {
+    // readable character set excluded (0,O,1,l)
+    const CODESET = "23456789abcdefghijkmnopqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ";
+    static function encode(int $n):string{
+        $base = strlen(self::CODESET);
+        $converted = '';
+        while ($n > 0) {
+            $i_pos = bcmod($n, $base);
+            $char = substr(self::CODESET, $i_pos, 1);
+            $converted = $char . $converted;
+            $n = bcdiv($n, $base);
+            $n = bcmul($n, '1', 0);//floor
+        }
+        return $converted ;
+    }
+    static function decode(string $code):int {
+        $base = strlen(self::CODESET);
+        $c = '0';
+        for ($i = strlen($code); $i; $i--) {
+            $i_pos = (-1 * ( $i - strlen($code) ) );
+            $s_j = substr($code, $i_pos, 1);
+            $i_x = strpos( self::CODESET, $s_j );
+            $i_z = bcmul( $i_x , bcpow($base, $i-1) );
+            $c = bcadd( $c, $i_z );
+        }
+        return bcmul($c, 1, 0);
+    }
+}
+
+
+// takes a decimal number and returnrs roman
+function dec2roman($num) {
+    $a_chars = 'IVXLCDM';
+    $c_len = strlen($a_chars);
+    $b=0;
+    $roman='';
+    for($i=5; $num>0; $b++, $i^=7) {
+        for($j=$num%$i,
+            $num=$num/$i^0;
+            $j--;
+        ) {
+            if( $j > 2 ) {
+                $j=1;
+                $idx = $b + $num-($num &= -2) + $j;
+            } else {
+                $idx = $b;
+            }
+            $roman = $a_chars[$idx].$roman;
+        }
+    }
+    return $roman;
+}
+
+
 
 
 //----------------------------------------------------------------------------
@@ -212,12 +274,27 @@ if (basename($argv[0]) == basename(__FILE__)) {
     require_once 'Test.php';
     bcscale(4);// setta il default scale, va settato prima delle chiamate
 
-    // (10,2+(5,05×6,1))÷3,2 == 12,8140625
-    is( bc_parse("10^2") , 100, 'pow');
-    is( bc_parse("10 % 2"), 0, 'mod');
-    is( bc_parse("(10 / 2)+3"), 8, 'prec');
-    is( bc_parse("(10.2+(5.05*6.1))/3.2") , '12.8140', 'complex expression');
+    switch( $argv[1] ) {
+    case 'base':
+        for ($i = 0;$i < 1000;$i++) {
+            $str = base_convert_x($i, 10, 62);
+            $i2 = base_convert_x($str, 62, 10);
+            is( $i , $i2, "$i == $i2 $str ");
+        }
+        for ($i = 0;$i < 100;$i++) {
+            $r = dec2roman($i);
+            ok( $r , "$i == $r   ");
 
+        }
+        break;
+    default:
+        // (10,2+(5,05×6,1))÷3,2 == 12,8140625
+        is( bc_parse("10^2") , 100, 'pow');
+        is( bc_parse("10 % 2"), 0, 'mod');
+        is( bc_parse("(10 / 2)+3"), 8, 'prec');
+        is( bc_parse("(10.2+(5.05*6.1))/3.2") , '12.8140', 'complex expression');
+        break;
+    }
 
 }
 
