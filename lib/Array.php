@@ -37,7 +37,8 @@ class Arr {
     }
 
     // se c'è una chiave che non sia un int in sequenza di scorrimento, è associativo
-    function isAssociative2(array<mixed, mixed> $a): bool {
+    // $a array<mixed, mixed>
+    function isAssociative2(array $a): bool{
         $i = 0;
         foreach ($a as $k => $v) {
             if ($k !== $i++) {
@@ -54,19 +55,11 @@ class Arr {
     // determina se la chiave e' disponibile e se non lo fosse restituisce $default
     // $k può essere un'array di chiavi
     function get($a, $k, $default = '') {
-        //$a_k = ( is_string($k) ) ? array($k) : $k;
-        if (isset($a[$k]))
+        if (isset($a[$k])) {
             return $a[$k];
-        else
+        } else {
             return $default;
-    }
-
-    function range($min = 0, $max, $pass = 1) {
-        $a = array();
-        for ($i = $min; $i < $max; $i = $i + $pass) {
-            $a[] = $i;
         }
-        return $a;
     }
 
     // assicura che tutto ciò che è in $compare sia in $a
@@ -98,18 +91,18 @@ class Arr {
     }
 
     /*
-      $records = array(array('a' => 'y', 'b' => 'z', 'c' => 'e'), array('a' => 'x', 'b' => 'w', 'c' => 'f'));
-      $subset1 = array_collect($records, 'a'); // $subset1 will be: array(array('a' => 'y'), array('a' => 'x'));
-      $subset2 = array_collect($records, array('a', 'c')); // $subset2 will be: array(array('a' => 'y', 'c' => 'e'), array('a' => 'x', 'c' => 'f'));
+    $records = array(array('a' => 'y', 'b' => 'z', 'c' => 'e'), array('a' => 'x', 'b' => 'w', 'c' => 'f'));
+    $subset1 = array_collect($records, 'a'); // $subset1 will be: array(array('a' => 'y'), array('a' => 'x'));
+    $subset2 = array_collect($records, array('a', 'c')); // $subset2 will be: array(array('a' => 'y', 'c' => 'e'), array('a' => 'x', 'c' => 'f'));
      */
 
     function collect($array, $params) {
-        $return = array();
+        $return = [];
         if (!is_array($params)) {
             $params = array($params);
         }
         foreach ($array as $record) {
-            $rec_ret = array();
+            $rec_ret = [];
             foreach ($params as $search_term) {
                 if (array_key_exists($search_term, $record)) {
                     $rec_ret[$search_term] = $record[$search_term];
@@ -127,20 +120,20 @@ class Arr {
     }
 
     /* ----------------------------------------------------------------
-      Ruby sugar
-      ---------------------------------------------------------------- */
+    Ruby sugar
+    ---------------------------------------------------------------- */
     /*
-      array.compact ? an_array
-      Returns a copy of self with all nil elements removed.
+    array.compact ? an_array
+    Returns a copy of self with all nil elements removed.
 
-      [ "a", nil, "b", nil, "c", nil ].compact
-      #=> [ "a", "b", "c" ]
+    [ "a", nil, "b", nil, "c", nil ].compact
+    #=> [ "a", "b", "c" ]
      */
 
     function compact($a) {
         return Arr::reject($a, function ($v) {
-                    return $v == null;
-                });
+            return $v == null;
+        });
     }
 
     // array.reject {|item| block } ? an_array
@@ -150,11 +143,11 @@ class Arr {
     }
 
     /*
-      array.select {|item| block } ? an_array
-      Invokes the block passing in successive elements from array, returning an array containing those elements for which the block returns a true value (equivalent to Enumerable#select).
+    array.select {|item| block } ? an_array
+    Invokes the block passing in successive elements from array, returning an array containing those elements for which the block returns a true value (equivalent to Enumerable#select).
 
-      a = %w{ a b c d e f }
-      a.select {|v| v =~ /[aeiou]/}   #=> ["a", "e"]
+    a = %w{ a b c d e f }
+    a.select {|v| v =~ /[aeiou]/}   #=> ["a", "e"]
      */
 
     function select($a, $f) {
@@ -162,11 +155,11 @@ class Arr {
     }
 
     /*
-      array.uniq ? an_array
-      Returns a new array by removing duplicate values in self.
+    array.uniq ? an_array
+    Returns a new array by removing duplicate values in self.
 
-      a = [ "a", "a", "b", "b", "c" ]
-      a.uniq   #=> ["a", "b", "c"]
+    a = [ "a", "a", "b", "b", "c" ]
+    a.uniq   #=> ["a", "b", "c"]
      */
 
     function uniq($a) {
@@ -176,23 +169,25 @@ class Arr {
     // Usage:  $ids = array_pluck('id', $users);
     // ritorna un array dei valori di una chiave
     function pluck($key, $input) {
-        if (is_array($key) || !is_array($input)){
-            return array();
+        if (is_array($key) || !is_array($input)) {
+            return [];
         }
-        $array = array();
+        $array = [];
         foreach ($input as $v) {
-            if (array_key_exists($key, $v))
+            if (array_key_exists($key, $v)) {
                 $array[] = $v[$key];
+            }
+
         }
         return $array;
     }
 
     function array_pluck($key, $data) {
-        return array_reduce($data, function($result, $array) use($key){
-                isset($array[$key]) &&
-                $result[] = $array[$key];
-                return $result;
-        }, array());
+        return array_reduce($data, function ($result, $array) use ($key) {
+            isset($array[$key]) &&
+            $result[] = $array[$key];
+            return $result;
+        }, []);
     }
 
     // ritorna un array dei valori di una chiave
@@ -235,21 +230,21 @@ class Arr {
                 return $arg;
             }
         }
-        return $args[ $i =count($args) -1 ];
+        return $args[$i = count($args) - 1];
     }
 }
 
 class ArrayPaginator {
     /*
-      es.
-      $pagelen = 30;
-      $this->view->userCount = count($a_items);
-      $this->view->page = $page;
-      $this->view->pagelen = $pagelen;
-      if( $a_items ) {
-      $paginated_usr = array_slice($a_items, (($page-1)*$pagelen), $pagelen);
-      $this->view->userList = $paginated_usr;
-      }
+    es.
+    $pagelen = 30;
+    $this->view->userCount = count($a_items);
+    $this->view->page = $page;
+    $this->view->pagelen = $pagelen;
+    if( $a_items ) {
+    $paginated_usr = array_slice($a_items, (($page-1)*$pagelen), $pagelen);
+    $this->view->userList = $paginated_usr;
+    }
      */
 
     // ritorna una pagina di una determinata lunghezza partendo dall'array
@@ -331,13 +326,15 @@ class PersistentArrayF implements ArrayAccess, Iterator {
         return $this->current;
     }
     // aggiunge i valori povenienti da un altro hash
-    function merge(array $a_hash){
-        foreach($a_hash as $k => $v) {
+    function merge(array $a_hash) {
+        foreach ($a_hash as $k => $v) {
             $this->offsetSet($k, $v);
         }
     }
 }
 
 // persist an array in memory using APC
+/*
 class PersistentArrayM implements ArrayAccess, Iterator {
 }
+ */

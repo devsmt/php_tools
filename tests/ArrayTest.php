@@ -31,8 +31,6 @@ ok( Arr::equals(array('a'=>'a', 'b'=>'b'), array('a'=>'a')), 'different associat
 
 ok( !Arr::equals( array('a'=>'a'), array('a'=>'a', 'b'=>'b') ), 'different associative array (not all the required values)' );
 
-$a = Arr::range(0,5);
-ok( Arr::equals($a, array(0,1,2,3,4)), 'sequence 0..5:'.implode(',',$a) );
 
 $a = array('a'=>0,'b'=>1,'c'=>2);
 ok( Arr::get($a, 'a') == 0, 'get a key' );

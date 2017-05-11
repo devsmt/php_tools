@@ -84,7 +84,7 @@ END;
                         }
                     }
                     $this->data['traffic_start'] = $now;
-                    $this->data['user_traffic'] = array();
+                    $this->data['user_traffic'] = [];
                 }
             }
             $this->release_lock();

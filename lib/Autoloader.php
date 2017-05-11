@@ -1,7 +1,5 @@
 <?php
 
-
-
 class Autoloader {
 
     public static function register() {
@@ -38,7 +36,7 @@ class Autoloader {
          */
         spl_autoload_register(function ($pClassName) {
             // project-specific namespace prefix
-            $prefix = 'Mobile';// Foo\\Bar\\
+            $prefix = 'Mobile'; // Foo\\Bar\\
             // base directory for the namespace prefix
             $base_dir = __DIR__; // . '/src/';
             // does the class use the namespace prefix?

@@ -55,9 +55,9 @@ class SQL {
         if (!is_array($val)) {
             return '';
         }
-        $a_regs = array();
+        $a_regs = ;
         $field_sep = ',';
-        $str = array();
+        $str = ;
         foreach ($val as $k => $v) {
             $str[] = SQL::quote($k) . "=" . SQL::quotev($v);
         }
@@ -72,7 +72,7 @@ class SQL {
     public static function where_range($field, $a_v, $c2 = '||') {
         $sql = '';
         if (count($a_v) > 0) {
-            $a_s = array();
+            $a_s = ;
             foreach ($a_v as $i => $v) {
                 $v = (is_int($v) ? $v : "'" . $v . "'");
                 //il valore va tra virgolette?
@@ -114,7 +114,7 @@ class SQL {
         $sql = '';
         if (!is_array($field)) {
             if (count($a_v) > 0) {
-                $a_s = array();
+                $a_s = ;
                 foreach ($a_v as $i => $v) {
                     $v = SQL::escape($v);
                     $v = SQL::_ensure_like_char($v);
@@ -123,7 +123,7 @@ class SQL {
                 $sql = sprintf('( %s )', implode($c2, $a_s));
             }
         } else {
-            $a_s = array();
+            $a_s = ;
             foreach ($field as $f => $v) {
                 $v = SQL::escape($v);
                 $v = SQL::_ensure_like_char($v);
@@ -163,7 +163,7 @@ class SQL {
     // array(field, field ... )
     //
     // field
-    public static function orderby($a = array()) {
+    public static function orderby($a = ) {
         // assert("is_array($a)")
         // assert("is_array($a[0])")
         $sql = '';
@@ -174,7 +174,7 @@ class SQL {
                 $a = array($a);
             } else {
                 $old = $a;
-                $a = array();
+                $a = ;
                 foreach ($old as $f) {
                     $a[] = array($f);
                 }
@@ -221,7 +221,7 @@ class SQL {
     // \param $t str table name
     //
     // Query Cache does simple optimization to check if query can be cached. As I mentioned only SELECT queries are cached - so it looks at first letter of the query and if it is e'Se' it proceeds with query lookup in cache if not - skips it.
-    public static function select($t, $opt = array()) {
+    public static function select($t, $opt = ) {
         extract(array_merge(array('s' => '*', 'where' => null, 'group_by' => null, 'order_by' => null, 'pos' => 0, 'limit' => null), $opt));
         if (is_array($s)) {
             $s = Arr::deleteEmpty($s);
@@ -260,7 +260,7 @@ class SQL {
     // or  INSERT [LOW_PRIORITY | DELAYED] [IGNORE]
     // [INTO] tbl_name
     // SET col_name=expression, col_name=expression, ...
-    public static function insert($t, $val = array(), $flags = null) {
+    public static function insert($t, $val = , $flags = null) {
         return "INSERT INTO " . SQL::quote($t) . " SET " . SQL::sequence_val($val);
     }
 
@@ -297,7 +297,7 @@ class SQL {
     // REPLACE works exactly like INSERT, except that if an old row in the table has the
     // same value as a new row for a PRIMARY KEY or a UNIQUE index, the old row is deleted before the new row is inserted
     //
-    public static function replace($t, $val = array(), $flags = null) {
+    public static function replace($t, $val = , $flags = null) {
         return "REPLACE INTO $t SET " . SQL::sequence_val($val);
     }
 

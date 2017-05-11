@@ -8,7 +8,7 @@ class Text {
         // calc len:
         // cicla righe con header
         // cicla colonne e aggiorna il conteggio se si trova un max
-        $a_len = array();
+        $a_len = [];
         for ($i = 0; $i < count($data); $i++) {
             $a_r = $data[$i];
             for ($k = 0; $k < count($a_r); $k++) {
@@ -29,7 +29,7 @@ class Text {
             $a_r = $data[$i];
             for ($k = 0; $k < count($a_r); $k++) {
                 // applica format
-                $a_r[$k]=str_pad($a_r[$k], $a_len[$k], ' ', STR_PAD_LEFT);
+                $a_r[$k] = str_pad($a_r[$k], $a_len[$k], ' ', STR_PAD_LEFT);
             }
             $s_tbl .= implode('  ', $a_r) . "\n";
         }

@@ -1,7 +1,5 @@
 <?php
 
-
-
 // sfrutta php come parser di template
 // nel template usare una ref tipo $this->chiave
 // NOTE: escape your values to prevent Cross Site Scripting (XSS)
@@ -15,7 +13,7 @@ class Template {
         // assign default vars
         if ($path != '') {
             if (!$this->setPath($path)) {
-                $msg = sprintf('Errore %s ', 'template non trovato' );
+                $msg = sprintf('Errore %s ', 'template non trovato');
                 throw new Exception($msg);
             }
         }
@@ -76,7 +74,7 @@ class Template {
 
     // xss mitigation functions
     public static function xss_safe($str) {
-        return htmlspecialchars($str, ENT_QUOTES | ENT_HTML401, $encoding='UTF-8');
+        return htmlspecialchars($str, ENT_QUOTES | ENT_HTML401, $encoding = 'UTF-8');
     }
 
     // lasciamo fare a php il il suo lavoro... di parser
@@ -92,7 +90,7 @@ class Template {
         ini_set('include_path', $cur_include_path . PATH_SEPARATOR . dirname($this->_path) . PATH_SEPARATOR . TEMPLATE_PATH);
         ob_start();
 
-        require ($this->_path);
+        require $this->_path;
         $b = ob_get_contents();
         ob_end_clean();
         $this->_buffer = $b;
@@ -140,14 +138,14 @@ class Template {
 
     function endContentFor($section_name) {
         if (isset($this->__content_blocks__[$section_name])) {
-            $this->__content_blocks__[$section_name].= ob_get_clean();
+            $this->__content_blocks__[$section_name] .= ob_get_clean();
         } else {
             $this->__content_blocks__[$section_name] = ob_get_clean();
         }
     }
 
     function addToHeader($html) {
-        $this->_header_content.= $html;
+        $this->_header_content .= $html;
         $this->assign('header_content', $this->_header_content);
     }
 
@@ -156,7 +154,7 @@ class Template {
     -------------------------------------------------------------------------- */
     // encode entities, but preserve tags!
     function htmlButTags($str) {
-        if( $this->_doEncoding ) {
+        if ($this->_doEncoding) {
             // Take all the html entities
             $caracteres = get_html_translation_table(HTML_ENTITIES);
             // Find out the "tags" entities
@@ -183,22 +181,19 @@ class Template {
     // }
 
     /*
-    // $html_body = preg_replace("/(<\/?)(\w+)([^>]*>)/e", "'\\1'.strtoupper('\\2').'\\3'", $html_body);
-    function addAfterBeginHeader($v) {
-    $this->_buffer = preg_replace("/(<head)([^>]*>)/e", "'<head>\n$v'", $this->_buffer);
-    }
-    function addBeforeEndHeader($v) {
-    $this->_buffer = preg_replace("/(<\/?)(head)([^>]*>)/e", "'$v\n</head>'", $this->_buffer);
-    }
-    function addAfterBeginBody($v) {
-    $this->_buffer = preg_replace("/(<body)([^>]*>)/e", "'<body'.'\\2'.'\n$v'", $this->_buffer);
-    }
-    function addBeforeEndBoby($v) {
-    $rep = "'$v\n</body>'";
-    $this->_buffer = preg_replace("/(<\/body)([^>]*>)/e", $rep, $this->_buffer);
-    }
-    */
+// $html_body = preg_replace("/(<\/?)(\w+)([^>]*>)/e", "'\\1'.strtoupper('\\2').'\\3'", $html_body);
+function addAfterBeginHeader($v) {
+$this->_buffer = preg_replace("/(<head)([^>]*>)/e", "'<head>\n$v'", $this->_buffer);
 }
-
-
-
+function addBeforeEndHeader($v) {
+$this->_buffer = preg_replace("/(<\/?)(head)([^>]*>)/e", "'$v\n</head>'", $this->_buffer);
+}
+function addAfterBeginBody($v) {
+$this->_buffer = preg_replace("/(<body)([^>]*>)/e", "'<body'.'\\2'.'\n$v'", $this->_buffer);
+}
+function addBeforeEndBoby($v) {
+$rep = "'$v\n</body>'";
+$this->_buffer = preg_replace("/(<\/body)([^>]*>)/e", $rep, $this->_buffer);
+}
+ */
+}

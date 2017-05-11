@@ -51,12 +51,9 @@ class BitSet {
 
 }
 
-
 function get_bit(int $int, int $offset): bool {
-  return (bool) ((1 << $offset) & $int);
+    return (bool) ((1 << $offset) & $int);
 }
 function set_bit(int $int, int $offset, bool $value): int {
-  return $value ? $int | (1 << $offset) : $int & ~(1 << $offset);
+    return $value ? $int | (1 << $offset) : $int & ~(1 << $offset);
 }
-
-

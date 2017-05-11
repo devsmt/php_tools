@@ -4,9 +4,9 @@
 class Net {
 
     // IP anche se dietro un proxy
-    public static function getIP($def = 'UNKNOWN'):string {
+    public static function getIP($def = 'UNKNOWN'): string {
         static $ip = null;
-        if( !empty($ip) ) {
+        if (!empty($ip)) {
             return $ip;
         }
         $a_k = [
@@ -17,10 +17,10 @@ class Net {
             'HTTP_X_CLUSTER_CLIENT_IP',
             'HTTP_FORWARDED_FOR',
             'HTTP_FORWARDED',
-            'REMOTE_ADDR'
+            'REMOTE_ADDR',
         ];
-        foreach($a_k as $k ) {
-            if( isset( $_SERVER[$k] ) && !empty($_SERVER[$k])  ) {
+        foreach ($a_k as $k) {
+            if (isset($_SERVER[$k]) && !empty($_SERVER[$k])) {
                 // server with multiple interfaces, contains the ',' char
                 // foreach( explode(',', $_SERVER[$k]) as $ip) { }
                 $ip = $_SERVER[$k];
@@ -30,7 +30,7 @@ class Net {
                 return $ip;
             }
         }
-        return $def ;
+        return $def;
     }
 
     // es.  111.112.113.0 - 111.112.113.255
@@ -58,7 +58,7 @@ class Net {
     //
     public static function getHostsByAddrs(array $ips) {
 
-        $hosts = array();
+        $hosts = [];
         $ips = explode(',', $ips);
 
         if (is_array($ips)) {
@@ -73,7 +73,7 @@ class Net {
 
     // @see https://github.com/rmccue/Requests
     // permette di ottenre il contenuto della pagina servita ad un indirizzo specifico
-    public static function getContent($url, $opts = [] ) {
+    public static function getContent($url, $opts = []) {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_HEADER, 0);
@@ -86,17 +86,17 @@ class Net {
             curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
         }
         // apply opts
-        if(is_array($opts) && $opts) {
-            foreach($opts as $key => $val) {
+        if (is_array($opts) && $opts) {
+            foreach ($opts as $key => $val) {
                 curl_setopt($ch, $key, $val);
             }
         }
 
         // transfer
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        if(FALSE === ($retval = curl_exec($ch))) {
+        if (FALSE === ($retval = curl_exec($ch))) {
             $err = curl_error($ch);
-            $msg = sprintf('Errore CURL %s ', $err );
+            $msg = sprintf('Errore CURL %s ', $err);
             throw new Exception($msg);
         } else {
             curl_close($ch);
@@ -105,11 +105,11 @@ class Net {
     }
 
     // richiama una url con dati in post
-    protected static function post($url, array $fields ) {
+    protected static function post($url, array $fields) {
 
-        foreach($fields as $key=>$value) {
+        foreach ($fields as $key => $value) {
             $value = urlencode($value);
-            $fields_string .= $key.'='.$value.'&';
+            $fields_string .= $key . '=' . $value . '&';
         }
         rtrim($fields_string, '&');
 
@@ -122,9 +122,9 @@ class Net {
 
         // transfer
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        if(FALSE === ($retval = curl_exec($ch))) {
+        if (FALSE === ($retval = curl_exec($ch))) {
             $err = curl_error($ch);
-            $msg = sprintf('Errore CURL %s ', $err );
+            $msg = sprintf('Errore CURL %s ', $err);
             throw new Exception($msg);
         } else {
             curl_close($ch);
@@ -132,15 +132,12 @@ class Net {
         }
     }
 
-
-
-
     /*
     $endpoint = "https://graph.facebook.com/?id=" . urlencode($uri);
     $curlopts = array( CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4 );
     $retval = http_get_contents($endpoint, $curlopts);
-    */
-    function http_get_contents($url , $opts = array() ) {
+     */
+    function http_get_contents($url, $opts = []) {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_TIMEOUT, 5);
@@ -150,24 +147,24 @@ class Net {
 
     // verifica un IP su diversi database di IP malevoli
     function checkDNSBL($ip) {
-        $dnsbl_check=array(
+        $dnsbl_check = array(
             'bl.spamcop.net',
             'list.dsbl.org',
             'sbl.spamhaus.org',
             'xbl.spamhaus.org');
-        if( !empty($ip) ){
-            $reverse_ip = implode('.',array_reverse(explode(".",$ip)));
-            $reverse_ip = idn_to_ascii( $reverse_ip );
-            foreach($dnsbl_check as $server_name){
-                if(checkdnsrr($reverse_ip.'.'.$server_name.'.','A')){
-                    return $rip.'.'.$server_name;
+        if (!empty($ip)) {
+            $reverse_ip = implode('.', array_reverse(explode(".", $ip)));
+            $reverse_ip = idn_to_ascii($reverse_ip);
+            foreach ($dnsbl_check as $server_name) {
+                if (checkdnsrr($reverse_ip . '.' . $server_name . '.', 'A')) {
+                    return $rip . '.' . $server_name;
                 }
             }
         }
         return false;
     }
     // verifica se una porta locale è aperta o chiusa
-    function portIsOpen($port=25){
+    function portIsOpen($port = 25) {
         $fp = fsockopen('127.0.0.1', $port, $errno, $errstr, 5);
         if (!$fp) {
             // port is closed or blocked

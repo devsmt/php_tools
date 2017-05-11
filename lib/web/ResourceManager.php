@@ -7,19 +7,19 @@
 
 class ResourceManager {
 
-    static $_css = array();
-    static $_js = array();
+    static $_css = [];
+    static $_js = [];
 
     /*
       un widget registra le risorse che gli sono necessarie
       todo: una risorsa pu� specificare nomi delle dipendenze
      */
 
-    function addCSS($name, $url, $depends = array()) {
+    function addCSS($name, $url, $depends = []) {
         self::$_css[$name] = $url;
     }
 
-    function addJS($name, $url, $depends = array()) {
+    function addJS($name, $url, $depends = []) {
         self::$_js[$name] = $url;
     }
 
@@ -39,8 +39,8 @@ class ResourceManager {
     }
 
     function clear() {
-        self::$_css = array();
-        self::$_js = array();
+        self::$_css = [];
+        self::$_js = [];
     }
 
 }

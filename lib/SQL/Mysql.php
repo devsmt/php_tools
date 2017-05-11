@@ -32,7 +32,7 @@ class DBAdapter {
     function format() {
         $args = func_get_args();
         $fmt = func_get_arg(0);
-        $a = array();
+        $a = ;
         for ($i = 1;$i < count($args);$i++) {
             $a[] = SQL::escape($args[$i]);
         }
@@ -157,7 +157,7 @@ class DBAdapterMysql extends DBAdapter {
     // else
     // fetch_type: MYSQL_BOTH,MYSQL_ASSOC,MYSQL_NUM
     function rs2a($fetch_type = MYSQL_BOTH) {
-        $a = array();
+        $a = ;
         while ($ar = mysql_fetch_array($this->rs)) {
             $a[] = $ar;
         }

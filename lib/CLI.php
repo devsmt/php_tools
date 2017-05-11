@@ -19,7 +19,7 @@ class CLI {
     }
 
     // determina se chi sta lanciando lo script è l'utente root
-    public static function userIsRoot($user='root') {
+    public static function userIsRoot($user = 'root') {
         $processUser = posix_getpwuid(posix_geteuid());
         return $processUser['name'] == $user;
     }
@@ -76,70 +76,69 @@ class CLI {
     /* uso:
     // example.php -r=1  --optional=text --debug
     $cl_options_parsed = cli_getopt(
-        $a_opts = [
-            'r:' => 'required:',//:=>required
-            'o::' => 'optional::', //::=>optional
-        ],
-        $a_flags = [
-            'd' => 'debug', // flag
-        ],
-        $a_defaults=[
-            'r' => 0,
-            'o' => 'o_default',
-            'd' => false
-        ] );
-    */
+    $a_opts = [
+    'r:' => 'required:',//:=>required
+    'o::' => 'optional::', //::=>optional
+    ],
+    $a_flags = [
+    'd' => 'debug', // flag
+    ],
+    $a_defaults=[
+    'r' => 0,
+    'o' => 'o_default',
+    'd' => false
+    ] );
+     */
     // will stop parsing options upon the '--'
     // arguments not listed will be ignored
     // it keep in sync short and long
     // better handling of flags
     // defaults: use short version for defaults
-    public static function getopt( array $a_opts, array $a_flags, array $a_defaults=[] ):array {
+    public static function getopt(array $a_opts, array $a_flags, array $a_defaults = []): array{
         // ottiene il valore
-        $get_result = function($a_res, $short, $long) use($a_defaults, $a_flags) {
+        $get_result = function ($a_res, $short, $long) use ($a_defaults, $a_flags) {
             // nel caso sia un parametro flag,
-            if( isset($a_flags[$short]) || isset($a_flags[$long]) ) {
+            if (isset($a_flags[$short]) || isset($a_flags[$long])) {
                 // getopt setta la chiave se passato, atrimenti non la setta
-                if( isset($a_res[$short]) || isset($a_res[$long]) ) {
+                if (isset($a_res[$short]) || isset($a_res[$long])) {
                     return true;
                 } else {
-                    return (int)($a_defaults[$short] ?? $a_defaults[$long]);
+                    return (int) ($a_defaults[$short] ?? $a_defaults[$long]);
                 }
             } else {
                 // return the first setted
                 return
-                    $a_res[$short] ??
-                    $a_res[$long ] ??
-                    $a_defaults[$short] ??
-                    $a_defaults[$long ] ??
-                '' ;
+                $a_res[$short] ??
+                $a_res[$long] ??
+                $a_defaults[$short] ??
+                $a_defaults[$long] ??
+                '';
             }
         };
         // merge flags
-        $a_opts = array_merge( $a_opts, $a_flags );
+        $a_opts = array_merge($a_opts, $a_flags);
         // make map short => long
         $a_s_l = [];
-        foreach($a_opts as $short => $long) {
-            $short = str_replace(':','',$short);
-            $long = str_replace(':','',$long);
-            $a_s_l[$short]=$long;
+        foreach ($a_opts as $short => $long) {
+            $short = str_replace(':', '', $short);
+            $long = str_replace(':', '', $long);
+            $a_s_l[$short] = $long;
         }
         // create the short string
         $s_p = implode('', array_keys($a_opts));
         if ('cli' === PHP_SAPI) {
-            $a_res = getopt($s_p, array_values($a_opts) );
+            $a_res = getopt($s_p, array_values($a_opts));
             // apply defaults long <-> short values
             $a_result = [];
-            foreach($a_s_l as $short => $long) {
-                $a_result[ $short ] = $get_result($a_res, $short, $long);
-                $a_result[ $long  ] = $get_result($a_res, $short, $long);
+            foreach ($a_s_l as $short => $long) {
+                $a_result[$short] = $get_result($a_res, $short, $long);
+                $a_result[$long] = $get_result($a_res, $short, $long);
             }
             return $a_result;
         } else {
-            die(__FUNCTION__.'/'.__LINE__.' will not parse option, not in cli');
+            die(__FUNCTION__ . '/' . __LINE__ . ' will not parse option, not in cli');
         }
     }
-
 
     //----------------------------------------------------------------------------
     // std in/out
@@ -199,48 +198,47 @@ class CLI {
     public static function colored($str, $foreground_color = '', $background_color = '') {
         // ForeGround
         static $a_fg = [
-        'black' => '0;30',
-        'red' => '0;31',
-        'green' => '0;32',
-        'brown' => '0;33',
-        'blue' => '0;34',
-        'purple' => '0;35',
-        'cyan' => '0;36',
-        'white' => '0;37',
-        // Bold
-        'bblack' => '1;30',
-        'bred' => '1;31',
-        'bgreen' => '1;32',
-        'byellow' => '1;33',
-        'bblue' => '1;34',
-        'bpurple' => '1;35',
-        'bcyan' => '1;36',
-        'bwhite' => '1;37',
+            'black' => '0;30',
+            'red' => '0;31',
+            'green' => '0;32',
+            'brown' => '0;33',
+            'blue' => '0;34',
+            'purple' => '0;35',
+            'cyan' => '0;36',
+            'white' => '0;37',
+            // Bold
+            'bblack' => '1;30',
+            'bred' => '1;31',
+            'bgreen' => '1;32',
+            'byellow' => '1;33',
+            'bblue' => '1;34',
+            'bpurple' => '1;35',
+            'bcyan' => '1;36',
+            'bwhite' => '1;37',
         ];
         // background
         static $a_bg = [
-        'black' => '40',
-        'red' => '41',
-        'green' => '42',
-        'yellow' => '43',
-        'blue' => '44',
-        'magenta' => '45',
-        'cyan' => '46',
-        'light_gray' => '47',
+            'black' => '40',
+            'red' => '41',
+            'green' => '42',
+            'yellow' => '43',
+            'blue' => '44',
+            'magenta' => '45',
+            'cyan' => '46',
+            'light_gray' => '47',
         ];
         $str_result = '';
         // FG color
-        if (isset( $a_fg[$foreground_color])) {
-            $str_result .= sprintf("\e[%sm", $a_fg[$foreground_color] );
+        if (isset($a_fg[$foreground_color])) {
+            $str_result .= sprintf("\e[%sm", $a_fg[$foreground_color]);
         }
         // BG color
-        if (isset( $a_bg[$background_color])) {
-            $str_result .= sprintf("\033[%sm",  $a_bg[$background_color] );
+        if (isset($a_bg[$background_color])) {
+            $str_result .= sprintf("\033[%sm", $a_bg[$background_color]);
         }
         $str_result .= $str . "\033[0m";
         return $str_result;
     }
-
 
     // UI reporting automatico sull'esecuzione dello script
     // uso:
@@ -319,7 +317,6 @@ class CLI {
         fclose($pipes[1]);
         return proc_close($ph);
     }
-
 
 }
 
@@ -434,7 +431,3 @@ if (!function_exists('is')) {
         return $pass;
     }
 }
-
-
-
-

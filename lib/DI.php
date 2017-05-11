@@ -3,14 +3,14 @@
 
 // Add `mailer` to the registry array, along with a resolver
 IoC::register('mailer', function() {
-    $mailer = new Mailer;
-    $mailer->setConfig('...');
-    return $mailer;
+$mailer = new Mailer;
+$mailer->setConfig('...');
+return $mailer;
 });
 
 // Fetch new mailer instance with dependencies set
 $mailer = IoC::resolve('mailer');
-*/
+ */
 class GlobalDIC {
     protected static $registry = [];
 
@@ -21,7 +21,7 @@ class GlobalDIC {
 
     // Create the instance
     public static function resolve($name) {
-        if ( array_key_exists($name, static::$registry) ) {
+        if (array_key_exists($name, static::$registry)) {
             $resolver = self::$registry[$name];
             return $resolver();
         }
@@ -29,11 +29,9 @@ class GlobalDIC {
     }
 }
 
-
-
 /*
 minimalistic Dependency Injection Container
-*/
+ */
 class InstanceDIC {
 
     protected $registry = [];
@@ -49,11 +47,11 @@ class InstanceDIC {
 /* uso:
 $c = new DIC;
 $c->mailer = function() {
-    // create new instance of service and configure it
-    $m = new Mailer();
-    return $m;
+// create new instance of service and configure it
+$m = new Mailer();
+return $m;
 };
 
 // Fetch, boy
 $mailer = $c->mailer; // mailer instance
-*/
+ */

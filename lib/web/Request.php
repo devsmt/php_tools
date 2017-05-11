@@ -89,7 +89,7 @@ class Request {
         if (!is_array($dir)) {
             $dir = array($dir);
         }
-        $metched_dir = array();
+        $metched_dir = [];
         $p_reg = "/(\/(" . implode('|', $dir) . ")\/){1}/i"; // -> CI-cms:"/^\/(en|fr){1}\//i" or /(\/(it|en|de|fr|es|ru)\/){1}/i
         $result = (preg_match($p_reg, $_SERVER['PHP_SELF'], $metched_dir) === 1);
         if ($result) {

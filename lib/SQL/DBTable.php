@@ -82,7 +82,7 @@ class DBTable {
         return $this->db->qry_cmd($sql, $line, $file);
     }
 
-    function select($opt = array()) {
+    function select($opt = ) {
         $sql = SQL::select($this->table, $opt);
         if ($this->db->qry($sql, __LINE__, __FILE__)) {
             return $this->db->rs;

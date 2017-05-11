@@ -342,7 +342,7 @@ class SparklineGenerator {
 
         $x1 = 0;
         $y1 = $h - $data[0];
-        $line = array();
+        $line = [];
         $poly = array(0, $h + 50, $x1, $y1);
         for ($i = 1; $i < $count; $i++) {
             $x2 = $x1 + $step;

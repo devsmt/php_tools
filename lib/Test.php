@@ -5,7 +5,7 @@ inspired by Perl Test::Simple
 
 The goal here is to have a testing utility that's simple to learn, quick to use
 and difficult to trip yourself up with while still providing some flexibility
-*/
+ */
 
 //-----------------------------------------------------------------------------------
 //  test formating
@@ -74,7 +74,7 @@ function cmp_ok($val, $operator, $expected_val, $description = '') {
 
 function can_ok($object, $methods) {
     $pass = true;
-    $errors = array();
+    $errors = [];
     foreach ($methods as $method) {
         if (!method_exists($object, $method)) {
             $pass = false;
@@ -141,8 +141,8 @@ function is_deeply($got, $expected, $test_name) {
         ok(true, " is_deeply $test_name");
     } else {
         ok(false, " !is_deeply $test_name ");
-        diag( $s_got );
-        diag( $s_exp );
+        diag($s_got);
+        diag($s_exp);
     }
     return $pass;
 }
@@ -197,21 +197,21 @@ function is_float_essentially_equal($a, $b, $epsilon) {
 //  moking
 //-----------------------------------------------------------------------------------
 /*
-  per utilizzare gli oggetti che hanno interdipendenze, si creano degli oggetti
-  vuoti da "riempire" all'occorrenza simulando condizioni tipiche
+per utilizzare gli oggetti che hanno interdipendenze, si creano degli oggetti
+vuoti da "riempire" all'occorrenza simulando condizioni tipiche
 
-  es.
-  class myObject extends SimpleMock{}
+es.
+class myObject extends SimpleMock{}
 
-  $o = new myObject();
-  $o->set('isSomething', 'val');
+$o = new myObject();
+$o->set('isSomething', 'val');
 
-  // test
-  $o->isSomething(); // ritorna "val"
+// test
+$o->isSomething(); // ritorna "val"
  */
 class SimpleMock {
 
-    var $data = array();
+    var $data = [];
 
     function getValue($i) {
         return $this->data[$i];
@@ -265,27 +265,27 @@ class TestSuite {
     public function run() {
         $class = $this->getClass();
         switch ($class) {
-            case 'all':
-                // fa girare tutte le classi di test in sequenza
-                foreach ($a = get_declared_classes() as $class_name) {
-                    if (substr($class_name, -4) == 'Test') {
-                        $logger->info("running $class_name");
-                        $t = new $class_name();
-                        $t->run();
-                        $t->cleanup();
-                    }
-                }
-                break;
-            default:
-                $is_valid_class = !empty($class) && class_exists($class) && class_implements('ITestCommand');
-                if ($is_valid_class) {
-                    $t = new $class();
+        case 'all':
+            // fa girare tutte le classi di test in sequenza
+            foreach ($a = get_declared_classes() as $class_name) {
+                if (substr($class_name, -4) == 'Test') {
+                    $logger->info("running $class_name");
+                    $t = new $class_name();
                     $t->run();
                     $t->cleanup();
-                } else {
-                    die($this->render_usage());
                 }
-                break;
+            }
+            break;
+        default:
+            $is_valid_class = !empty($class) && class_exists($class) && class_implements('ITestCommand');
+            if ($is_valid_class) {
+                $t = new $class();
+                $t->run();
+                $t->cleanup();
+            } else {
+                die($this->render_usage());
+            }
+            break;
         }
         $this->render_result();
     }
@@ -337,7 +337,6 @@ class Test {
 
     static $errc = 0;
 
-
     public static function ok($test, $label, $data = null) {
         if (PHP_SAPI != 'cli') {
             if ($test == false) {
@@ -350,14 +349,13 @@ class Test {
                 echo "<p class=\"success\">OK $label </p>\n\n";
             }
         } else {
-            if( $test ) {
+            if ($test) {
                 echo "ok $label\n";
             } else {
                 echo "ERROR($label)    " . var_export($data, 1) . " \n";
             }
         }
     }
-
 
     public static function diag($l, $data = '') {
         if (!empty($data)) {
@@ -412,7 +410,7 @@ __END__;
 }
 
 //  test init
-register_shutdown_function(function() {
+register_shutdown_function(function () {
     if (PHP_SAPI != 'cli') {
         echo Test::css();
         Test::alarm();
@@ -424,27 +422,27 @@ register_shutdown_function(function() {
 //----------------------------------------------------------------------------
 
 class APIClient {
-    public static function get($method, $param=[]) {
+    public static function get($method, $param = []) {
         $param_auth = self::getAuth();
-        $a_param = array_merge( $param_auth, $param );
-        $url = sprintf('%s/%s?%s', self::URL, $method, http_build_query($a_param) );
+        $a_param = array_merge($param_auth, $param);
+        $url = sprintf('%s/%s?%s', self::URL, $method, http_build_query($a_param));
         $json_str = file_get_contents($url);
-        if(DEBUG) {
+        if (DEBUG) {
             echo "## URL: $url \n";
         }
-        $data = json_decode($json_str, $use_assoc=true );
+        $data = json_decode($json_str, $use_assoc = true);
 
-        if( empty($data)  ) {
-            if( DEBUG ) {
+        if (empty($data)) {
+            if (DEBUG) {
                 echo "## UNPARSABLE RESPONSE --------------------------------------\n";
                 echo "$json_str\n";
                 echo "## END RESPONSE    ------------------------------------------\n";
             }
             return $json_str;
         }
-        if( DEBUG && (isset($data['exec_time']) || isset($data['memory'])) ) {
-            echo sprintf('## time:%s mem:%s data_len:%s'.PHP_EOL,
-                @$data['exec_time'], @$data['memory'] , @count($data['data']) );
+        if (DEBUG && (isset($data['exec_time']) || isset($data['memory']))) {
+            echo sprintf('## time:%s mem:%s data_len:%s' . PHP_EOL,
+                @$data['exec_time'], @$data['memory'], @count($data['data']));
         }
         return $data;
     }
@@ -454,8 +452,8 @@ class APIClient {
         $hash = ''; // some hashing algorithm like sha1(self::KEY.'-'.$time);
         $a = [
             'client_id' => self::CLIENT_ID,
-            'time'      => $time,
-            'hash'      => $hash
+            'time' => $time,
+            'hash' => $hash,
         ];
         return $a;
     }

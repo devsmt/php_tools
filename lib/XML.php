@@ -6,23 +6,23 @@
 //
 class XML {
     /*
-      //this is a sample xml string
-      $xml_string="<?xml version='1.0'?>
-      <mydb>
-      <itemname name='Benzine'>
-      <symbol>ben</symbol>
-      <code>A</code>
-      </itemname>
-      <itemname name='Water'>
-      <symbol>h2o</symbol>
-      <code>K</code>
-      </itemname>
-      </mydb>";
+    //this is a sample xml string
+    $xml_string="<?xml version='1.0'?>
+    <mydb>
+    <itemname name='Benzine'>
+    <symbol>ben</symbol>
+    <code>A</code>
+    </itemname>
+    <itemname name='Water'>
+    <symbol>h2o</symbol>
+    <code>K</code>
+    </itemname>
+    </mydb>";
      */
 
     public static function strToArray($str) {
         $xml = simplexml_load_string($xml_string);
-        $a = array();
+        $a = [];
         foreach ($xml->itemname as $record) {
             //attribute are accessted by
             echo $record['name'], '  ';

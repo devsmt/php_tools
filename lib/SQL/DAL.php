@@ -35,7 +35,7 @@ class DAL {
     function selectValue($sql) {
         $db = self::getDB();
         $rs = $db->qry($sql);
-        $a = array();
+        $a = ;
         $record = $db->rs2a($rs);
         if ( !empty($record) ) {
             return $a[0][0];

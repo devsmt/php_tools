@@ -16,10 +16,10 @@ while ($x = $stack->next() ) {
 echo '$stack->next: "', $x, "\"\n";
 }
 echo '</pre>';
-*/
+ */
 class Stack {
 
-    private $stack = array();
+    private $stack = [];
 
     public function add($item) {
         $this->stack[] = $item;
@@ -41,19 +41,19 @@ class Stack {
 }
 
 /*
-  $q = new SplQueue();
-  $q->setIteratorMode(SplQueue::IT_MODE_DELETE);
+$q = new SplQueue();
+$q->setIteratorMode(SplQueue::IT_MODE_DELETE);
 
-  // ... enqueue some tasks on the queue ...
+// ... enqueue some tasks on the queue ...
 
-  // process them
-  foreach ($q as $task) {
-  // ... process $task ...
+// process them
+foreach ($q as $task) {
+// ... process $task ...
 
-  // add new tasks on the queue
-  $q[] = $newTask;
-  // ...
-  }
+// add new tasks on the queue
+$q[] = $newTask;
+// ...
+}
  */
 
 class Queue extends SplQueue {

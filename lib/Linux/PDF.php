@@ -33,8 +33,8 @@ class PDF {
       se ok, ritorna il path del nuovo thumbnail
      */
 
-    public static function getThumbnail($pdf_path, $opt = array()) {
-        $opt = array_merge(array('w' => 150, 'h' => 150, 'scale' => true, 'inflate' => true, 'quality' => 100, 'adapterClass' => null, 'adapterOptions' => array(), 'force' => false
+    public static function getThumbnail($pdf_path, $opt = ) {
+        $opt = array_merge(array('w' => 150, 'h' => 150, 'scale' => true, 'inflate' => true, 'quality' => 100, 'adapterClass' => null, 'adapterOptions' => , 'force' => false
                 // forza la riscrittura della thumb
                 ), $opt);
         extract($opt);
@@ -49,7 +49,7 @@ class PDF {
         return 'n-a';
     }
 
-    public static function getThumbnailURL($pdf_path, $opt = array()) {
+    public static function getThumbnailURL($pdf_path, $opt = ) {
         $path = self::getThumbnail($pdf_path, $opt);
         $url = str_replace(sfConfig::get('sf_root_dir') . '/web', '', $path);
         return $url;

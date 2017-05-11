@@ -4,15 +4,11 @@
 class Event {
 
     var $owner = null;
-    var $_callbacks = array();
+    var $_callbacks = [];
     // settato a runtime da Pluggable::getEvents() come il nome della propriete' dell'oggetto che lo istanzia, non va settata manualmente
     var $name = '';
 
-    // occorre passare un riferimento all'oggetto chiamante, in mod da poter accedere dalla collback ai dati dell'oggetto
-    function Event(&$owner) {
-        $this->__construct($owner);
-    }
-
+    // occorre passare un riferimento all'oggetto chiamante, in modo da poter accedere dalla collback ai dati dell'oggetto
     function __construct(&$owner) {
         $this->owner = $owner;
     }

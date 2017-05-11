@@ -5,7 +5,7 @@ namespace PT {
         return $s === '' || \ctype_alnum($s);
     }
 
-    function all_blank(string $s): bool {
+    function all_blank(string $s): bool{
         $l = \strlen($s);
         for ($i = 0; $i < $l; $i++) {
             $c = $s[$i];
@@ -60,7 +60,7 @@ namespace PT {
         return \ctype_alnum(char_at($s, $i));
     }
 
-    function is_blank(string $s, int $i = 0): bool {
+    function is_blank(string $s, int $i = 0): bool{
         $c = char_at($s, $i);
         return $c === ' ' || $c === "\t";
     }

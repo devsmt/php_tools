@@ -2,10 +2,8 @@
 
 class URL {
 
-    function GetSelf() {
-        if (isset($GLOBALS['HTTP_SERVER_VARS']['PHP_SELF'])) {
-            return $GLOBALS['HTTP_SERVER_VARS']['PHP_SELF'];
-        } elseif (isset($_SERVER['PHP_SELF'])) {
+    function getSelf() {
+        if (isset($_SERVER['PHP_SELF'])) {
             return $_SERVER['PHP_SELF'];
         } else {
             return '';
@@ -20,16 +18,16 @@ class URL {
         $c = func_num_args();
         switch ($c) {
             case 0:
-                $page = URL::GetSelf();
-                $data = array();
+                $page = URL::getSelf();
+                $data = [];
                 break;
             case 1:
                 if (is_array($args[0])) {
-                    $page = URL::GetSelf();
+                    $page = URL::getSelf();
                     $data = $args[0];
                 } else {
                     $page = $args[0];
-                    $data = array();
+                    $data = [];
                 }
                 break;
             case 2:

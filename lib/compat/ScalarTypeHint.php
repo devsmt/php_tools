@@ -1,5 +1,8 @@
 <?php
 
+
+
+
 class ScalarTypeHint {
 
     const TYPEHINT_PCRE = '/^Argument (\d)+ passed to (?:(\w+)::)?(\w+)\(\) must be an instance of (\w+), (\w+) given/';
@@ -13,6 +16,10 @@ class ScalarTypeHint {
     );
 
     public static function initializeHandler() {
+        // PHP 7 implementa la funzionalità di default
+        if( defined('PHP_VERSION_ID') && ( PHP_VERSION_ID <= 70006 ) ) {
+            return;
+        }
         set_error_handler('ScalarTypeHint::handleTypehint');
         return true;
     }

@@ -2,17 +2,17 @@
 
 // assicura che la funzione non sia eseguita in concorrenza con altre chiamate
 /*
-    // example use
-    $k = 'mykey';
-    if (LockMem::acquire($k)) {
-        do_something_that_requires_a_lock();
-        LockMem::release($k);
-    }
-    // example use
-    LockMem::tryUntillAvailable($key, function(){
-        // atomic operation
-    });
-*/
+// example use
+$k = 'mykey';
+if (LockMem::acquire($k)) {
+do_something_that_requires_a_lock();
+LockMem::release($k);
+}
+// example use
+LockMem::tryUntillAvailable($key, function(){
+// atomic operation
+});
+ */
 class LockMem {
     public static function doIfAvailable($key, Closure $operation) {
         if (LockMem::acquire($k)) {
@@ -22,22 +22,22 @@ class LockMem {
                 return true;
             } catch (Exception $e) {
                 $fmt = 'Exception: <b>%s</b> line:%s file:%s<br> trace:<pre>%s</pre>';
-                $msg = sprintf($fmt, $e->getMessage(),$e->getFile(), $e->getLine(), $e->getTraceAsString() );
+                $msg = sprintf($fmt, $e->getMessage(), $e->getFile(), $e->getLine(), $e->getTraceAsString());
                 die($msg);
             }
         }
         return false;
     }
-    public static function tryUntillAvailable($key, Closure $operation, $n_times=10, $pause_s=2) {
-        for( $i=1; $i <= $n_times; $i++) {
-            if( self::doIfAvailable($key, $operation) ){
+    public static function tryUntillAvailable($key, Closure $operation, $n_times = 10, $pause_s = 2) {
+        for ($i = 1; $i <= $n_times; $i++) {
+            if (self::doIfAvailable($key, $operation)) {
                 return true;
             } else {
-                sleep( $pause_s );
+                sleep($pause_s);
             }
         }
     }
-    public static function acquire($key, $expire=60) {
+    public static function acquire($key, $expire = 60) {
         if (is_locked($key)) {
             return null;
         }
@@ -54,37 +54,34 @@ class LockMem {
     }
 }
 
-
 // PHP needs to be compiled with sysvsem support in order to use sem_* functions
 /* uso:
 $k = 1000;
 LockSem::tryUntillAvailable($k, function(){} );
-*/
+ */
 class LockSem {
-    public static function tryUntillAvailable($key, Closure $operation ) {
+    public static function tryUntillAvailable($key, Closure $operation) {
 
         $is_int = ctype_digit($key);
-        if( !$is_int ) {
+        if (!$is_int) {
             die('la chiave deve essere un intero');
         }
 
         // get the resource for the semaphore
         $sem_res = sem_get($key, 1, 0666, 0);
         // try to acquire the semaphore: this function **will block until** the sem will be available
-        if(sem_acquire($sem_res)) {
+        if (sem_acquire($sem_res)) {
             try {
                 $operation();
             } catch (Exception $e) {
                 $fmt = 'Exception: <b>%s</b> line:%s file:%s<br> trace:<pre>%s</pre>';
-                $msg = sprintf($fmt, $e->getMessage(),$e->getFile(), $e->getLine(), $e->getTraceAsString() );
+                $msg = sprintf($fmt, $e->getMessage(), $e->getFile(), $e->getLine(), $e->getTraceAsString());
             }
             // release the semaphore so other process can use it
             sem_release($sem_res);
         }
     }
 }
-
-
 
 // funzione: crea un lock per un file
 class LockFile {

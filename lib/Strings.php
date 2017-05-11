@@ -10,8 +10,8 @@ function str_match($str, $sub_str) {
     return ($result !== false) ? true : false;
 }
 // alias
-function str_contains($str, $sub_str) { return str_match($str, $sub_str); }
-function str_find    ($str, $sub_str) { return str_match($str, $sub_str); }
+function str_contains($str, $sub_str) {return str_match($str, $sub_str);}
+function str_find($str, $sub_str) {return str_match($str, $sub_str);}
 
 // semplifica l'individuazione del numero di occorrenze di una sottostringa
 function str_count_matches($str, $sub_str) {
@@ -19,7 +19,7 @@ function str_count_matches($str, $sub_str) {
     return ($result === false) ? 0 : $result;
 }
 
-function str_begins($str, $substr, $ci=false):bool {
+function str_begins($str, $substr, $ci = false): bool{
     $p = '/^' . $substr . ' /i';
     return preg_match($p, $str) > 0;
 }
@@ -39,7 +39,6 @@ function str_begins_with() {
     return false;
 }
 
-
 //----------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------
@@ -52,9 +51,9 @@ function str_clean($s) {
         $p = ord($s[$i]);
         // chr(32) is space, it is preserved
         if (($p >= 32 && $p <= 254)) {
-            $result.= $s[$i];
+            $result .= $s[$i];
         } else {
-            $result.= '';
+            $result .= '';
         }
     }
     return $result;
@@ -83,11 +82,10 @@ function str_clean_utf8($string) {
 function str_clean_r(string $s,
     $opt_chars = "`_.,;@#%~'\"\+\*\?\[\^\]\$\(\)\{\}\=\!\<\>\|\:\-\s\\\\",
     array $permit_chars = []
-):string {
+): string {
     // '"
     return preg_replace("/[^A-Z0-9$opt_chars]+/i", '', $s);
 }
-
 
 //
 // assicura che gli utenti non possano iniettare HTML(e quindi js) dalle variabili
@@ -114,7 +112,7 @@ function str_reminder($str, $maxlen = 50, $suffisso = ' [...] ') {
         $a = explode(' ', substr($str, 0, $maxlen + 10)); // per migliorare le prestazioni vado a fare l'explode di una stringa ragionevolmente ridimensionata
         for ($i = 0; $i < count($a); $i++) {
             if (strlen($result . $a[$i] . ' ') < $maxlen) {
-                $result.= $a[$i] . ' ';
+                $result .= $a[$i] . ' ';
             } else {
                 break;
             }
@@ -125,27 +123,22 @@ function str_reminder($str, $maxlen = 50, $suffisso = ' [...] ') {
     }
 }
 
-
-
 //----------------------------------------------------------------------------
 // random strings
 //----------------------------------------------------------------------------
 
-
-
-
 class RandStr {
     const ALPHA = 'bdghjmnpqrstvz';
-    const NUM   = '123456789';
-    const SIGN  = '.,?;:!%_=-+*@';
+    const NUM = '123456789';
+    const SIGN = '.,?;:!%_=-+*@';
 
     // data una stringa di base, genera password di uguale lunghezza
     // e assicura che almeno un carattere sia numerico e punteggiatura
-    public static function mkPassword( $len=10, $min_num_len=1, $len_sign=1 ) {
+    public static function mkPassword($len = 10, $min_num_len = 1, $len_sign = 1) {
         $str = '';
-        $str .= self::generate($len,         self::ALPHA );
-        $str .= self::generate($min_num_len, self::NUM   );// aggiunge caratteri di punteggiatura
-        $str .= self::generate($len_sign,    self::SIGN  );// aggiunge caratteri di punteggiatura
+        $str .= self::generate($len, self::ALPHA);
+        $str .= self::generate($min_num_len, self::NUM); // aggiunge caratteri di punteggiatura
+        $str .= self::generate($len_sign, self::SIGN); // aggiunge caratteri di punteggiatura
         return $str;
     }
 
@@ -155,21 +148,21 @@ class RandStr {
         // esclusi i caratteri che potrebbero essere confusi, come i,l,1,I oppure 0 e o/O
         $str_dict = 'bdghjmnpqrstvz';
         $vowels = 'aeuy';
-        if(!$readable){
+        if (!$readable) {
             $str_dict .= 'lo';
             $vowels .= 'io';
         }
-        if ( str_match($str, 'V') ) {
-            $vowels.= 'AEUY';
+        if (str_match($str, 'V')) {
+            $vowels .= 'AEUY';
         }
-        if ( str_match($str, 'n') ) {
-            $str_dict.= '23456789';
+        if (str_match($str, 'n')) {
+            $str_dict .= '23456789';
         }
-        if ( str_match($str, 'A' )) {
-            $str_dict.= 'BDGHJLMNPQRSTVWXZ';
+        if (str_match($str, 'A')) {
+            $str_dict .= 'BDGHJLMNPQRSTVWXZ';
         }
-        if ( str_match($str, '!' ) ) {
-            $str_dict.= '!@#$%';
+        if (str_match($str, '!')) {
+            $str_dict .= '!@#$%';
         }
         $password = '';
         // alterna una vocale e una consonante
@@ -179,11 +172,11 @@ class RandStr {
         for ($i = 0; $i < $len; $i++) {
             if ($alt == 1) {
                 $i = (rand() % strlen($str_dict));
-                $password.= $str_dict[$i];
+                $password .= $str_dict[$i];
                 $alt = 0;
             } else {
                 $i = (rand() % strlen($vowels));
-                $password.= $vowels[$i];
+                $password .= $vowels[$i];
                 $alt = 1;
             }
         }
@@ -192,23 +185,23 @@ class RandStr {
 
     // generara una stringa rand della lunghezza specifica
     // il dict di default non contiene la lettera "O" perchè facile confonderla con numero 0
-    public static function generate($len, $dict='ABCDEFGHIJKLMNPQRSTUVWXYZ0123456789' ) {
+    public static function generate($len, $dict = 'ABCDEFGHIJKLMNPQRSTUVWXYZ0123456789') {
         $dict_len = strlen($dict);
         $str = '';
         for ($i = 0; $i < $len; $i++) {
-            $pos = rand(0, $dict_len-1 );
+            $pos = rand(0, $dict_len - 1);
             $str .= $dict{$pos};
         }
         return $str;
     }
     // random pad
     public static function pad($str, $len) {
-        if( strlen($str) >= $len ) {
+        if (strlen($str) >= $len) {
             return $str;
         } else {
             $delta = $len - strlen($str);
             $suffix = self::generate($delta);
-            return $str.$suffix;
+            return $str . $suffix;
         }
     }
 
@@ -243,7 +236,6 @@ class RandStr {
 //
 //----------------------------------------------------------------------------
 
-
 function str_rm_diacritics($str) {
     // hash "lettera latina" => regexp char group da sostituire
     $DIACRITICS = [
@@ -259,16 +251,16 @@ function str_rm_diacritics($str) {
         't' => '[tťŤ]',
         'u' => '[uÙÚÛÜùúûüůŮŪū]',
         'y' => '[yŸÿýÝ]',
-        'z' => '[zŽž]'
+        'z' => '[zŽž]',
     ];
     $str_result = trim($str);
-    foreach( $DIACRITICS as $letter=>$dia_regex ) {
-        $str = preg_replace('/'.$dia_regex.'/', $letter, $str);
+    foreach ($DIACRITICS as $letter => $dia_regex) {
+        $str = preg_replace('/' . $dia_regex . '/', $letter, $str);
     }
     return $str_result;
 }
 
-function str_transliterate($str){
+function str_transliterate($str) {
     if (function_exists('iconv')) {
         $text = iconv('utf-8', 'us-ascii//TRANSLIT', $str);
     }
@@ -281,12 +273,12 @@ require_once('libs/utf8/utils/bad.php');
 require_once('libs/utf8/utils/validation.php');
 require_once('libs/utf8_to_ascii/utf8_to_ascii.php');
 if(!utf8_is_valid($str)){
-  $str=utf8_bad_strip($str);
+$str=utf8_bad_strip($str);
 }
 $str = utf8_to_ascii($str, '' );
-*/
-function str_rm_nonascii($str){
-    $res = preg_replace('/[^\x20-\x7E]/','', $str);
+ */
+function str_rm_nonascii($str) {
+    $res = preg_replace('/[^\x20-\x7E]/', '', $str);
     // remove non ascii characters
     // $res =  preg_replace('/[\x00-\x1F\x80-\xFF]/', '', $str);
     return $res;
@@ -296,34 +288,33 @@ function str_is_utf8(string $str): bool {
     return (bool) \preg_match('//u', $str);
 }
 // in ASCII str remove uncommon printable chars, depending on font may not appear in terminals
-function str_asci_simplify($str){
-    $str = str_replace(chr(130), ',', $str);    // baseline single quote
-    $str = str_replace(chr(131), 'NLG', $str);  // florin
-    $str = str_replace(chr(132), '"', $str);    // baseline double quote
-    $str = str_replace(chr(133), '...', $str);  // ellipsis
-    $str = str_replace(chr(134), '**', $str);   // dagger (a second footnote)
-    $str = str_replace(chr(135), '***', $str);  // double dagger (a third footnote)
-    $str = str_replace(chr(136), '^', $str);    // circumflex accent
+function str_asci_simplify($str) {
+    $str = str_replace(chr(130), ',', $str); // baseline single quote
+    $str = str_replace(chr(131), 'NLG', $str); // florin
+    $str = str_replace(chr(132), '"', $str); // baseline double quote
+    $str = str_replace(chr(133), '...', $str); // ellipsis
+    $str = str_replace(chr(134), '**', $str); // dagger (a second footnote)
+    $str = str_replace(chr(135), '***', $str); // double dagger (a third footnote)
+    $str = str_replace(chr(136), '^', $str); // circumflex accent
     $str = str_replace(chr(137), 'o/oo', $str); // permile
-    $str = str_replace(chr(138), 'Sh', $str);   // S Hacek
-    $str = str_replace(chr(139), '<', $str);    // left single guillemet
-    $str = str_replace(chr(140), 'OE', $str);   // OE ligature
-    $str = str_replace(chr(145), "'", $str);    // left single quote
-    $str = str_replace(chr(146), "'", $str);    // right single quote
-    $str = str_replace(chr(147), '"', $str);    // left double quote
-    $str = str_replace(chr(148), '"', $str);    // right double quote
-    $str = str_replace(chr(149), '-', $str);    // bullet
-    $str = str_replace(chr(150), '-', $str);    // endash
-    $str = str_replace(chr(151), '--', $str);   // emdash
-    $str = str_replace(chr(152), '~', $str);    // tilde accent
+    $str = str_replace(chr(138), 'Sh', $str); // S Hacek
+    $str = str_replace(chr(139), '<', $str); // left single guillemet
+    $str = str_replace(chr(140), 'OE', $str); // OE ligature
+    $str = str_replace(chr(145), "'", $str); // left single quote
+    $str = str_replace(chr(146), "'", $str); // right single quote
+    $str = str_replace(chr(147), '"', $str); // left double quote
+    $str = str_replace(chr(148), '"', $str); // right double quote
+    $str = str_replace(chr(149), '-', $str); // bullet
+    $str = str_replace(chr(150), '-', $str); // endash
+    $str = str_replace(chr(151), '--', $str); // emdash
+    $str = str_replace(chr(152), '~', $str); // tilde accent
     $str = str_replace(chr(153), '(TM)', $str); // trademark ligature
-    $str = str_replace(chr(154), 'sh', $str);   // s Hacek
-    $str = str_replace(chr(155), '>', $str);    // right single guillemet
-    $str = str_replace(chr(156), 'oe', $str);   // oe ligature
-    $str = str_replace(chr(159), 'Y', $str);    // Y Dieresis
+    $str = str_replace(chr(154), 'sh', $str); // s Hacek
+    $str = str_replace(chr(155), '>', $str); // right single guillemet
+    $str = str_replace(chr(156), 'oe', $str); // oe ligature
+    $str = str_replace(chr(159), 'Y', $str); // Y Dieresis
     return $str;
 }
-
 
 // Encodes HTML safely for UTF-8. Use instead of htmlentities.
 //
@@ -359,25 +350,24 @@ function str_slugify($text) {
 //   $message = "User {{username}} created";
 //   $context = array('username' => 'bolivar');
 //   echo str_interpolate($message, $context);
-function str_interpolate($tmpl, array $a_binds=[] ) {
+function str_interpolate($tmpl, array $a_binds = []) {
     // build a replacement array with braces around the context keys
-    $a_repl = array();
+    $a_repl = [];
     foreach ($a_binds as $key => $val) {
         // check that the value can be casted to string
-        if ( str_is_repr($val) ) {
+        if (str_is_repr($val)) {
             $a_repl["{{$key}}"] = $val;
-        } elseif ( is_obj($val) ) {
-            $a_repl["{{$key}}"] = sprintf('[object class %s]',get_class($val));
+        } elseif (is_obj($val)) {
+            $a_repl["{{$key}}"] = sprintf('[object class %s]', get_class($val));
         }
     }
     return strtr($tmpl, $a_repl);
 }
 
 // check input can be converted to str
-function str_is_repr($val):bool {
+function str_is_repr($val): bool {
     return !is_array($val) && (!is_object($val) || method_exists($val, '__toString'));
 }
-
 
 //----------------------------------------------------------------------------
 // templates
@@ -385,21 +375,21 @@ function str_is_repr($val):bool {
 // data una stringa interpola i valori passati in this->binds nei segnaposto
 // espressi con la sintassi {{nome_var}}
 
-function str_template($str_template, array $a_binds, $default_sub='__') {
+function str_template($str_template, array $a_binds, $default_sub = '__') {
     $_substitute = function ($buffer, $name, $val) {
-        $reg = sprintf('{{%s}}', $name );
+        $reg = sprintf('{{%s}}', $name);
         $reg = preg_quote($reg, '/');
-        return preg_replace('/'.$reg.'/i', $val, $buffer);
+        return preg_replace('/' . $reg . '/i', $val, $buffer);
     };
-    $_clean_unused_vars = function ($buffer) use($default_sub) {
-        return preg_replace('/\{\{[a-zA-Z0-9_]*\}\}/i', $default_sub, $buffer );
+    $_clean_unused_vars = function ($buffer) use ($default_sub) {
+        return preg_replace('/\{\{[a-zA-Z0-9_]*\}\}/i', $default_sub, $buffer);
     };
     $buffer = $str_template;
 
     // sort keys by +lenght first
-    uksort( $a_binds, function($a, $b) {
-        $al=strlen($a);
-        $bl=strlen($b);
+    uksort($a_binds, function ($a, $b) {
+        $al = strlen($a);
+        $bl = strlen($b);
         if ($al == $bl) {
             return 0;
         }
@@ -408,10 +398,10 @@ function str_template($str_template, array $a_binds, $default_sub='__') {
 
     foreach ($a_binds as $name => $val) {
         // check that the value can be casted to string
-        if ( str_is_repr($val) ) {
+        if (str_is_repr($val)) {
             $buffer = $_substitute($buffer, $name, $val);
-        } elseif( is_obj($val) ) {
-            $val = sprintf('[object class %s]', get_class($val) );
+        } elseif (is_obj($val)) {
+            $val = sprintf('[object class %s]', get_class($val));
             $buffer = $_substitute($buffer, $name, $val);
         }
     }
@@ -419,25 +409,23 @@ function str_template($str_template, array $a_binds, $default_sub='__') {
     return $buffer;
 }
 // aggiunge la codifica dei caratteri per output HTML
-function html_template($str_template, array $a_binds, $default_sub='__' ) {
+function html_template($str_template, array $a_binds, $default_sub = '__') {
 
     // xss mitigation functions
     $xss = function ($str) {
-        return htmlspecialchars($str, ENT_QUOTES | ENT_HTML401, $encoding='UTF-8' );
+        return htmlspecialchars($str, ENT_QUOTES | ENT_HTML401, $encoding = 'UTF-8');
     };
     // prevent cross-site scripting attacks (XSS) escaping values
     // escape all by default, skip vars names beginning with '_'
-    $_sanitizer = function($name, $val) use($xss) {
-        $name_begins_with_underscore = substr($name,0,1) == '_';
+    $_sanitizer = function ($name, $val) use ($xss) {
+        $name_begins_with_underscore = substr($name, 0, 1) == '_';
         return $name_begins_with_underscore ? $val : $xss($val);
     };
-    $a_binds_sanitized = array_map(function($k, $v) {
+    $a_binds_sanitized = array_map(function ($k, $v) {
         return $val_s = $_sanitizer($k, $v);
-    }, array_keys($a_binds), array_values($a_binds) );
-    return str_template($str_template,$a_binds_sanitized, $default_sub);
+    }, array_keys($a_binds), array_values($a_binds));
+    return str_template($str_template, $a_binds_sanitized, $default_sub);
 }
-
-
 
 // bypass heredoc limitation to not be able to call functions
 // an alternative method to
@@ -455,9 +443,6 @@ class HEREDOCHelpers {
 // USO:
 // $_fn = new HEREDOCHelpers();
 // in a heredoc with {$_fn->time()}
-
-
-
 
 //
 //  Returns subject replaced with regular expression matchs
@@ -482,13 +467,13 @@ function str_a_reg_replace($str, array $a_binds) {
 //     'chevy' => 'ford'
 // );
 function str_a_replace(array $a_binds, $str) {
-   return str_replace(array_keys($a_binds), array_values($a_binds), $str);
+    return str_replace(array_keys($a_binds), array_values($a_binds), $str);
 }
 
 // sostituzione gestendo array di stringhe in input
 function str_replace_deep($search, $replace, $a_str) {
     if (is_array($a_str)) {
-        foreach($a_str as &$_str) {
+        foreach ($a_str as &$_str) {
             $_str = str_replace_deep($search, $replace, $_str);
         }
         unset($_str);
@@ -499,8 +484,6 @@ function str_replace_deep($search, $replace, $a_str) {
     }
 }
 
-
-
 function str_money($s) {
     $v = str_to_float($s);
     return Money::format($v);
@@ -509,10 +492,14 @@ function str_money($s) {
 // ritorna n caratteri di una str partendo da destra
 function str_right($str, $n) {
     //return substr($str, strlen($str)-$n, $n );
-    if (is_array($str))
-        return ''; //'Array:'.print_r($str).'';
-    else
+    if (is_array($str)) {
+        return '';
+    }
+    //'Array:'.print_r($str).'';
+    else {
         return substr($str, -$n);
+    }
+
 }
 
 // ritorna n caratteri di una str partendo da sinistra
@@ -568,12 +555,12 @@ function format_bytes($bytes_size, $precision = 2) {
 }
 // data una grandezza in una unità specifica, ritorna la grandezza in bytes
 function format_bytes_size($size = 0, $unit = 'B') {
-    $unit = strtoupper( $unit );
-    $a_units = ['B'=>0, 'KB'=>1, 'MB'=>2, 'GB'=>3, 'TB'=>4, 'PB'=>5, 'EB'=>6, 'ZB'=>7, 'YB'=>8];
+    $unit = strtoupper($unit);
+    $a_units = ['B' => 0, 'KB' => 1, 'MB' => 2, 'GB' => 3, 'TB' => 4, 'PB' => 5, 'EB' => 6, 'ZB' => 7, 'YB' => 8];
     if (!in_array($str_unit, array_keys($a_units))) {
         return false;
     }
-    if (!intval($size) < 0 ) {
+    if (!intval($size) < 0) {
         return false;
     }
     $b_unit = pow(1024, $a_units[$str_unit]);
@@ -582,11 +569,11 @@ function format_bytes_size($size = 0, $unit = 'B') {
 
 function format_bytes_str($str) {
     $str_unit = trim(substr($str, -2));
-    $str_unit = strtoupper( $str_unit );
+    $str_unit = strtoupper($str_unit);
     if (intval($str_unit) !== 0) {
         $str_unit = 'B';
     }
-    $a_units = ['B'=>0, 'KB'=>1, 'MB'=>2, 'GB'=>3, 'TB'=>4, 'PB'=>5, 'EB'=>6, 'ZB'=>7, 'YB'=>8];
+    $a_units = ['B' => 0, 'KB' => 1, 'MB' => 2, 'GB' => 3, 'TB' => 4, 'PB' => 5, 'EB' => 6, 'ZB' => 7, 'YB' => 8];
     if (!in_array($str_unit, array_keys($a_units))) {
         return false;
     }
@@ -599,12 +586,11 @@ function format_bytes_str($str) {
     return $size * $b_unit;
 }
 
-
 // trova un tag con un particolare attributo
 function get_by_tag_att($attr, $value, $xml, $tag = null) {
-    if (is_null($tag)){
+    if (is_null($tag)) {
         $tag = '\\w+';
-    }else{
+    } else {
         $tag = preg_quote($tag);
     }
     $attr = preg_quote($attr);
@@ -625,9 +611,9 @@ function text_auto_link($text) {
 // To encode use positive n, to decode - negative.
 // With n = 13 (ROT13), encode and decode n can be positive.
 /* USO
-  $enc = rotate('string', 6);
-  echo "Encoded: $enc<br/>\n";
-  echo 'Decoded: ' . rotate($enc, -6);
+$enc = rotate('string', 6);
+echo "Encoded: $enc<br/>\n";
+echo 'Decoded: ' . rotate($enc, -6);
  */
 function str_rotate($str, $n) {
 
@@ -656,19 +642,19 @@ function str_rotate($str, $n) {
 }
 
 // formatta le occorrenze $query all'interno del testo $str
-function str_highlight($str, $search = null, $replacement = '<em>${0}</em>'){
+function str_highlight($str, $search = null, $replacement = '<em>${0}</em>') {
 
-    if( !empty($search)) {
+    if (!empty($search)) {
         $ind = stripos($str, $search);
         $is_found = $ind !== false;
         $len = strlen($search);
-        if($is_found){
+        if ($is_found) {
             // usa espressione regolare per preservare il case della parola cercata
             $pattern = "/$search/i";
             $str = preg_replace($pattern, $replacement, $str);
         }
     }
-    if(mb_detect_encoding($str) != "UTF-8"){
+    if (mb_detect_encoding($str) != "UTF-8") {
         $str = utf8_encode($str);
     }
     return $str;
@@ -678,118 +664,115 @@ function str_highlight($str, $search = null, $replacement = '<em>${0}</em>'){
 // utf-8 compatible class
 class Str {
 
-    public static function UCFirst($s) {
-        return mb_strtoupper(mb_substr($s, 0, 1, "UTF-8")) . mb_substr($s, 1, mb_strlen($s), "UTF-8");
-    }
+public static function UCFirst($s) {
+return mb_strtoupper(mb_substr($s, 0, 1, "UTF-8")) . mb_substr($s, 1, mb_strlen($s), "UTF-8");
+}
 
-    public static function toLower($s) {
-        return mb_strtolower($s, "UTF-8");
-    }
+public static function toLower($s) {
+return mb_strtolower($s, "UTF-8");
+}
 
-    public static function toUpper($s) {
-        return mb_strtoupper($s, "UTF-8");
-    }
+public static function toUpper($s) {
+return mb_strtoupper($s, "UTF-8");
+}
 
-    public static function trim($str) {
-        return mb_ereg_replace('^[[:space:]]*([\s\S]*?)[[:space:]]*$', '\1', $str);
-    }
+public static function trim($str) {
+return mb_ereg_replace('^[[:space:]]*([\s\S]*?)[[:space:]]*$', '\1', $str);
+}
 
-    public static function reminder($str, $maxlen = 50, $suffisso = ' [...] ') {
-        if (mb_strlen($str) > $maxlen) {
-            $result = '';
-            $str = mb_ereg_replace('[[:space:]]+', ' ', $str);
-            // per migliorare le prestazioni vado a fare l'explode di una stringa ragionevolmente ridimensionata
-            $a = mb_split('[[:space:]]+', mb_substr($str, 0, $maxlen + 10));
-            for ($i = 0; $i < count($a); $i++) {
-                if (mb_strlen($result . $a[$i] . ' ') < $maxlen) {
-                    $result.= $a[$i] . ' ';
-                } else {
-                    break;
-                }
-            }
-            return mb_trim($result) . ' ' . $suffisso;
-        } else {
-            return $str;
-        }
-    }
+public static function reminder($str, $maxlen = 50, $suffisso = ' [...] ') {
+if (mb_strlen($str) > $maxlen) {
+$result = '';
+$str = mb_ereg_replace('[[:space:]]+', ' ', $str);
+// per migliorare le prestazioni vado a fare l'explode di una stringa ragionevolmente ridimensionata
+$a = mb_split('[[:space:]]+', mb_substr($str, 0, $maxlen + 10));
+for ($i = 0; $i < count($a); $i++) {
+if (mb_strlen($result . $a[$i] . ' ') < $maxlen) {
+$result.= $a[$i] . ' ';
+} else {
+break;
+}
+}
+return mb_trim($result) . ' ' . $suffisso;
+} else {
+return $str;
+}
+}
 
-    function isUTF8($str) {
-        return (utf8_encode(utf8_decode($str)) == $str);
-    }
+function isUTF8($str) {
+return (utf8_encode(utf8_decode($str)) == $str);
+}
 
-    // encode se necessario
-    public static function encode($str) {
-        if (mb_detect_encoding($str) != "UTF-8") {
-            $str = utf8_encode($str);
-        }
-        return $str;
-    }
+// encode se necessario
+public static function encode($str) {
+if (mb_detect_encoding($str) != "UTF-8") {
+$str = utf8_encode($str);
+}
+return $str;
+}
 
 }
-*/
-
-
-
+ */
 
 // increments a string(converted to it's numeric representation) and outputs the incremented string
 // StringSequence::increment('asdaW31RG2B3q'); => 'asdaW31RG2B3r'
 class StringSequence {
-     static $ANSI_LIMIT = 30;
-     private static function validate($str) {
-         if(strlen($str) > self::$ANSI_LIMIT) {
-            $msg = sprintf('Expected string length should not exceed  %s ', self::$ANSI_LIMIT );
+    static $ANSI_LIMIT = 30;
+    private static function validate($str) {
+        if (strlen($str) > self::$ANSI_LIMIT) {
+            $msg = sprintf('Expected string length should not exceed  %s ', self::$ANSI_LIMIT);
             throw new Exception($msg);
-         }
-         if(!ctype_alnum($str)) {
+        }
+        if (!ctype_alnum($str)) {
             $msg = sprintf('String must only contain alphabats or integers');
             throw new Exception($msg);
-         }
-         return true;
-     }
-     private static function filterStr($str){
-         return trim(htmlspecialchars(strip_tags($str)));
-     }
-     // increment $char by 1
-     private static function nextCharacter($char) {
-         if ($char == '9') {
-             return 'a';
-         } elseif ($char == 'Z' || $char == 'z') {
-             return '0';
-         } else {
-             return chr( ord($char) + 1);
-         }
-     }
-     // return new sequencially incremented string
-     private static function nextSequence($str) {
-         // reverse, make into array, increment last and next if needed(=0)
-         // array to string,
-         // then reverse again
-         $a_chars = str_split(strrev($str));
-         foreach($a_chars as $char) {
-             $char = self::nextCharacter($char);
-             // keep going down the line if we're moving from 'Z' to '0'
-             if ($char != '0') {
-                 break;
-             }
-         }
-         $str = strrev(implode('', $a_chars));
-         // check string if contains all 0's then prepend string by 1
-         $is_all_zero = preg_match('/^[0]+$/i', $str);
-         if($is_all_zero){
-            $str = '1'.$str;
-         }
-         return $str;
-     }
-     // Get New Sequencially Incremented String
-     public static function increment($str, $offset=1) {
-         $str = self::filterStr($str);
-         self::validate($str);
-         $res = $str;
-         for( $i=0; $i<$offset; $i++) {
-             $res = self::nextSequence($res);
-         }
-         return $res;
-     }
+        }
+        return true;
+    }
+    private static function filterStr($str) {
+        return trim(htmlspecialchars(strip_tags($str)));
+    }
+    // increment $char by 1
+    private static function nextCharacter($char) {
+        if ($char == '9') {
+            return 'a';
+        } elseif ($char == 'Z' || $char == 'z') {
+            return '0';
+        } else {
+            return chr(ord($char) + 1);
+        }
+    }
+    // return new sequencially incremented string
+    private static function nextSequence($str) {
+        // reverse, make into array, increment last and next if needed(=0)
+        // array to string,
+        // then reverse again
+        $a_chars = str_split(strrev($str));
+        foreach ($a_chars as $char) {
+            $char = self::nextCharacter($char);
+            // keep going down the line if we're moving from 'Z' to '0'
+            if ($char != '0') {
+                break;
+            }
+        }
+        $str = strrev(implode('', $a_chars));
+        // check string if contains all 0's then prepend string by 1
+        $is_all_zero = preg_match('/^[0]+$/i', $str);
+        if ($is_all_zero) {
+            $str = '1' . $str;
+        }
+        return $str;
+    }
+    // Get New Sequencially Incremented String
+    public static function increment($str, $offset = 1) {
+        $str = self::filterStr($str);
+        self::validate($str);
+        $res = $str;
+        for ($i = 0; $i < $offset; $i++) {
+            $res = self::nextSequence($res);
+        }
+        return $res;
+    }
 }
 //----------------------------------------------------------------------------
 //  pcre utils
@@ -809,13 +792,13 @@ function _pcre_get_error_message(int $error): string {
     case \PREG_BAD_UTF8_OFFSET_ERROR:
         return
         'The offset didn\'t correspond to the beginning of a valid UTF-8 code point';
-    case 6 /* PREG_JIT_STACKLIMIT_ERROR */:
+    case 6/* PREG_JIT_STACKLIMIT_ERROR */:
         return 'JIT stack space limit exceeded';
     default:
         return 'Unknown error';
     }
 }
-function _pcre_check_last_error(): void {
+function _pcre_check_last_error(): void{
     $error = \preg_last_error();
     if ($error !== \PREG_NO_ERROR) {
         throw new PCREException(_pcre_get_error_message($error), $error);

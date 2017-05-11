@@ -1,35 +1,33 @@
 <?php
 
 /*
-  per creare a runtime un oggetto e accoppiare agli eventi esposti i plugin disponibili
-  occorere
-  - una lista degli eventi dell'oggetto
-  - unalista delle funzioni esposte dai plugin e la lora disponibilità ad gestire eventi di quale classe
-  alla creazione dell'oggetto business, viene fatto l'accoppiamento evento -> callback
+per creare a runtime un oggetto e accoppiare agli eventi esposti i plugin disponibili
+occorere
+- una lista degli eventi dell'oggetto
+- unalista delle funzioni esposte dai plugin e la lora disponibilità ad gestire eventi di quale classe
+alla creazione dell'oggetto business, viene fatto l'accoppiamento evento -> callback
 
-  nota: se si passa un oggetto come parametro di una funzione, php lo passa per copia a meno che non si definisca la funzione
+nota: se si passa un oggetto come parametro di una funzione, php lo passa per copia a meno che non si definisca la funzione
 
-  function test(&$obj){
-  return true;
-  }
-*/
+function test(&$obj){
+return true;
+}
+ */
 
-// una classe pluggable espone alla creazione eventi che un plugin pue' intercettare e gestire
+// una classe pluggable espone alla creazione eventi che un plugin puo' intercettare e gestire
 // con le proprie callback
 class Pluggable {
 
-    function Pluggable() {
+    function __construct() {
         $this->connectEvents();
-        /*
-          il plugin dovrebbe poter modificare l'interfaccia utente
-          aggiungendo i propri mene' ad esempio
-         */
+        // il plugin dovrebbe poter modificare l'interfaccia utente
+        // aggiungendo i propri menu' ad esempio
     }
 
     // richiedi i plugin disponibili per gli eventi della classe corrente
     function connectEvents() {
         $classVars = get_object_vars($this);
-        $result = array();
+        $result = [];
         foreach ($classVars as $k => $v) {
             if (is_object($this->$k) && is_a($this->$k, 'Event')) {
                 $this->$k->name = $k;
@@ -45,9 +43,9 @@ class Pluggable {
 class Plugin {
 
     // className: { {event name:'', method:''} }
-    var $slots = array();
+    var $slots = [];
 
-    function Plugin(&$manager) {
+    function __construct(&$manager) {
         $manager->registerPlugin($this);
     }
 
@@ -56,7 +54,7 @@ class Plugin {
     function exposeCallback($className, $event_name, $method) {
         $className = strtolower($className);
         if (!array_key_exists($className, $this->slots)) {
-            $this->map[$className] = array();
+            $this->map[$className] = [];
         }
         $this->slots[$className][] = array('event' => $event_name, 'method' => $method);
     }
@@ -70,10 +68,10 @@ class Plugin {
 class PluginManager {
 
     // riferimenti ai plugin installati
-    var $plugins = array();
+    var $plugins = [];
 
     function registerPlugin($plugin) {
-        $this->plugins[] = & $plugin;
+        $this->plugins[] = &$plugin;
         ///echo 'after register plugins:', var_dump($this->plugins); // dbg
         // todo: gestire le parti di interfaccia!
     }
@@ -84,9 +82,9 @@ class PluginManager {
         $ownerClass = strtolower(get_class($event->owner));
         ///var_dump($ownerClass);
         for ($i = 0; $i < count($this->plugins); $i++) {
-            $plugin = & $this->plugins[$i];
+            $plugin = &$this->plugins[$i];
             if (array_key_exists($ownerClass, $this->plugins[$i]->slots)) {
-                $mapEvent = & $plugin->slots[$ownerClass];
+                $mapEvent = &$plugin->slots[$ownerClass];
                 //TODO: performance cercare di evitare il for (con una struttura dati + efficiente?)
                 for ($j = 0; $j < count($mapEvent); $j++) {
                     if ($mapEvent[$j]['event'] === $event->name) {

@@ -34,17 +34,17 @@ abstract class PersistentObject {
     private $dbm = null;
     private $dbmFile = '';
 
-    public function __construct($dir='', $reset=false) {
+    public function __construct($dir = '', $reset = false) {
         $class = preg_replace('/[^a-zA-Z0-9_]/', '', get_class($this));
-        if( empty($dir) ) {
+        if (empty($dir)) {
             $dir = realpath(__FILE__ . '/../var');
         }
-        if( empty($dir) ) {
+        if (empty($dir)) {
             $msg = sprintf('Errore: %s dir "%s" non deve essere vuota ', __CLASS__, $dir);
             throw new Exception($msg);
         }
-        $this->dbmFile = sprintf( '%s/%s.nmdb', $dir, $class );
-        if( $reset && file_exists($this->dbmFile) ) {
+        $this->dbmFile = sprintf('%s/%s.nmdb', $dir, $class);
+        if ($reset && file_exists($this->dbmFile)) {
             // elimina informazioni presenti, così che il file venga riscritto
             unlink($this->dbmFile);
         }

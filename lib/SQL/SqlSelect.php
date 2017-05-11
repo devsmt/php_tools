@@ -35,13 +35,13 @@ class sqlSelectStmnt {
     var $having = '';
     var $orderby = '';
     var $limit = '';
-    var $_fields = array();
-    var $_table = array();
-    var $_where = array();
-    var $_group_by = array();
-    var $_having = array();
-    var $_orderby = array();
-    var $_limit = array();
+    var $_fields = ;
+    var $_table = ;
+    var $_where = ;
+    var $_group_by = ;
+    var $_having = ;
+    var $_orderby = ;
+    var $_limit = ;
 
     // function parseFields() {
     //     if($this->fields=='*')
@@ -74,7 +74,7 @@ class sqlParser extends sqlSelectStmnt {
     var $sql = '';
     // Query Cache does simple optimization to check if query can be cached. As I mentioned only SELECT queries are cached - so it looks at first letter of the query and if it is “S” it proceeds with query lookup in cache if not - skips it.
     var $format = 'SELECT %s FROM %s';
-    var $result = array();
+    var $result = ;
     var $stm = null;
     function sqlParser($sql) {
         $this->sql = $this->clear($sql);
@@ -183,12 +183,12 @@ class sqlSelect extends sqlSelectStmnt {
     // var $orderby ='';
     // var $limit ='';
 
-    var $_fields = array();
-    var $_tables = array(); //array($table,$on,$join_type='left')
-    var $_where = array(); // [WHERE where_definition]
-    var $_group_by = array(); // [GROUP BY {unsigned_integer | col_name | formula} [ASC | DESC], ...]
-    var $_having = array(); // [HAVING where_definition]
-    var $_order_by = array(); // [ORDER BY {unsigned_integer | col_name | formula} [ASC | DESC] ,...]
+    var $_fields = ;
+    var $_tables = ; //array($table,$on,$join_type='left')
+    var $_where = ; // [WHERE where_definition]
+    var $_group_by = ; // [GROUP BY {unsigned_integer | col_name | formula} [ASC | DESC], ...]
+    var $_having = ; // [HAVING where_definition]
+    var $_order_by = ; // [ORDER BY {unsigned_integer | col_name | formula} [ASC | DESC] ,...]
     // array(array('field','flag'))
     var $pos = 0; // [LIMIT [offset,] rows]
     var $limit = null; // se settato, usa clausola limit
@@ -273,7 +273,7 @@ class sqlSelect extends sqlSelectStmnt {
         return implode(' && ', $this->_having);
     }
     function getOrderBy() {
-        $a = array();
+        $a = ;
         foreach ($this->_order_by as $k => $order) {
             $a[] = $order[0] . ' ' . $order[1];
         }

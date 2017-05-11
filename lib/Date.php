@@ -4,12 +4,19 @@ class Date {
 
     // ultimo giorno di ogni mese
     public static function last_month_day($month) {
-        $a_m = array(1 => 31, 2 => 28, 3 => 31, 4 => 30, 5 => 31, 6 => 30, 7 => 31, 8 => 31, 9 => 30, 10 => 31, 11 => 30, 12 => 31);
-        if (array_key_exists($month, $a_m)) {
-            return $a_m[$month];
-        } else {
-            return 0;
+        return days_in_month($y = date('Y'), $month);
+    }
+    public static function days_in_month(int $y, int $m): int {
+        // attenzione a indice 1, febbraio ha numero giorni variabile
+        static $months = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+        if ($m < 1 || $m > 12) {
+            throw new \Exception('Invalid month: ' . $m);
         }
+        // gestisce anno bisestile
+        if (Date::is_leap_year($y)) {
+            $months[1] = 29;
+        }
+        return $months[$m - 1];
     }
 
     public static function isTimeStamp($date) {
@@ -177,7 +184,8 @@ class Date {
         return $r;
     }
 
-    // dato un timestamp $ts (operation begin[(es. $_SERVER['REQUEST_TIME'] )]) ritorna una stringa leggibile
+    // dato un timestamp $ts (operation begin[(es. $_SERVER['REQUEST_TIME'] )])
+    // ritorna una stringa leggibile
     public static function duration($ts) {
         $time = time();
         $years = (int) ((($time - $ts) / (7 * 86400)) / 52.177457);
@@ -186,7 +194,7 @@ class Date {
         $days = (int) (($rem) / 86400) - $weeks * 7;
         $hours = (int) (($rem) / 3600) - $days * 24 - $weeks * 7 * 24;
         $mins = (int) (($rem) / 60) - $hours * 60 - $days * 24 * 60 - $weeks * 7 * 24 * 60;
-        $secs = (int) ($time - $ts) - ( ( $mins * 60) + ($hours * 60) + ($days * 24 * 60) + ($weeks * 7 * 24 * 60) );
+        $secs = (int) ($time - $ts) - (($mins * 60) + ($hours * 60) + ($days * 24 * 60) + ($weeks * 7 * 24 * 60));
         $str = '';
         if ($years == 1) {
             $str .= "$years year, ";
@@ -217,14 +225,14 @@ class Date {
         } else {
             $str .= " $mins minutes";
         }
-        if( !empty($secs) ) {
+        if (!empty($secs)) {
             $str .= " $secs secs";
         }
         return $str;
     }
 
     // determina se è l'orario corrente rientra negli orari di lavoro
-    function isBusinessDayAndHour() {
+    public static function isBusinessDayAndHour() {
         $h = date('H');
         $d = date('w'); // w   Numeric representation of the day of the week, 0 (for Sunday) through 6 (for Saturday)
         $is_h = $h >= 7 && $h < 23; //no la notte
@@ -232,28 +240,10 @@ class Date {
         return $is_h && $is_d;
     }
 
-    function is_leap_year(int $y): bool {
+    public static function is_leap_year(int $y): bool {
         return ($y % 4 == 0) && (($y % 100 != 0) || ($y % 400 == 0));
     }
-    function is_valid_date(int $y, int $m, int $d): bool {
-        return $m >= 1 && $m <= 12 && $d >= 1 && $d <= days_in_month($y, $m);
+    public static function is_valid_date(int $y, int $m, int $d): bool {
+        return $m >= 1 && $m <= 12 && $d >= 1 && $d <= Date::days_in_month($y, $m);
     }
 }
-
-
-function days_in_month(int $y, int $m): int {
-    // attenzione a indice 1, febbraio ha numero giorni variabile
-    static $months = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-
-    if ($m < 1 || $m > 12) {
-        throw new \Exception('Invalid month: '.$m);
-    }
-
-    // gestisce anno bisestile
-    if( is_leap_year($y) ) {
-        $months[1] = 29;
-    }
-
-    return $months[$m - 1];
-}
-

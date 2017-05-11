@@ -2,18 +2,18 @@
 
 // l'applicazione o il controller devono configurare e istanziare il logger
 //  uso
-//  $config = array(
-//                 'adapters'=>array(
-//                                   array(
-//                                         'name'=>'LoggerAdapterFile',
-//                                         'param'=>array('file'=>'mail.log')
-//                                   )
-//                             )
-//                 );
+//  $config = [
+//      'adapters'=>[
+//        [
+//           'name'=>'LoggerAdapterFile',
+//           'param'=>['file'=>'mail.log']
+//        ]
+//      ]
+//  ];
 //
 class Logger {
 
-    var $adapters = array();
+    var $adapters = [];
 
     function __construct($config) {
         if (isset($config['adapters'])) {
@@ -191,7 +191,7 @@ class MFLogger {
         }));
 
         // implementa una soglia massima
-        if ( file_exists($path) ) {
+        if (file_exists($path)) {
             $bytes = filesize($path);
             $MB = pow(1024, $factor = 2);
             if ($bytes > 500 * $MB) {
@@ -203,7 +203,7 @@ class MFLogger {
     }
 
     // dipende dall'applicazione
-    public static function path(string $ns): string {
+    public static function path(string $ns): string{
         $path = realpath(__DIR__ . '/../data/log');
         if (empty($path)) {
             $msg = sprintf('Errore %s ', './data/log not exists');

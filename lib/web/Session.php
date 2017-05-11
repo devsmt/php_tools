@@ -58,7 +58,7 @@ interface ISessionDriver {
 }
 class SessionDriverPHP5 implements ISessionDriver {
 
-    function __construct($options = array()) {
+    function __construct($options = []) {
         if (!SessionDriverPHP5::started()) {
             @session_start();
         }
@@ -315,7 +315,7 @@ class SessionMessages {
             if (isset($_SESSION[__FLASH__][$msg_type])) {
                 return $_SESSION[__FLASH__][$msg_type];
             } else {
-                return array();
+                return [];
             }
         } else {
             return $_SESSION[__FLASH__];
@@ -327,7 +327,7 @@ class SessionMessages {
     // until they are outputted to the page
     protected function add($type, $msg) {
         if (!isset($_SESSION[__FLASH__])) {
-            $_SESSION[__FLASH__] = array();
+            $_SESSION[__FLASH__] = [];
         }
         $type = strtolower($type);
         if (!in_array($type, array('error', 'success', 'info'));

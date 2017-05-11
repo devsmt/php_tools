@@ -19,7 +19,7 @@ class Bootstrap {
 
     public static function init() {
         date_default_timezone_set('Europe/Berlin');
-        require_once 'ScalarTypeHint.php';
+        // require_once 'ScalarTypeHint.php';
         self::initErrorHandling();
 
         // include minum set of functionality
@@ -27,23 +27,11 @@ class Bootstrap {
 
         header_remove("X-Powered-By");
         ini_set('expose_php', 'off');
-
     }
 
-    public static function Error($line, $file, $msg) {
-        die(sprintf('%s@%s: %s', $line, $file, $msg));
-    }
 
     function initErrorHandling() {
-        error_reporting(E_ALL ^ E_NOTICE); // mostra tutti gli errori ma Esclude i NOTICE
-        ini_set("log_errors", "On");
-        // ensure dir LOG_PATH
-        ini_set("error_log", LOG_PATH);
-        if (isset($_REQUEST['__verbose__']) && $_REQUEST['__verbose__'] > 0) {
-            ini_set("display_errors", "On");
-        } else {
-            ini_set("display_errors", "Off");
-        }
+        Error::initErrorHandling();
     }
 
     /*

@@ -13,11 +13,11 @@ $output = $input.".gz";
 file_put_contents("compress.zlib://$output", file_get_contents($input));
 
 `bzip2 -z -k -f -v --best /path/to/file.log`;
-*/
+ */
 
 abstract class CompressionEngine {
 
-    function compress($file, $destination = '', $options = array()) {
+    function compress($file, $destination = '', $options = []) {
 
     }
 
@@ -30,7 +30,7 @@ abstract class CompressionEngine {
 class CompressionEngineGZ extends CompressionEngine {
 
     //
-    function compress($file, $destination = '', $options = array()) {
+    function compress($file, $destination = '', $options = []) {
         $level = 5;
         //echo "compressing $file \n";
         if (empty($destination)) {
@@ -62,39 +62,39 @@ class CompressionEngineGZ extends CompressionEngine {
     }
 
     /*
-      // GZIPs a file on disk (appending .gz to the name)
-      function gzCompressFile($source, $dest='', $opt = array()) {
+    // GZIPs a file on disk (appending .gz to the name)
+    function gzCompressFile($source, $dest='', $opt = []) {
 
-      $option = array_merge( array(
-      'level' => 9
-      ), $opt );
-      extract($option);
+    $option = array_merge( array(
+    'level' => 9
+    ), $opt );
+    extract($option);
 
-      if( empty($dest) ) {
-      $dest = $source . '.gz';
-      }
+    if( empty($dest) ) {
+    $dest = $source . '.gz';
+    }
 
-      $mode = 'wb' . $level;
-      $error = false;
-      if ($fp_out = gzopen($dest, $mode)) {
-      if ($fp_in = fopen($source,'rb')) {
-      while (!feof($fp_in)){
-      gzwrite($fp_out, fread($fp_in, 1024 * 512));
-      }
-      fclose($fp_in);
-      } else {
-      $error = true;
-      }
-      gzclose($fp_out);
-      } else {
-      $error = true;
-      }
-      if ($error) {
-      return false;
-      } else {
-      return $dest;
-      }
-      }
+    $mode = 'wb' . $level;
+    $error = false;
+    if ($fp_out = gzopen($dest, $mode)) {
+    if ($fp_in = fopen($source,'rb')) {
+    while (!feof($fp_in)){
+    gzwrite($fp_out, fread($fp_in, 1024 * 512));
+    }
+    fclose($fp_in);
+    } else {
+    $error = true;
+    }
+    gzclose($fp_out);
+    } else {
+    $error = true;
+    }
+    if ($error) {
+    return false;
+    } else {
+    return $dest;
+    }
+    }
      */
 
     // un file con estensione .gz, viene letto decompresso in memoria e salvato senza estensione
@@ -104,7 +104,7 @@ class CompressionEngineGZ extends CompressionEngine {
         $gzh = gzopen($file, "r");
         if ($gzh) {
             while (!gzeof($gzh)) {
-                $buffer.= gzgets($gzh, 4096);
+                $buffer .= gzgets($gzh, 4096);
             }
             gzclose($gzh);
             if (empty($out_file)) {

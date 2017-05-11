@@ -30,13 +30,13 @@ class Path {
             if (stristr(PHP_OS, 'win')) {
                 // win non inizia il path con /
                 if ($i > 0) {
-                    $path.= DIRECTORY_SEPARATOR;
+                    $path .= DIRECTORY_SEPARATOR;
                 }
             } else {
                 // unix style path
-                $path.= DIRECTORY_SEPARATOR;
+                $path .= DIRECTORY_SEPARATOR;
             }
-            $path.= $a[$i];
+            $path .= $a[$i];
         }
         // elimina possibili doppi slash dovuti a concatenazioni precedenti
         $path = str_replace(DIRECTORY_SEPARATOR . DIRECTORY_SEPARATOR, DIRECTORY_SEPARATOR, $path);
@@ -53,14 +53,14 @@ class Path {
         $result = '';
         $path = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $path);
         if ($path[0] == '/') {
-            $result.= '/';
+            $result .= '/';
         }
         $result_append = '';
         if (substr($path, -1) == '/') {
             $result_append = '/';
         }
         $parts = array_filter(explode(DIRECTORY_SEPARATOR, $path), 'strlen');
-        $absolutes = array();
+        $absolutes = [];
         foreach ($parts as $part) {
             if ('.' == $part) {
                 continue;
@@ -71,7 +71,7 @@ class Path {
                 $absolutes[] = $part;
             }
         }
-        $result.= implode(DIRECTORY_SEPARATOR, $absolutes);
+        $result .= implode(DIRECTORY_SEPARATOR, $absolutes);
         return $result . $result_append;
     }
 
@@ -79,14 +79,13 @@ class Path {
     // in modo da ottenere un link url assoluto
     function toAbsUrl($path) {
 
-
         /*
-          //$realpath=str_replace("\\", "/", realpath($path));
+        //$realpath=str_replace("\\", "/", realpath($path));
 
-          // path alla cartella dove è intallata la lib
-          $lib_root_dir = Path::join(__DIR__, '..');
-          // trova la sottocartella dove è installata la lib
-          $root = str_replace($_SERVER['DOCUMENT_ROOT'], '', $lib_root_dir);
+        // path alla cartella dove è intallata la lib
+        $lib_root_dir = Path::join(__DIR__, '..');
+        // trova la sottocartella dove è installata la lib
+        $root = str_replace($_SERVER['DOCUMENT_ROOT'], '', $lib_root_dir);
          */
         return '/' . str_replace($_SERVER['DOCUMENT_ROOT'], '', $path);
     }
@@ -113,7 +112,7 @@ class Path {
     // function ls_filter_hidden($d,$f){  return !eregi('^\.[a-z]',$f); }
     // @param action permette di specificare una funzione da eseguire sul file specificato
     function ls($dir, $filter = '', $action = '') {
-        $dir_struct = array();
+        $dir_struct = [];
         if (@is_dir($dir)) {
             $dir_h = @opendir($dir);
             while ($file = readdir($dir_h)) {
@@ -143,7 +142,7 @@ class Path {
     //  It does not normalize the case (use normcase() for that). On Windows, it converts forward slashes to backward slashes. It should be understood that this
     //  may change the meaning of the path if it contains symbolic links!
     /*
-      ritorna un path pulito di eventuali irregolarità
+    ritorna un path pulito di eventuali irregolarità
      */
     function normpath($path) {
         $path = ($path != "") ? $path : $this->path;
@@ -157,7 +156,7 @@ class Path {
          *   it can't end on "dot something", or can't have a querystring ("dot something ? querystring")
          */
         if (!preg_match("/(\.\w{1,4})$/", $path) && !preg_match("/\?[^\\/]+$/", $path) && !preg_match("/\\/$/", $path)) {
-            $path.= '/';
+            $path .= '/';
         }
         /*   Breaks the original string in to parts: "root" and "dir".
          *    "root" can be "C:/" (Windows), "/" (Linux) or "http://www.something.com/" (URLs). This will be the start of output string.
@@ -173,7 +172,7 @@ class Path {
         // Breaks "dir" part on each slash
         $path_parts = explode("/", $path_dir);
         // Creates a new array with the right path. Each element is a new dir (or file in the ending, if exists) in sequence.
-        for ($i = $j = 0, $real_path_parts = array(); $i < count($path_parts); $i++) {
+        for ($i = $j = 0, $real_path_parts = []; $i < count($path_parts); $i++) {
             if ($path_parts[$i] == '.') {
                 continue;
             } else if ($path_parts[$i] == '..') {
@@ -201,52 +200,50 @@ class Path {
 
     /*
 
-      date due url, trova il path per raggiungere 2 partendo da 1
+    date due url, trova il path per raggiungere 2 partendo da 1
 
-      function findRelativePath($path_1, $path_2)
-      {
-      if ($path_1 == ""  ||  $path_2 == "")
-      {
-      return false;
-      }
+    function findRelativePath($path_1, $path_2)
+    {
+    if ($path_1 == ""  ||  $path_2 == "")
+    {
+    return false;
+    }
 
-      $path_1 = $this->fix($path_1);
-      $path_2 = $this->fix($path_2);
+    $path_1 = $this->fix($path_1);
+    $path_2 = $this->fix($path_2);
 
-      preg_match_all("/^(\\/|\w:\\/|https?:\\/\\/[^\\/]+\\/)?(.*)$/i", $path_1, $matches_1, PREG_SET_ORDER);
-      preg_match_all("/^(\\/|\w:\\/|https?:\\/\\/[^\\/]+\\/)?(.*)$/i", $path_2, $matches_2, PREG_SET_ORDER);
+    preg_match_all("/^(\\/|\w:\\/|https?:\\/\\/[^\\/]+\\/)?(.*)$/i", $path_1, $matches_1, PREG_SET_ORDER);
+    preg_match_all("/^(\\/|\w:\\/|https?:\\/\\/[^\\/]+\\/)?(.*)$/i", $path_2, $matches_2, PREG_SET_ORDER);
 
-      if ($matches_1[0][1] != $matches_2[0][1])
-      {
-      return false;
-      }
+    if ($matches_1[0][1] != $matches_2[0][1])
+    {
+    return false;
+    }
 
-      $path_1_parts = explode("/", $matches_1[0][2]);
-      $path_2_parts = explode("/", $matches_2[0][2]);
+    $path_1_parts = explode("/", $matches_1[0][2]);
+    $path_2_parts = explode("/", $matches_2[0][2]);
 
+    while (isset($path_1_parts[0])  &&  isset($path_2_parts[0]))
+    {
+    if ($path_1_parts[0] != $path_2_parts[0])
+    {
+    break;
+    }
 
-      while (isset($path_1_parts[0])  &&  isset($path_2_parts[0]))
-      {
-      if ($path_1_parts[0] != $path_2_parts[0])
-      {
-      break;
-      }
+    array_shift($path_1_parts);
+    array_shift($path_2_parts);
+    }
 
-      array_shift($path_1_parts);
-      array_shift($path_2_parts);
-      }
+    for ($i = 0, $path = ""; $i < count($path_1_parts)-1; $i++)
+    {
+    $path .= "../";
+    }
 
-
-      for ($i = 0, $path = ""; $i < count($path_1_parts)-1; $i++)
-      {
-      $path .= "../";
-      }
-
-      return $path . implode("/", $path_2_parts);
-      }
+    return $path . implode("/", $path_2_parts);
+    }
      */
     /*
-      assicura che la dir esista in ogni sua parte e sia scrivibile
+    assicura che la dir esista in ogni sua parte e sia scrivibile
      */
 
     function ensure($dir) {

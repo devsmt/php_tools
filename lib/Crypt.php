@@ -1,7 +1,5 @@
 <?php
 
-
-
 interface ICryptDriver {
 
     function crypt();
@@ -29,7 +27,7 @@ interface ICryptDriver {
 class CryptDriverRC4 implements ICryptDriver {
 
     function crypt($key, $pt) {
-        $s = array();
+        $s = [];
         for ($i = 0; $i < 256; $i++) {
             $s[$i] = $i;
         }
@@ -51,7 +49,7 @@ class CryptDriverRC4 implements ICryptDriver {
             $x = $s[$i];
             $s[$i] = $s[$j];
             $s[$j] = $x;
-            $ct.= $pt[$y] ^ chr($s[($s[$i] + $s[$j]) % 256]);
+            $ct .= $pt[$y] ^ chr($s[($s[$i] + $s[$j]) % 256]);
         }
         return $ct;
     }
@@ -72,7 +70,7 @@ class CryptDriverRC4 implements ICryptDriver {
 
 class Crypt {
 
-    static function crypt() {
+    static function docrypt() {
         $d = new CryptDriverRC4();
         return $d->crypt($k, $s);
     }

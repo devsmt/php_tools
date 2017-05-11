@@ -151,7 +151,7 @@ class Browser {
     // IE9 =>  16 marzo 2010, compatibile Vista e win7
     // IE10 => 26 ottobre 2012, win8
     // IE11 => 7 novembre 2013, win7 e win8
-    static public static function isOldIE($opt = array()) {
+    static public static function isOldIE($opt = []) {
         $option = array_merge(array(
             'min_version' => 7,
             'USER_AGENT' => self::getAgent()

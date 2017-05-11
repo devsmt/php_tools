@@ -26,13 +26,13 @@ class Filter {
     }
 
     // xss mitigation functions
-    public static function xss_safe($str, $encoding='UTF-8') {
+    public static function xss_safe($str, $encoding = 'UTF-8') {
         return htmlspecialchars($str, ENT_QUOTES | ENT_HTML401, $encoding);
     }
 
     // rimuove char non stampabili, fuori intervallo 32...127
     public static function clean_ascii($s) {
-        return filter_var($s, FILTER_UNSAFE_RAW, FILTER_FLAG_STRIP_LOW|FILTER_FLAG_STRIP_HIGH);
+        return filter_var($s, FILTER_UNSAFE_RAW, FILTER_FLAG_STRIP_LOW | FILTER_FLAG_STRIP_HIGH);
     }
 
     // un intero controllato
@@ -49,7 +49,7 @@ class Filter {
     //
     public static function clean_float($float, $max = 1, $min = 0) {
         return filter_var($float, FILTER_SANITIZE_NUMBER_FLOAT, array("min_range" => $min, "max_range" => $max)
-            );
+        );
     }
 
     // rende più sicura una url
@@ -70,12 +70,10 @@ class Filter {
 
 }
 
-
 // wrapper over http://htmlpurifier.org
 // @see Yii CHtmlPurifier();
 class FilterHTML {
     public static function purify($html) {
-
 
         //require_once '/path/to/HTMLPurifier.auto.php';
 
@@ -86,12 +84,12 @@ class FilterHTML {
         // remove bad parsing
         $html = preg_replace('#\\\r\\\n|\\\r|\\\n|\\\#sui', '', $html);
         $p->options = array(
-            'HTML.Allowed' => 'img[src],p,br,b,strong,i'
-            );
+            'HTML.Allowed' => 'img[src],p,br,b,strong,i',
+        );
         $html = $p->purify($html);
         $p->options = array(
-            'HTML.Allowed' => ''
-            );
+            'HTML.Allowed' => '',
+        );
         $text = $p->purify($html);
         if (mb_strlen($text, 'UTF-8') === mb_strlen($html, 'UTF-8')) {
             return '<pre>' . $text . '</pre>';

@@ -22,12 +22,11 @@ function iva($v, $p = 22, $decimal = 2) {
     return perc($v, 100 + $p, $decimal);
 }
 // dato $totale e $parziale, ritorna intero 0-100 rappresentante la percentuale
-function get_perc($totale, $parziale, $decimal=2){
-    $x = 100 / ($totale/$parziale);
-    $x = (float) round( $x, $decimal );
+function get_perc($totale, $parziale, $decimal = 2) {
+    $x = 100 / ($totale / $parziale);
+    $x = (float) round($x, $decimal);
     return $x;
 }
-
 
 // convert a string/int from any arbitrary base to any arbitrary base,
 // up to base 62(0-9,A-Z,a-z are 62 chars)
@@ -35,21 +34,21 @@ function get_perc($totale, $parziale, $decimal=2){
 /*
 usage:
 for ($i = 0;$i < 100000;$i++) {
-    $str = base_convert_x($i, 10, 62);
-    $i2 = base_convert_x($str, 62, 10);
-    // $i == $i2
-    echo "$i => $str => $i2 \n";
+$str = base_convert_x($i, 10, 62);
+$i2 = base_convert_x($str, 62, 10);
+// $i == $i2
+echo "$i => $str => $i2 \n";
 }
-*/
+ */
 function base_convert_x(string $p_num = '', int $p_base = 10, int $p_to_base = 62,
-    string $CODESET  = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
-):string {
+    string $CODESET = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ'
+): string {
     // $p_to_base depends from the char set choosen
-    if( $p_to_base < 0 || $p_to_base > strlen($CODESET) ){
-        throw new \Exception("$p_to_base must be < than ".strlen($CODESET) );
+    if ($p_to_base < 0 || $p_to_base > strlen($CODESET)) {
+        throw new \Exception("$p_to_base must be < than " . strlen($CODESET));
     }
-    $a_chars_b62 = str_split($CODESET);// char[]
-    $h_b62to10 = array_flip($a_chars_b62);// hash<char, int> { ... 'a' =>11 ...}
+    $a_chars_b62 = str_split($CODESET); // char[]
+    $h_b62to10 = array_flip($a_chars_b62); // hash<char, int> { ... 'a' =>11 ...}
     // decode: convert from from $p_base to base 10
     if ($p_base != 10) {
         $num_b10 = 0;
@@ -58,10 +57,10 @@ function base_convert_x(string $p_num = '', int $p_base = 10, int $p_to_base = 6
         // split input  into chars
         $a_num_chars = str_split($p_num);
         $num_strlen = strlen($p_num);
-        for ($back_pos = ($num_strlen-1); $back_pos>=0; $back_pos--) {
+        for ($back_pos = ($num_strlen - 1); $back_pos >= 0; $back_pos--) {
             $char = $a_num_chars[$back_pos];
             $pwr_b10 = ((int) $h_b62to10[$char]);
-            $num_b10 += ( $pwr_b10 * $pwr_of_from_base);
+            $num_b10 += ($pwr_b10 * $pwr_of_from_base);
             $pwr_of_from_base *= $p_base;
         }
     } else {
@@ -94,7 +93,7 @@ function base_convert_x(string $p_num = '', int $p_base = 10, int $p_to_base = 6
 class BigIntToStr {
     // readable character set excluded (0,O,1,l)
     const CODESET = "23456789abcdefghijkmnopqrstuvwxyzABCDEFGHIJKLMNPQRSTUVWXYZ";
-    static function encode(int $n):string{
+    static function encode(int $n): string{
         $base = strlen(self::CODESET);
         $converted = '';
         while ($n > 0) {
@@ -102,50 +101,46 @@ class BigIntToStr {
             $char = substr(self::CODESET, $i_pos, 1);
             $converted = $char . $converted;
             $n = bcdiv($n, $base);
-            $n = bcmul($n, '1', 0);//floor
+            $n = bcmul($n, '1', 0); //floor
         }
-        return $converted ;
+        return $converted;
     }
-    static function decode(string $code):int {
+    static function decode(string $code): int{
         $base = strlen(self::CODESET);
         $c = '0';
         for ($i = strlen($code); $i; $i--) {
-            $i_pos = (-1 * ( $i - strlen($code) ) );
+            $i_pos = (-1 * ($i - strlen($code)));
             $s_j = substr($code, $i_pos, 1);
-            $i_x = strpos( self::CODESET, $s_j );
-            $i_z = bcmul( $i_x , bcpow($base, $i-1) );
-            $c = bcadd( $c, $i_z );
+            $i_x = strpos(self::CODESET, $s_j);
+            $i_z = bcmul($i_x, bcpow($base, $i - 1));
+            $c = bcadd($c, $i_z);
         }
         return bcmul($c, 1, 0);
     }
 }
 
-
 // takes a decimal number and returnrs roman
 function dec2roman($num) {
     $a_chars = 'IVXLCDM';
     $c_len = strlen($a_chars);
-    $b=0;
-    $roman='';
-    for($i=5; $num>0; $b++, $i^=7) {
-        for($j=$num%$i,
-            $num=$num/$i^0;
+    $b = 0;
+    $roman = '';
+    for ($i = 5; $num > 0; $b++, $i ^= 7) {
+        for ($j = $num % $i,
+            $num = $num / $i ^ 0;
             $j--;
         ) {
-            if( $j > 2 ) {
-                $j=1;
-                $idx = $b + $num-($num &= -2) + $j;
+            if ($j > 2) {
+                $j = 1;
+                $idx = $b + $num - ($num &= -2) + $j;
             } else {
                 $idx = $b;
             }
-            $roman = $a_chars[$idx].$roman;
+            $roman = $a_chars[$idx] . $roman;
         }
     }
     return $roman;
 }
-
-
-
 
 //----------------------------------------------------------------------------
 // BC functions
@@ -153,7 +148,7 @@ function dec2roman($num) {
 class HEX {
     // large hex numbers
     public static function bchexdec($hex) {
-        if(strlen($hex) == 1) {
+        if (strlen($hex) == 1) {
             return hexdec($hex);
         } else {
             $remain = substr($hex, 0, -1);
@@ -166,52 +161,50 @@ class HEX {
         $last = bcmod($dec, 16);
         $remain = bcdiv(bcsub($dec, $last), 16);
 
-        if($remain == 0) {
+        if ($remain == 0) {
             return dechex($last);
         } else {
-            return bcdechex($remain).dechex($last);
+            return bcdechex($remain) . dechex($last);
         }
     }
 }
 //------------------------------------------------------------------------------
 /*
-* Computes the factoral (x!).
-* @author Thomas Oldbury.
-* @license Public domain.
-*/
-function bcfact($fact, $scale = 100)
-{
-    if($fact == 1) return 1;
+ * Computes the factoral (x!).
+ * @author Thomas Oldbury.
+ * @license Public domain.
+ */
+function bcfact($fact, $scale = 100) {
+    if ($fact == 1) {
+        return 1;
+    }
+
     return bcmul($fact, bcfact(bcsub($fact, '1'), $scale), $scale);
 }
 
 /*
-* Computes e^x, where e is Euler's constant, or approximately 2.71828.
-* @author Thomas Oldbury.
-* @license Public domain.
-*/
-function bcexp($x, $iters = 7, $scale = 100)
-{
+ * Computes e^x, where e is Euler's constant, or approximately 2.71828.
+ * @author Thomas Oldbury.
+ * @license Public domain.
+ */
+function bcexp($x, $iters = 7, $scale = 100) {
     /* Compute e^x. */
     $res = bcadd('1.0', $x, $scale);
-    for($i = 0; $i < $iters; $i++)
-    {
+    for ($i = 0; $i < $iters; $i++) {
         $res += bcdiv(bcpow($x, bcadd($i, '2'), $scale), bcfact(bcadd($i, '2'), $scale), $scale);
     }
     return $res;
 }
 
 /*
-* Computes ln(x).
-* @author Thomas Oldbury.
-* @license Public domain.
-*/
-function bcln($a, $iters = 10, $scale = 100)
-{
+ * Computes ln(x).
+ * @author Thomas Oldbury.
+ * @license Public domain.
+ */
+function bcln($a, $iters = 10, $scale = 100) {
     $result = "0.0";
 
-    for($i = 0; $i < $iters; $i++)
-    {
+    for ($i = 0; $i < $iters; $i++) {
         $pow = bcadd("1.0", bcmul($i, "2.0", $scale), $scale);
         //$pow = 1 + ($i * 2);
         $mul = bcdiv("1.0", $pow, $scale);
@@ -223,40 +216,61 @@ function bcln($a, $iters = 10, $scale = 100)
     return $res;
 }
 
-
 //------------------------------------------------------------------------------
-
 
 // faster version, more operators implemented
 function bc_parse() {
     $argv = func_get_args();
     $string = str_replace(' ', '', "({$argv[0]})");
 
-    $operations = array();
-    if (strpos($string, '^') !== false) $operations[] = '\^';
-    if (strpbrk($string, '*/%') !== false) $operations[] = '[\*\/\%]';
-    if (strpbrk($string, '+-') !== false) $operations[] = '[\+\-]';
-    if (strpbrk($string, '<>!=') !== false) $operations[] = '<|>|=|<=|==|>=|!=|<>';
+    $operations = [];
+    if (strpos($string, '^') !== false) {
+        $operations[] = '\^';
+    }
+
+    if (strpbrk($string, '*/%') !== false) {
+        $operations[] = '[\*\/\%]';
+    }
+
+    if (strpbrk($string, '+-') !== false) {
+        $operations[] = '[\+\-]';
+    }
+
+    if (strpbrk($string, '<>!=') !== false) {
+        $operations[] = '<|>|=|<=|==|>=|!=|<>';
+    }
 
     $string = preg_replace('/\$([0-9\.]+)/e', '$argv[$1]', $string);
     while (preg_match('/\(([^\)\(]*)\)/', $string, $match)) {
         foreach ($operations as $operation) {
             if (preg_match("/([+-]{0,1}[0-9\.]+)($operation)([+-]{0,1}[0-9\.]+)/", $match[1], $m)) {
-                switch($m[2]) {
-                    case '+':  $result = bcadd($m[1], $m[3]); break;
-                    case '-':  $result = bcsub($m[1], $m[3]); break;
-                    case '*':  $result = bcmul($m[1], $m[3]); break;
-                    case '/':  $result = bcdiv($m[1], $m[3]); break;
-                    case '%':  $result = bcmod($m[1], $m[3]); break;
-                    case '^':  $result = bcpow($m[1], $m[3]); break;
-                    case '==':
-                    case '=':  $result = bccomp($m[1], $m[3]) == 0; break;
-                    case '>':  $result = bccomp($m[1], $m[3]) == 1; break;
-                    case '<':  $result = bccomp($m[1], $m[3]) ==-1; break;
-                    case '>=': $result = bccomp($m[1], $m[3]) >= 0; break;
-                    case '<=': $result = bccomp($m[1], $m[3]) <= 0; break;
-                    case '<>':
-                    case '!=': $result = bccomp($m[1], $m[3]) != 0; break;
+                switch ($m[2]) {
+                case '+':$result = bcadd($m[1], $m[3]);
+                    break;
+                case '-':$result = bcsub($m[1], $m[3]);
+                    break;
+                case '*':$result = bcmul($m[1], $m[3]);
+                    break;
+                case '/':$result = bcdiv($m[1], $m[3]);
+                    break;
+                case '%':$result = bcmod($m[1], $m[3]);
+                    break;
+                case '^':$result = bcpow($m[1], $m[3]);
+                    break;
+                case '==':
+                case '=':$result = bccomp($m[1], $m[3]) == 0;
+                    break;
+                case '>':$result = bccomp($m[1], $m[3]) == 1;
+                    break;
+                case '<':$result = bccomp($m[1], $m[3]) == -1;
+                    break;
+                case '>=':$result = bccomp($m[1], $m[3]) >= 0;
+                    break;
+                case '<=':$result = bccomp($m[1], $m[3]) <= 0;
+                    break;
+                case '<>':
+                case '!=':$result = bccomp($m[1], $m[3]) != 0;
+                    break;
                 }
                 $match[1] = str_replace($m[0], $result, $match[1]);
             }
@@ -267,45 +281,31 @@ function bc_parse() {
     return $string;
 }
 
-
-
 // if colled directly, run the tests:
-if (basename($argv[0]) == basename(__FILE__)) {
+if (isset($_SERVER['argv']) && basename($_SERVER['argv'][0]) == basename(__FILE__)) {
     require_once 'Test.php';
-    bcscale(4);// setta il default scale, va settato prima delle chiamate
+    bcscale(4); // setta il default scale, va settato prima delle chiamate
 
-    switch( $argv[1] ) {
+    switch ($argv[1]) {
     case 'base':
-        for ($i = 0;$i < 1000;$i++) {
+        for ($i = 0; $i < 1000; $i++) {
             $str = base_convert_x($i, 10, 62);
             $i2 = base_convert_x($str, 62, 10);
-            is( $i , $i2, "$i == $i2 $str ");
+            is($i, $i2, "$i == $i2 $str ");
         }
-        for ($i = 0;$i < 100;$i++) {
+        for ($i = 0; $i < 100; $i++) {
             $r = dec2roman($i);
-            ok( $r , "$i == $r   ");
+            ok($r, "$i == $r   ");
 
         }
         break;
     default:
         // (10,2+(5,05×6,1))÷3,2 == 12,8140625
-        is( bc_parse("10^2") , 100, 'pow');
-        is( bc_parse("10 % 2"), 0, 'mod');
-        is( bc_parse("(10 / 2)+3"), 8, 'prec');
-        is( bc_parse("(10.2+(5.05*6.1))/3.2") , '12.8140', 'complex expression');
+        is(bc_parse("10^2"), 100, 'pow');
+        is(bc_parse("10 % 2"), 0, 'mod');
+        is(bc_parse("(10 / 2)+3"), 8, 'prec');
+        is(bc_parse("(10.2+(5.05*6.1))/3.2"), '12.8140', 'complex expression');
         break;
     }
 
 }
-
-
-
-
-
-
-
-
-
-
-
-
