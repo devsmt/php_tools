@@ -10,8 +10,6 @@ class View {
     protected $file = '';
     protected $data = null;
 
-
-
     function __construct($file = '', $data = null) {
         /*
         if ($file == '') {
