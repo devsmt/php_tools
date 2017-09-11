@@ -1,26 +1,21 @@
 <?php
-
 /*
 inspired by Perl Test::Simple
-
 The goal here is to have a testing utility that's simple to learn, quick to use
 and difficult to trip yourself up with while still providing some flexibility
  */
-
 //-----------------------------------------------------------------------------------
 //  test formating
 //-----------------------------------------------------------------------------------
 function diag($l, $data = null) {
     return Test::diag($l, $data);
 }
-
 //-----------------------------------------------------------------------------------
 //  assertions
 //-----------------------------------------------------------------------------------
 function ok($test, $description = '') {
     return Test::ok($test, $description, $data = null);
 }
-
 function is($val, $expected_val, $description = '') {
     $pass = ($val == $expected_val);
     ok($pass, $description);
@@ -30,7 +25,6 @@ function is($val, $expected_val, $description = '') {
     }
     return $pass;
 }
-
 function isnt($val, $expected_val, $description = '') {
     $pass = ($val != $expected_val);
     ok($pass, $description);
@@ -41,7 +35,6 @@ function isnt($val, $expected_val, $description = '') {
     }
     return $pass;
 }
-
 function like($string, $regex, $description = '') {
     $pass = preg_match($regex, $string);
     ok($pass, $description);
@@ -51,7 +44,6 @@ function like($string, $regex, $description = '') {
     }
     return $pass;
 }
-
 function unlike($string, $regex, $description = '') {
     $pass = !preg_match($regex, $string);
     ok($pass, $description);
@@ -61,7 +53,6 @@ function unlike($string, $regex, $description = '') {
     }
     return $pass;
 }
-
 function cmp_ok($val, $operator, $expected_val, $description = '') {
     eval('$pass = ($val ' . $operator . ' $expected_val);');
     ok($pass, $description);
@@ -71,7 +62,6 @@ function cmp_ok($val, $operator, $expected_val, $description = '') {
     }
     return $pass;
 }
-
 function can_ok($object, $methods) {
     $pass = true;
     $errors = [];
@@ -89,7 +79,6 @@ function can_ok($object, $methods) {
     }
     return $pass;
 }
-
 function isa_ok($object, $expected_class, $object_name = 'The object') {
     $got_class = get_class($object);
     if (version_compare(php_version(), '5', '>=')) {
@@ -104,23 +93,17 @@ function isa_ok($object, $expected_class, $object_name = 'The object') {
     }
     return $pass;
 }
-
 function pass($description = '') {
     return ok(true, $description);
 }
-
 function fail($description = '') {
     return ok(false, $description);
 }
-
 function include_ok($module) {
     // Test success of including file, but continue testing if possible even if unable to include
 }
-
 function require_ok($module) {
-
 }
-
 function skip($message, $num) {
     global $_num_skips;
     if ($num < 0) {
@@ -131,7 +114,6 @@ function skip($message, $num) {
     }
     $_num_skips = $num;
 }
-
 // Recursively check datastructures for equalness
 function is_deeply($got, $expected, $test_name) {
     $s_got = serialize($got);
@@ -146,7 +128,6 @@ function is_deeply($got, $expected, $test_name) {
     }
     return $pass;
 }
-
 // usa weblint per assicurarsi che html prodotto sia standard
 function html_ok($str, $name = "") {
     $fname = tempnam(getenv("TMP"), 'lint-');
@@ -164,7 +145,6 @@ function html_ok($str, $name = "") {
     }
     return $ok;
 }
-
 // confrontare Float
 // The arguments required for both functions are three numbers: the first and second arguments can be either the calculated value, or the target comparison value, and the third is the precision.
 //
@@ -182,7 +162,6 @@ function is_float_approximately_equal($a, $b, $epsilon) {
     $B = abs($B);
     return abs($A - $B) <= ($A < $B ? $B : $A) * $epsilon;
 }
-
 // The essentiallyEqual function uses the smaller of the two values and multiples it by epsilon
 // to determine the margin of error. Therefore, unless values A and B are equal, the
 // essentiallyEqual function will always require the values to be more precise than the
@@ -192,45 +171,34 @@ function is_float_essentially_equal($a, $b, $epsilon) {
     $B = abs($B);
     return abs($A - $B) <= ($A > $B ? $B : $A) * $epsilon;
 }
-
 //-----------------------------------------------------------------------------------
 //  moking
 //-----------------------------------------------------------------------------------
 /*
 per utilizzare gli oggetti che hanno interdipendenze, si creano degli oggetti
 vuoti da "riempire" all'occorrenza simulando condizioni tipiche
-
 es.
 class myObject extends SimpleMock{}
-
 $o = new myObject();
 $o->set('isSomething', 'val');
-
 // test
 $o->isSomething(); // ritorna "val"
  */
 class SimpleMock {
-
     var $data = [];
-
     function getValue($i) {
         return $this->data[$i];
     }
-
     function get($i) {
         return $this->getValue($i);
     }
-
     function set($i, $v) {
         $this->data[$i] = $v;
     }
-
     function __call($name, $arguments) {
         return $this->get($name);
     }
-
 }
-
 //-----------------------------------------------------------------------------------
 // suite functionality
 //-----------------------------------------------------------------------------------
@@ -239,28 +207,20 @@ class SimpleMock {
 // es. class OrderTest implements ITestCommand {}
 //
 interface ITestCommand {
-
     public function __construct();
-
     // run test cases
     public function run();
-
     public function cleanup();
 }
-
 // da CLI o pagina statica, leggge tutte le classi definite come tests e le esegue
 class TestSuite {
-
     public function __construct() {
-
     }
-
     // classe da far girare
     public function getClass() {
         // implementazione cli
         return isset($argv[1]) ? $argv[1] : null;
     }
-
     // esegui i test scelti
     public function run() {
         $class = $this->getClass();
@@ -289,18 +249,13 @@ class TestSuite {
         }
         $this->render_result();
     }
-
     // si occupa di rendere leggibile il risultato dei test nel container(cli,web)
     // di esecuzione prescelto
     public function render_result() {
-
     }
-
     // uso del test
     public function render_usage() {
-
     }
-
     function listAll() {
         $dir_path = dirname(__FILE__ . DIRECTORY_SEPARATOR . 'tests');
         $dir = dir($dir_path);
@@ -316,27 +271,32 @@ class TestSuite {
             }
         }
     }
-
 }
-
 //-----------------------------------------------------------------------------------
 // minimalistic test for the web
 //-----------------------------------------------------------------------------------
-/*
- * minimalistic in page test harness
- *
- * uso:
- * echo Test::css();
- * ...do your tests here
- * Test::ok();
- * // segnala la presenza di errori
- * Test::alarm();
- *
- */
+//
+// minimalistic in page test harness
+//
+// uso:
+// echo Test::css();
+// ...do your tests here
+// Test::ok();
+// // segnala la presenza di errori
+// Test::alarm();
+//
+//
+//  test init
+//  register_shutdown_function(function () {
+//      if (PHP_SAPI != 'cli') {
+//          echo Test::css();
+//          Test::alarm();
+//      }
+//  });
+//
+//
 class Test {
-
     static $errc = 0;
-
     public static function ok($test, $label, $data = null) {
         if (PHP_SAPI != 'cli') {
             if ($test == false) {
@@ -356,7 +316,6 @@ class Test {
             }
         }
     }
-
     public static function diag($l, $data = '') {
         if (!empty($data)) {
             echo '<pre class="dump">' . $l . '</pre>';
@@ -364,7 +323,6 @@ class Test {
             echo '<pre class="dump">' . $l . ':' . var_export($data, 1) . '</pre>';
         }
     }
-
     // segnala la presenza di errori
     public static function alarm() {
         if (Test::$errc) {
@@ -373,10 +331,7 @@ class Test {
             echo '<style type="text/css">body{background-color:#dbffdb}</style>';
         }
     }
-
-    //
     public static function css() {
-
         $html = <<<__END__
 <style type="text/css">
 body {
@@ -396,31 +351,18 @@ p,pre {
 .success{
     background-color: #66ff99;
 }
-
 .dump{
     font-size:8px;
     background-color: #dedede;
 }
 </style>
-
 __END__;
         return $html;
     }
-
 }
-
-//  test init
-register_shutdown_function(function () {
-    if (PHP_SAPI != 'cli') {
-        echo Test::css();
-        Test::alarm();
-    }
-});
-
 //----------------------------------------------------------------------------
 // minimalistic test for API
 //----------------------------------------------------------------------------
-
 class APIClient {
     public static function get($method, $param = []) {
         $param_auth = self::getAuth();
@@ -431,7 +373,6 @@ class APIClient {
             echo "## URL: $url \n";
         }
         $data = json_decode($json_str, $use_assoc = true);
-
         if (empty($data)) {
             if (DEBUG) {
                 echo "## UNPARSABLE RESPONSE --------------------------------------\n";
@@ -446,7 +387,6 @@ class APIClient {
         }
         return $data;
     }
-
     protected static function getAuth() {
         $time = time();
         $hash = ''; // some hashing algorithm like sha1(self::KEY.'-'.$time);

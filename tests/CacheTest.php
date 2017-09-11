@@ -8,7 +8,7 @@ require_once __DIR__.'/../lib/Test.php';
 
 session_start();
 
-$_GET = array( 'a'=>0, 'b'=>2);
+$_GET = [ 'a'=>0, 'b'=>2];
 $currentKey = PageCache::genKey();
 is( $currentKey, $_SERVER['PHP_SELF'].'-a=0&b=2', 'gen key');
 

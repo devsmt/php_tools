@@ -87,3 +87,66 @@ abstract class PersistentObject {
         return $assoc;
     }
 }
+
+
+
+// persiste un array in un hash file database
+// $pa = new ArrayPersistent(__DIR__.'/test.cdb');
+// $pa['key'] = time();
+// foreach( $pa as $k => $v) { }
+class ArrayPersistentF implements ArrayAccess, Iterator {
+    private $db;
+    private $current;
+    function __construct($path) {
+        $this->db = dba_popen($path, "c", "flatfile");
+        if (!$this->db) {
+            throw new Exception("$path could not be opened");
+        }
+    }
+    function __destruct() {
+        dba_close($this->db);
+    }
+    function offsetExists($index) {
+        return dba_exists($index, $this->db);
+    }
+    function offsetGet($index) {
+        return unserialize(dba_fetch($index, $this->db));
+    }
+    function offsetSet($index, $newval) {
+        dba_replace($index, serialize($newval), $this->db);
+        return $newval;
+    }
+    function offsetUnset($index) {
+        return dba_delete($index, $this->db);
+    }
+    function rewind() {
+        $this->current = dba_firstkey($this->db);
+    }
+    function current() {
+        $key = $this->current;
+        if ($key !== false) {
+            return $this->offsetGet($key);
+        }
+    }
+    function next() {
+        $this->current = dba_nextkey($this->db);
+    }
+    function valid() {
+        return ($this->current == false) ? false : true;
+    }
+    function key() {
+        return $this->current;
+    }
+    // aggiunge i valori povenienti da un altro hash
+    function merge(array $a_hash) {
+        foreach ($a_hash as $k => $v) {
+            $this->offsetSet($k, $v);
+        }
+    }
+}
+
+// persist an array in memory using APC
+/*
+class ArrayPersistentM implements ArrayAccess, Iterator {
+}
+*/

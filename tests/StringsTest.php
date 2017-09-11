@@ -3,10 +3,10 @@
 require_once __DIR__.'/../lib/Test.php';
 require_once __DIR__.'/../lib/Strings.php';
 
-$r=str_template('second: {{second}}; first: {{first}}', array(
+$r=str_template('second: {{second}}; first: {{first}}', [
     'first'  => '1st',
     'second' => '2nd'
-));
+]);
 $e = 'second: 2nd; first: 1st';
 is($r, $e, 'str_template');
 

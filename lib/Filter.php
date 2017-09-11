@@ -37,7 +37,7 @@ class Filter {
 
     // un intero controllato
     public static function clean_i($int, $max = PHP_INT_MAX, $min = 0) {
-        return (int) filter_var($int, FILTER_SANITIZE_NUMBER_INT, array("min_range" => $min, "max_range" => $max));
+        return (int) filter_var($int, FILTER_SANITIZE_NUMBER_INT, ["min_range" => $min, "max_range" => $max]);
     }
 
     // convertono a true: 1 "1" "yes" "true" "on" TRUE
@@ -48,7 +48,7 @@ class Filter {
 
     //
     public static function clean_float($float, $max = 1, $min = 0) {
-        return filter_var($float, FILTER_SANITIZE_NUMBER_FLOAT, array("min_range" => $min, "max_range" => $max)
+        return filter_var($float, FILTER_SANITIZE_NUMBER_FLOAT, ["min_range" => $min, "max_range" => $max]
         );
     }
 
@@ -83,13 +83,13 @@ class FilterHTML {
 
         // remove bad parsing
         $html = preg_replace('#\\\r\\\n|\\\r|\\\n|\\\#sui', '', $html);
-        $p->options = array(
+        $p->options = [
             'HTML.Allowed' => 'img[src],p,br,b,strong,i',
-        );
+        ];
         $html = $p->purify($html);
-        $p->options = array(
+        $p->options = [
             'HTML.Allowed' => '',
-        );
+        ];
         $text = $p->purify($html);
         if (mb_strlen($text, 'UTF-8') === mb_strlen($html, 'UTF-8')) {
             return '<pre>' . $text . '</pre>';

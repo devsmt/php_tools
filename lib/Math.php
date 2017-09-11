@@ -51,6 +51,7 @@ function base_convert_x(string $p_num = '', int $p_base = 10, int $p_to_base = 6
     $h_b62to10 = array_flip($a_chars_b62); // hash<char, int> { ... 'a' =>11 ...}
     // decode: convert from from $p_base to base 10
     if ($p_base != 10) {
+        // $num_b10 = (int) base_convert($p_num, $p_base, 10 );
         $num_b10 = 0;
         // power of from base, eg. 1, 8, 64, 512
         $pwr_of_from_base = 1;
@@ -280,6 +281,33 @@ function bc_parse() {
 
     return $string;
 }
+
+//----------------------------------------------------------------------------
+//  metric conversion
+//----------------------------------------------------------------------------
+// da metri ad altre unit
+function m2km($m) {   return $m / 1000.0;  }
+function m2m ($m) {   return $m;           }
+function m2cm($m) {   return $m * 100.0;   }
+function m2mm($m) {   return $m * 1000.0;  }
+function m2ft($m) {   return $m * 3.28084; }
+//
+function cm2km($cm) { return m2km( cm2m($cm)   );   }
+function cm2m ($cm) { return m2m ( $cm / 100.0 );   }
+function cm2cm($cm) { return m2cm( cm2m($cm)   );   }
+function cm2mm($cm) { return m2mm( cm2m($cm)   );   }
+function cm2ft($cm) { return m2ft( cm2m($cm)   );   }
+//
+function mm2km($mm) { return m2km( mm2m($mm)    );  }
+function mm2m ($mm) { return m2m ( $mm / 1000.0 );  }
+function mm2cm($mm) { return m2cm( mm2m($mm)    );  }
+function mm2mm($mm) { return m2mm( mm2m($mm)    );  }
+function mm2ft($mm) { return m2ft( mm2m($mm)    );  }
+
+
+//----------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------
 
 // if colled directly, run the tests:
 if (isset($_SERVER['argv']) && basename($_SERVER['argv'][0]) == basename(__FILE__)) {

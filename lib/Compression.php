@@ -65,9 +65,9 @@ class CompressionEngineGZ extends CompressionEngine {
     // GZIPs a file on disk (appending .gz to the name)
     function gzCompressFile($source, $dest='', $opt = []) {
 
-    $option = array_merge( array(
+    $option = array_merge( [
     'level' => 9
-    ), $opt );
+    ], $opt );
     extract($option);
 
     if( empty($dest) ) {

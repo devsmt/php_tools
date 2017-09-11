@@ -13,14 +13,14 @@ class View {
     function __construct($file = '', $data = null) {
         /*
         if ($file == '') {
-            $file = CURRENT_MODULE . '.php';
+        $file = CURRENT_MODULE . '.php';
         }
         if (is_readable($file)) {
-            $path = $file;
+        $path = $file;
         } else {
-            $path = Path::join(TEMPLATE_PATH, $file);
+        $path = Path::join(TEMPLATE_PATH, $file);
         }
-        */
+         */
         $this->layout = new Template('layout.php', $data);
         // TODO:config
         $this->file = $file;

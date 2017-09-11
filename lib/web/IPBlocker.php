@@ -14,7 +14,7 @@ declare (strict_types = 1);
 /*
 // throttle
 $B = new IPBLocker();
-$B->addAttempt();
+$B->addAttempt($resource_id);
 if( !$B->isLegit() ){
     $B->makeClientWait();
     Logger::log("$IP failed to login {$this->max_attempts} times");
@@ -27,8 +27,8 @@ if( $is_login_ok ) {
 }
 */
 class IPBLocker {
-    public function __construct($max_attempts = 5, $ttl_m = 60, $IP=null) {
-        $this->cache_key = 'ip_login_log';
+    public function __construct($max_attempts = 5, $ttl_m = 60, $IP=null, $resource_id='ip_login_log') {
+        $this->cache_key = $resource_id ;
         $this->max_attempts = $max_attempts;
         $this->ttl_secs = $ttl_m * 60;
         $this->IP = coalesce($IP, Net::getIP());
@@ -72,8 +72,8 @@ class IPBLocker {
         // store back
         apc_store($this->cache_key, $a_ip_log, $this->ttl_secs);
     }
-    //
-    public function getAttemptNum() {
+    // TODO: controllare il tempo intercorso tra le richieste
+    public function getAttemptNum( ) {
         $a_ip_log_all = apcu_entry($this->cache_key, function ($key) {
             return [];
         }, $this->ttl_secs);
@@ -92,8 +92,9 @@ class IPBLocker {
         $attempts_num = $this->getAttemptNum();
         sleep(2 ^ ($attempts_num - 1));
     }
-    // if login is_a ok, delete old attempts
+    // if login is_a ok, delete attempts older than TTL
     public function deleteAttempts() {
+        /*
         // get data
         $a_ip_log = apcu_entry($this->cache_key, function ($key) {
             return [];
@@ -102,6 +103,7 @@ class IPBLocker {
         unset($a_ip_log[$this->IP]);
         // store back
         apc_store($this->cache_key, $a_ip_log, $this->ttl_secs);
+        */
     }
 }
 

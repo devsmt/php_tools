@@ -175,7 +175,7 @@ class Template {
     //     // TODO: non funziona --></div><!-- -->
     //     // TODO: gestire = @
     //     $s = preg_replace(array('/\r\n|\n|\r|\t|\s\s/', '/<!--([\s\w\.!#\$%\-+\'\"\<\>\\.\/]+)-->/'), '', $s);
-    //     //$s = str_replace(array('  ',"\n", "\r", "\t"),'',$s );
+    //     //$s = str_replace(['  ',"\n", "\r", "\t"],'',$s );
     //     return $s;
     //   }
     // }

@@ -1,12 +1,16 @@
 <?php
+declare(strict_types=1);
+
+
+
 
 //
 // TODO: mai ritornare "&&" davanti le clausole where, qusto parametro dovrebbe essere gestito altrove
 //
 class SQL {
-    /* ------------------------------------------------------------------------------
-      SQL GENERATION
-      ------------------------------------------------------------------------------ */
+    // -------------------------------------------------------------------------
+    // SQL GENERATION
+    // -------------------------------------------------------------------------
 
     // quote adatto ai nomi di campo
     public static function quote($f) {
@@ -51,17 +55,17 @@ class SQL {
 
     // ritorna una stringa nella forma a=1,b=2,...
     // da un array associativo nella forma 'a'=>1,'b'=>2
-    public static function sequence_val($val) {
+    public static function sequence_val(array $val) {
         if (!is_array($val)) {
             return '';
         }
-        $a_regs = ;
+        $a_regs = [];
         $field_sep = ',';
-        $str = ;
+        $a_str = [];
         foreach ($val as $k => $v) {
-            $str[] = SQL::quote($k) . "=" . SQL::quotev($v);
+            $a_str[] = SQL::quote($k) . "=" . SQL::quotev($v);
         }
-        return implode($field_sep, $str);
+        return implode($field_sep, $a_str);
     }
 
     // ritorna un parametro della clausola where
@@ -72,7 +76,7 @@ class SQL {
     public static function where_range($field, $a_v, $c2 = '||') {
         $sql = '';
         if (count($a_v) > 0) {
-            $a_s = ;
+            $a_s = [];
             foreach ($a_v as $i => $v) {
                 $v = (is_int($v) ? $v : "'" . $v . "'");
                 //il valore va tra virgolette?
@@ -114,7 +118,7 @@ class SQL {
         $sql = '';
         if (!is_array($field)) {
             if (count($a_v) > 0) {
-                $a_s = ;
+                $a_s = [];
                 foreach ($a_v as $i => $v) {
                     $v = SQL::escape($v);
                     $v = SQL::_ensure_like_char($v);
@@ -123,7 +127,7 @@ class SQL {
                 $sql = sprintf('( %s )', implode($c2, $a_s));
             }
         } else {
-            $a_s = ;
+            $a_s = [];
             foreach ($field as $f => $v) {
                 $v = SQL::escape($v);
                 $v = SQL::_ensure_like_char($v);
@@ -156,27 +160,27 @@ class SQL {
     // costruisce la clausola sql ORDER BY
     // la struttura in input deve essere
     //
-    // array(
-    //   array($field, $flag='ASC')
-    // )
+    // [
+    //   [$field, $flag='ASC']
+    // ]
     //
-    // array(field, field ... )
+    // [field, field ... ]
     //
     // field
-    public static function orderby($a = ) {
+    public static function orderby($a = []) {
         // assert("is_array($a)")
         // assert("is_array($a[0])")
         $sql = '';
         if (is_string($a)) {
-            $a = array(array($a, 'ASC'));
+            $a = [[$a, 'ASC']];
         } elseif (is_array($a) && !empty($a) && isset($a[0]) && !is_array($a[0])) {
             if (strtoupper($a[1]) == 'ASC' || strtoupper($a[1]) == 'DESC') {
-                $a = array($a);
+                $a = [$a];
             } else {
                 $old = $a;
-                $a = ;
+                $a = [];
                 foreach ($old as $f) {
-                    $a[] = array($f);
+                    $a[] = [$f];
                 }
             }
         }
@@ -184,7 +188,7 @@ class SQL {
             $o = ' ORDER BY ';
             for ($i = 0; $i < count($a); $i++) {
                 if ($a[$i][0] != '') {
-                    $o.= sprintf('%s %s,', SQL::quote(SQL::escape($a[$i][0])), SQL::escape(isset($a[$i][1]) ? $a[$i][1] : 'ASC'));
+                    $o .= sprintf('%s %s,', SQL::quote(SQL::escape($a[$i][0])), SQL::escape(isset($a[$i][1]) ? $a[$i][1] : 'ASC'));
                 }
             }
             $sql = substr($o, 0, -1) . "\n";
@@ -206,6 +210,38 @@ class SQL {
         return SQL::limit($start, $offset);
     }
 
+
+    // and( "field=1", "field2!=0", ... )
+    public static function _and_() {
+        $a = func_get_args();
+        return '(' . implode(' && ', $a) . ')';
+    }
+
+    // or( "field=1", "field2!=0", ... )
+    public static function _or_() {
+        $a = func_get_args();
+        return '(' . implode(' || ', $a) . ')';
+    }
+
+    public static function ifs($condition, $sql) {
+        if ($condition) {
+            return $sql;
+        } else {
+            return '';
+        }
+
+    }
+
+    public static function isSelect($sql) {
+        $sql = trim($sql);
+        $l = strlen('select');
+        $sql_begin = strtolower(substr($sql, 0, $l));
+        return $sql_begin == 'select';
+    }
+
+    //----------------------------------------------------------------------------
+    //
+    //----------------------------------------------------------------------------
     //
     // select semplice
     // \code
@@ -220,27 +256,73 @@ class SQL {
     // \param $s str select_stmt
     // \param $t str table name
     //
-    // Query Cache does simple optimization to check if query can be cached. As I mentioned only SELECT queries are cached - so it looks at first letter of the query and if it is e'Se' it proceeds with query lookup in cache if not - skips it.
-    public static function select($t, $opt = ) {
-        extract(array_merge(array('s' => '*', 'where' => null, 'group_by' => null, 'order_by' => null, 'pos' => 0, 'limit' => null), $opt));
-        if (is_array($s)) {
-            $s = Arr::deleteEmpty($s);
-            $s = implode(', ', $s);
+    // Query Cache does simple optimization to check if query can be cached.
+    // As I mentioned only SELECT queries are cached - so it looks at first letter of the query and if it is e 'Se'
+    // it proceeds with query lookup in cache if not - skips it.
+    public static function select( string $table, array $opt = []):string {
+        $rm_empty = function ($a_data) {
+            return array_values(array_filter($a_data, function ($v) {
+                // false will be skipped
+                return !empty($v);
+            }));
+        };
+        $prepend_and = function($a_where){
+            // per ogni $where condition se non inizia con '&&' o '||' lo aggiunge automaticamente
+            return array_map(function($val) {
+                $val = trim($val);
+                $b = substr($val, 0, 2);
+                if( in_array( $b, ['&&', '||'] ) ) {
+                    $val = "&& $val";
+                }
+                return $val;
+            }, $a_where );
+        };
+
+        extract(array_merge( [
+                'fields' => '*',
+                'where' => null,
+                'group_by' => null,
+                'order_by' => null,
+                // paging:
+                // 'pos' => 0,
+                // 'limit' => null,
+                // 'page' => 1,
+                // 'page_len' => 30
+        ], $opt));
+        if (is_array($fields)) {
+            $fields = $rm_empty($fields);
+            $fields = implode(', ', $fields);
         }
         if (is_array($where)) {
-            $where = Arr::deleteEmpty($where);
-            $where = implode(' && ', $where);
+            $where = $rm_empty($where);
+            $where = $prepend_and($where);
+            $where = implode(' ', $where);
         }
         if (is_array($group_by)) {
-            $group_by = Arr::deleteEmpty($group_by);
+            $group_by = $rm_empty($group_by);
             $group_by = implode(',', $group_by);
         }
-        return "SELECT $s FROM " . SQL::quote($t) . ' ' . ((!empty($where) ? " WHERE $where " : '') . (!empty($group_by) ? " GROUP BY $group_by " : '') . SQL::orderby($order_by) . SQL::limit($pos, $limit));
+        $sql_limit = '';
+        if( isset($pos) && isset($limit) ) {
+            $sql_limit = SQL::limit($pos, $limit);
+        } elseif ( isset($page) && isset($page_len) ) {
+            $sql_limit = SQL::page_limit($page, $page_len);
+        }
+        //
+        return sprintf(
+            "SELECT %s FROM %s WHERE (1=1) %s %s %s",
+            $fields,
+            SQL::quote($table),
+            $where,
+            (!empty($group_by) ? " GROUP BY $group_by " : ''),
+            SQL::orderby($order_by),
+            $sql_limit
+        );
     }
 
     //
     // echo '<pre>';
-    // echo SQL::simple_select('*',
+    // echo SQL::select('*',
     // 'table as ta'.SQL::select_join('table2 as tb','ta.id=tb.id'),
     // 'a>0 && a<10',
     // 'a',
@@ -260,7 +342,7 @@ class SQL {
     // or  INSERT [LOW_PRIORITY | DELAYED] [IGNORE]
     // [INTO] tbl_name
     // SET col_name=expression, col_name=expression, ...
-    public static function insert($t, $val = , $flags = null) {
+    public static function insert($t, $val = [], $flags = null) {
         return "INSERT INTO " . SQL::quote($t) . " SET " . SQL::sequence_val($val);
     }
 
@@ -297,42 +379,16 @@ class SQL {
     // REPLACE works exactly like INSERT, except that if an old row in the table has the
     // same value as a new row for a PRIMARY KEY or a UNIQUE index, the old row is deleted before the new row is inserted
     //
-    public static function replace($t, $val = , $flags = null) {
+    public static function replace($t, $val = [], $flags = null) {
         return "REPLACE INTO $t SET " . SQL::sequence_val($val);
-    }
-
-    // and( "field=1", "field2!=0", ... )
-    public static function _and_() {
-        $a = func_get_args();
-        return '(' . implode(' && ', $a) . ')';
-    }
-
-    // or( "field=1", "field2!=0", ... )
-    public static function _or_() {
-        $a = func_get_args();
-        return '(' . implode(' || ', $a) . ')';
-    }
-
-    public static function ifs($condition, $sql) {
-        if ($condition)
-            return $sql;
-        else
-            return '';
-    }
-
-    public static function isSelect($sql) {
-        $sql = trim($sql);
-        $l = strlen('select');
-        $sql_begin = strtolower( substr($sql, 0, $l ) );
-        return $sql_begin =='select' ;
     }
 
 }
 
 class SQLTable {
     /* ------------------------------------------------------------------------------
-      SQL DB MANIPULATION
-      ------------------------------------------------------------------------------ */
+    SQL DB MANIPULATION
+    ------------------------------------------------------------------------------ */
 
     // CREATE TABLE `test2` (
     // `id` VARCHAR( 36 ) NOT NULL ,
@@ -342,12 +398,12 @@ class SQLTable {
         $fields_count = count($fields);
         $sql = "CREATE TABLE " . SQL::quote($name) . " (\n";
         for ($i = 0; $i < $fields_count; $i++) {
-            $sql.= SQL::quote($fields[$i]) . " $type ";
+            $sql .= SQL::quote($fields[$i]) . " $type ";
             if ($i < ($fields_count - 1)) {
-                $sql.= ",\n";
+                $sql .= ",\n";
             }
         }
-        $sql.= ");";
+        $sql .= ");";
         return $sql;
     }
 
@@ -422,16 +478,16 @@ class SQLFilter {
 
     // toglie caratteri pericolosi da un input che debba essere processato con SQL
     // DB::sanitize($s);
-    public static function sanitize($s, $len=0) {
-        $s  = preg_replace('/[^a-zA-Z0-9\-_]/', '', $s );
+    public static function sanitize($s, $len = 0) {
+        $s = preg_replace('/[^a-zA-Z0-9\-_]/', '', $s);
         // opzionalmente applica troncamento per lunghezza
-        if( !empty($len) ) {
+        if (!empty($len)) {
             $s = substr($s, 0, $len);
         }
         return $s;
     }
 
-    public static function sanitize_str($s, $len=0) {
+    public static function sanitize_str($s, $len = 0) {
         $s = self::quote($s);
         $s = preg_replace('/[^a-zA-Z0-9_\,\;\-\+\*\/\(\)\[\]\:\.\!\?#= ]/', '', $s);
         $s = filter_var($s, FILTER_SANITIZE_STRING,
@@ -439,20 +495,20 @@ class SQLFilter {
         );
 
         // opzionalmente applica troncamento per lunghezza
-        if( !empty($len) ) {
+        if (!empty($len)) {
             $s = substr($s, 0, $len);
         }
         return $s;
     }
 
-    public static function sanitize_int($s, $len=15) {
-        $s = preg_replace('/[^0-9]/', '', $s );
+    public static function sanitize_int($s, $len = 15) {
+        $s = preg_replace('/[^0-9]/', '', $s);
         // elimina input eccessivo
         $s = substr($s, 0, $len);
         return $s;
     }
-    public static function sanitize_float($s, $len=15) {
-        $s = preg_replace('/[^0-9\.]/', '', $s );
+    public static function sanitize_float($s, $len = 15) {
+        $s = preg_replace('/[^0-9\.]/', '', $s);
         // elimina input eccessivo
         $s = substr($s, 0, $len);
         return $s;

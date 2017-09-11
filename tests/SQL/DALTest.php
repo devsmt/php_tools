@@ -6,7 +6,7 @@ include_once 'UserTest.php';
 
 $DB = Weasel::getDB();
 
-$DataDictionary = array();
+$DataDictionary = [];
 //-- TEST ----------------------------------------------------------------------
 
 function set_up(){
@@ -51,21 +51,21 @@ tear_down();
 echo "\n\n--validation\n";
 $u = new User();
 $u->set('name','a');
-$u->requirePresenceOf( array('name') );
+$u->requirePresenceOf( ['name'] );
 ok($u->isValid(), 'requirePresenceOf "a"' );
 
 $u = new User();
-$u->requirePresenceOf( array('name') );
+$u->requirePresenceOf( ['name'] );
 ok( !$u->isValid(), '! requirePresenceOf null' );
 
 $u = new User();
 $u->set('id',10);
-$u->requireNumericallityOf( array('id') );
+$u->requireNumericallityOf( ['id'] );
 ok($u->isValid(), 'requireNumericallityOf 10' );
 
 $u = new User();
 $u->set('id','10');
-$u->requireNumericallityOf( array('id') );
+$u->requireNumericallityOf( ['id'] );
 ok( !$u->isValid(), '! requireNumericallityOf "10"' );
 
 

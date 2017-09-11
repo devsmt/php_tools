@@ -123,6 +123,52 @@ function str_reminder($str, $maxlen = 50, $suffisso = ' [...] ') {
     }
 }
 
+// restituisce stringhe descrizione molto lunghe in array di n substr
+function split_multilines($item_descr, $max_len = 40) {
+    $item_descr = trim($item_descr);
+    $item_descr = str_replace($sub = '  ', $re = ' ', $item_descr);
+    $len = strlen($item_descr);
+    if ($len < $max_len) {
+        return [$item_descr];
+    } else {
+        $a_str = explode(' ', $item_descr);
+        $res = [];
+        $idx = 0;
+        foreach ($a_str as $_i => $str) {
+            if (!isset($res[$idx])) {
+                $res[$idx] = $str;
+                continue;
+            }
+            // +1 dello spazio di separazione
+            $new_len = (strlen($res[$idx]) + 1 + strlen($str));
+            $max_len_c = ($idx + 1) * $max_len; //current maxlen
+            if ($new_len <= $max_len_c) {
+                $res[$idx] .= " $str";
+            } else {
+                $idx++; // next index
+                if (isset($res[$idx])) {
+                    $res[$idx] .= " $str";
+                } else {
+                    $res[$idx] = $str;
+                }
+
+            }
+        }
+        $res = array_map(function ($val) {return trim($val);}, $res);
+        return $res;
+    }
+};
+
+function capwords($str) {
+    $a_words = preg_split('/[-_. ]/', $str);
+    $a_words = array_map('ucfirst', array_map('mb_strtolower', $a_words));
+    $capped_str = join('', $a_words);
+    if (!empty($capped_str)) {
+        $capped_str[0] = mb_strtoupper($capped_str[0]);
+    }
+    return $capped_str;
+}
+
 //----------------------------------------------------------------------------
 // random strings
 //----------------------------------------------------------------------------
@@ -230,6 +276,98 @@ class RandStr {
     //     return $s;
     // }
 
+/*
+if ($err = pc_passwordcheck($_REQUEST['username'],$_REQUEST['password'])) {
+print "Bad password: $err";
+// Make the user pick another password
+}
+
+Basics
+Use at least eight characters, the more characters the better really, but most people will find anything more than about 15 characters difficult to remember.
+Use a random mixture of characters, upper and lower case, numbers, punctuation, spaces and symbols.
+Don't use a word found in a dictionary, English or foreign.
+Never use the same password twice.
+Things to avoid
+Don't just add a single digit or symbol before or after a word. e.g. "apple1"
+Don't double up a single word. e.g. "appleapple"
+Don't simply reverse a word. e.g. "elppa"
+Don't just remove the vowels. e.g. "ppl"
+Key sequences that can easily be repeated. e.g. "qwerty","asdf" etc.
+Don't just garble letters, e.g. converting e to 3, L or i to 1, o to 0. as in "z3r0-10v3"
+ */
+    function password_check($user, $pass) {
+        $lc_pass = strtolower($pass);
+        // also check password with numbers or punctuation subbed for letters
+        $denum_pass = strtr($lc_pass, '5301!', 'seoll');
+        $lc_user = strtolower($user);
+
+        // the password must be at least six characters
+        if (strlen($pass) < 6) {
+            return 'The password is too short.';
+        }
+
+        // the password can't be the username (or reversed username)
+        if (($lc_pass == $lc_user) || ($lc_pass == strrev($lc_user)) ||
+            ($denum_pass == $lc_user) || ($denum_pass == strrev($lc_user))) {
+            return 'The password is based on the username.';
+        }
+
+        // count how many lowercase, uppercase, and digits are in the password
+        $uc = 0;
+        $lc = 0;
+        $num = 0;
+        $other = 0;
+        for ($i = 0, $j = strlen($pass); $i < $j; $i++) {
+            $c = substr($pass, $i, 1);
+            if (preg_match('/^[[:upper:]]$/', $c)) {
+                $uc++;
+            } elseif (preg_match('/^[[:lower:]]$/', $c)) {
+                $lc++;
+            } elseif (preg_match('/^[[:digit:]]$/', $c)) {
+                $num++;
+            } else {
+                $other++;
+            }
+        }
+
+        // the password must have more than two characters of at least
+        // two different kinds
+        $max = $j - 2;
+        if ($uc > $max) {
+            return "The password has too many upper case characters.";
+        }
+        if ($lc > $max) {
+            return "The password has too many lower case characters.";
+        }
+        if ($num > $max) {
+            return "The password has too many numeral characters.";
+        }
+        if ($other > $max) {
+            return "The password has too many special characters.";
+        }
+
+        // the password must not contain a dictionary word
+        $word_file = '/usr/share/dict/words';
+        if (is_readable($word_file)) {
+            if ($fh = fopen($word_file, 'r')) {
+                $found = false;
+                while (!($found || feof($fh))) {
+                    $word = preg_quote(trim(strtolower(fgets($fh, 1024))), '/');
+                    if (preg_match("/$word/", $lc_pass) ||
+                        preg_match("/$word/", $denum_pass)) {
+                        $found = true;
+                    }
+                }
+                fclose($fh);
+                if ($found) {
+                    return 'The password is based on a dictionary word.';
+                }
+            }
+        }
+
+        return false;
+    }
+
 }
 
 //----------------------------------------------------------------------------
@@ -266,7 +404,7 @@ function str_transliterate($str) {
     }
     return $text;
 }
-/*
+/*------------------------------------------------------------------------------
 @see utf8 lib
 require_once('libs/utf8/utf8.php');
 require_once('libs/utf8/utils/bad.php');
@@ -276,7 +414,7 @@ if(!utf8_is_valid($str)){
 $str=utf8_bad_strip($str);
 }
 $str = utf8_to_ascii($str, '' );
- */
+------------------------------------------------------------------------------*/
 function str_rm_nonascii($str) {
     $res = preg_replace('/[^\x20-\x7E]/', '', $str);
     // remove non ascii characters
@@ -287,6 +425,37 @@ function str_rm_nonascii($str) {
 function str_is_utf8(string $str): bool {
     return (bool) \preg_match('//u', $str);
 }
+
+//
+//  Restituisce TRUE se la stringa sembra codificata in UTF8, FALSE altrimenti.
+//
+function UTF8_is($str) {
+    $length = strlen($str);
+    for ($i = 0; $i < $length; $i++) {
+        if (ord($Str[$i]) < 0x80) {
+            continue;
+        } elseif ((ord($Str[$i]) & 0xE0) == 0xC0) {
+            $n = 1;
+        } elseif ((ord($Str[$i]) & 0xF0) == 0xE0) {
+            $n = 2;
+        } elseif ((ord($Str[$i]) & 0xF8) == 0xF0) {
+            $n = 3;
+        } elseif ((ord($Str[$i]) & 0xFC) == 0xF8) {
+            $n = 4;
+        } elseif ((ord($Str[$i]) & 0xFE) == 0xFC) {
+            $n = 5;
+        } else {
+            return FALSE;
+        }
+        for ($j = 0; $j < $n; $j++) {
+            if ((++$i == $length) || ((ord($Str[$i]) & 0xC0) != 0x80)) {
+                return FALSE;
+            }
+        }
+    }
+    return TRUE;
+}
+
 // in ASCII str remove uncommon printable chars, depending on font may not appear in terminals
 function str_asci_simplify($str) {
     $str = str_replace(chr(130), ',', $str); // baseline single quote
@@ -348,7 +517,7 @@ function str_slugify($text) {
 // Interpolates context values into the message placeholders.
 // usage:
 //   $message = "User {{username}} created";
-//   $context = array('username' => 'bolivar');
+//   $context = ['username' => 'bolivar'];
 //   echo str_interpolate($message, $context);
 function str_interpolate($tmpl, array $a_binds = []) {
     // build a replacement array with braces around the context keys
@@ -462,10 +631,10 @@ function str_a_reg_replace($str, array $a_binds) {
 }
 
 // dato un array associativo di variabili da interpolare, esegue la sostituzione
-// $a_replace = array(
+// $a_replace = [
 //     'apple' => 'orange'
 //     'chevy' => 'ford'
-// );
+// ];
 function str_a_replace(array $a_binds, $str) {
     return str_replace(array_keys($a_binds), array_values($a_binds), $str);
 }
@@ -605,6 +774,19 @@ function text_auto_link($text) {
     $text = preg_replace("/[^a-z]+[^:\/\/](www\." . "[^\.]+[\w][\.|\/][a-zA-Z0-9\/\*\-\_\?\&\%\=\,\+\.]+)/", " <a href=\"\" target=\"\">$1</a>", $text);
     $text = preg_replace("/([\s|\,\>])([a-zA-Z][a-zA-Z0-9\_\.\-]*[a-z" . "A-Z]*\@[a-zA-Z][a-zA-Z0-9\_\.\-]*[a-zA-Z]{2,6})" . "([A-Za-z0-9\!\?\@\#\$\%\^\&\*\(\)\_\-\=\+]*)" . "([\s|\.|\,\<])/i", "$1<a href=\"mailto:$2$3\">$2</a>$4", $text);
     return $text;
+}
+
+// $a_links = text_link_extract($page);
+function text_link_extract($s) {
+    $a = [];
+    if (preg_match_all('/<a\s+.*?href=[\"\']?([^\"\' >]*)[\"\']?[^>]*>(.*?)<\/a>/i',
+        $s, $matches, PREG_SET_ORDER)
+    ) {
+        foreach ($matches as $match) {
+            array_push($a, [$match[1], $match[2]]);
+        }
+    }
+    return $a;
 }
 
 // Rotate each string characters by n positions in ASCII table

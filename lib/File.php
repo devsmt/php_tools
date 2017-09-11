@@ -202,7 +202,7 @@ class File {
     quando il file da includere è in qualche modo indicato dall'utente,
     occorre assicurarsi che sia all'interno di una whitelist
     $file = $_GET['filename']
-    $allowedFiles = array('file1.txt','file2.txt','file3.txt');
+    $allowedFiles = ['file1.txt','file2.txt','file3.txt'];
      */
 
     function whitelist_include($file, $allowedFiles) {

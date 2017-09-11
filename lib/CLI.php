@@ -283,10 +283,32 @@ class CLI {
         }
     }
 
-    function progressBar($progress, $qta, $pl_len = 10) {
+    function progressBarSimple($progress, $qta, $pl_len = 10) {
         $dec_progress = floor($progress * $pl_len / $qta);
         return sprintf('[%s]', str_pad(str_repeat('=', $dec_progress), $pl_len, '-', STR_PAD_RIGHT));
     }
+
+    // print a progress bar
+    function progressBar($finished_percent, $width=80 ) {
+      $finished_percent = str_pad($finished_percent, 2, ' ');
+      $fixed_space = 9; // for spaces, braces [ and number %
+      $width -= $fixed_space;
+      $finished_count = ceil( (($finished_percent*$width)/100) );
+      $empty_count    = $width - $finished_count;
+
+      $finished = str_repeat("#", $finished_count);
+      $empty    = str_repeat("-", $empty_count);
+
+      return "\r[ {$finished}{$empty} ] {$finished_percent}% ";
+    }
+    // uso:
+    // $width = intval(`tput cols`);
+    // foreach( range(0,100) as $count){
+    //   echo print_progress_bar($count, $width);
+    //   sleep(1);
+    // }
+
+
 
     function progressPerc($progress, $qta) {
         $perc_progress = floor($progress * 100 / $qta);
@@ -302,10 +324,11 @@ class CLI {
     // Returns the exit code from the process.
     //
     function pipeExec($cmd, $input, &$output) {
-        $descspec = array(
-            0 => array("pipe", "r"),
-            1 => array("pipe", "w"),
-            2 => array("pipe", "w"));
+        $descspec = [
+            0 => ["pipe", "r"],
+            1 => ["pipe", "w"],
+            2 => ["pipe", "w"]
+            ];
         $ph = proc_open($cmd, $descspec, $pipes);
         if (!$ph) {
             return -1;
@@ -355,7 +378,7 @@ class CLIController {
 }
 
 // funzione: permette il monitoring del batch job
-// use: CLIMonitor::registerMonitoringMailHook(array('test@gmail.com'));
+// use: CLIMonitor::registerMonitoringMailHook(['test@gmail.com']);
 class CLIMonitor {
 
     // notifica l'amministratore di errori nella procedura di importazione

@@ -71,7 +71,7 @@ class Validate {
 
     // un intero entro i limiti previsti
     public static function is_int($int, $max = PHP_INT_MAX, $min = 0) {
-        return filter_var($int, FILTER_VALIDATE_INT, array("min_range" => $min, "max_range" => $max));
+        return filter_var($int, FILTER_VALIDATE_INT, ["min_range" => $min, "max_range" => $max]);
     }
 
     // convertono a true: 1 "1" "yes" "true" "on" TRUE

@@ -184,12 +184,12 @@ class sqlSelect extends sqlSelectStmnt {
     // var $limit ='';
 
     var $_fields = ;
-    var $_tables = ; //array($table,$on,$join_type='left')
+    var $_tables = ; //[$table,$on,$join_type='left']
     var $_where = ; // [WHERE where_definition]
     var $_group_by = ; // [GROUP BY {unsigned_integer | col_name | formula} [ASC | DESC], ...]
     var $_having = ; // [HAVING where_definition]
     var $_order_by = ; // [ORDER BY {unsigned_integer | col_name | formula} [ASC | DESC] ,...]
-    // array(array('field','flag'))
+    // [['field','flag']]
     var $pos = 0; // [LIMIT [offset,] rows]
     var $limit = null; // se settato, usa clausola limit
     var $_procedure; // [PROCEDURE procedure_name]
@@ -200,9 +200,9 @@ class sqlSelect extends sqlSelectStmnt {
     function addTable($t, $on = '', $join_type = 'left') {
         if ($t != '') {
             if (count($this->_tables) == 0) {
-                $this->_tables[] = array($t, '', '');
+                $this->_tables[] = [$t, '', ''];
             } else {
-                if ($on != '') $this->_tables[] = array($t, $on, $join_type);
+                if ($on != '') $this->_tables[] = [$t, $on, $join_type];
                 else $this->err_msg[] = "per la tabella [$t] occorre specificare il punto di join";
             }
         }
@@ -243,7 +243,7 @@ class sqlSelect extends sqlSelectStmnt {
         $this->_having[] = $str;
     }
     function addOrderby($str = '', $flag = 'ASC') {
-        if ($str != '') $this->_order_by[] = array($str, $flag);
+        if ($str != '') $this->_order_by[] = [$str, $flag];
     }
     function getTables() {
         $s = $this->_tables[0][0];

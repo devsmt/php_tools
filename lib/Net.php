@@ -34,8 +34,7 @@ class Net {
     }
 
     // es.  111.112.113.0 - 111.112.113.255
-    // $wlist = array( '188.135.166.', '188.135.167.');
-    // Net::checkWhiteList($wlist, Net::getIP() );
+    // $wlist = [ '188.135.166.', '188.135.167.'];    // Net::checkWhiteList($wlist, Net::getIP() );
     public static function checkWhiteList(array $a, $IP = null) {
         if (empty($IP)) {
             $IP = Net::getIP();
@@ -134,7 +133,7 @@ class Net {
 
     /*
     $endpoint = "https://graph.facebook.com/?id=" . urlencode($uri);
-    $curlopts = array( CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4 );
+    $curlopts = [ CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4 ];
     $retval = http_get_contents($endpoint, $curlopts);
      */
     function http_get_contents($url, $opts = []) {
@@ -147,11 +146,12 @@ class Net {
 
     // verifica un IP su diversi database di IP malevoli
     function checkDNSBL($ip) {
-        $dnsbl_check = array(
+        $dnsbl_check = [
             'bl.spamcop.net',
             'list.dsbl.org',
             'sbl.spamhaus.org',
-            'xbl.spamhaus.org');
+            'xbl.spamhaus.org',
+        ];
         if (!empty($ip)) {
             $reverse_ip = implode('.', array_reverse(explode(".", $ip)));
             $reverse_ip = idn_to_ascii($reverse_ip);

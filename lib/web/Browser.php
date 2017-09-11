@@ -98,7 +98,7 @@ class Browser {
 
     // cerca di tradurre lo UserAgent in qualcosa di leggibile
     public static function translate() {
-        $browsers = array(
+        $browsers = [
             // major browser
             'msie', 'firefox', 'chrome', 'safari', 'mozilla', 'opera',
             // major engines
@@ -107,8 +107,7 @@ class Browser {
             'seamonkey', 'konqueror', 'netscape',
             'navigator', 'mosaic', 'lynx', 'amaya',
             'omniweb', 'avant', 'camino', 'flock', 'aol'
-            );
-
+            ];
         $user_agent = strtolower(self::getAgent());
         foreach($browsers as $_browser) {
             if (preg_match("/($_browser)[\/ ]?([0-9.]*)/", $user_agent, $match)) {
@@ -199,7 +198,7 @@ class Browser {
     public static function getLang() {
         $l = substr($_SERVER['HTTP_ACCEPT_LANGUAGE'], 0, 2);
         // TODO: where to find accepted languages?
-        $accepted_languages = array('en', 'it');
+        $accepted_languages = ['en', 'it'];
         if (in_array($l, $accepted_languages)) {
             return $l;
         }

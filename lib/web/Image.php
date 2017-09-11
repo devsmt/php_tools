@@ -70,6 +70,106 @@ class Image {
             exit;
         }
     }
+    // $file_path: The file you are grayscaling
+    // output
+    // This sets it to a .jpg, but you can change this to png or gif if that is what you are working with
+    // header('Content-type: image/jpeg');
+    // imagejpeg($buffered_img);
+    public static function doGrayScale($file_path) {
+
+        list($width, $height) = getimagesize($file_path);
+
+        // Define our source image
+        $source_buffer = imagecreatefromjpeg($file_path);
+
+        // Creating the Canvas
+        $buffered_img = imagecreate($width, $height);
+
+        //palette di 256 grigi
+        for ($c = 0; $c < 256; $c++) {
+            $palette[$c] = imagecolorallocate($buffered_img, $c, $c, $c);
+        }
+
+        //Reads the origonal colors pixel by pixel
+        for ($y = 0; $y < $height; $y++) {
+            for ($x = 0; $x < $width; $x++) {
+                $rgb = imagecolorat($source_buffer, $x, $y);
+
+                // dati rgb ritorna il grigio + prossimo da 0 a 256
+                $r = ($rgb >> 16) & 0xFF;
+                $g = ($rgb >> 8) & 0xFF;
+                $b = $rgb & 0xFF;
+                // conversione del pixel in grayscale
+                $gs = (($r * 0.299) + ($g * 0.587) + ($b * 0.114));
+
+                imagesetpixel($buffered_img, $x, $y, $palette[$gs]);
+            }
+        }
+
+        return $buffered_img;
+
+    }
+
+    /*
+     * croppa una immagine
+     * $img_file_path path all'immagine originale
+     */
+    public static function Crop($img_file_path, $result_file_path, $dim) {
+        $result = false;
+        if (isset($dim['cropWidth']) &&
+            isset($dim['cropHeight']) &&
+            isset($dim['cropStartX']) &&
+            isset($dim['cropStartY'])
+        ) {
+
+            $imgData = @GetImageSize($img_file_path);
+
+            $imgTypes = [
+                'image/jpeg',
+                'image/png',
+                'image/gif',
+            ];
+            $imgLoaders = [
+                'image/jpeg' => 'imagecreatefromjpeg',
+                'image/png' => 'imagecreatefrompng',
+                'image/gif' => 'imagecreatefromgif',
+            ];
+            $imgCreators = [
+                'image/jpeg' => 'imagejpeg',
+                'image/png' => 'imagepng',
+                'image/gif' => 'imagegif',
+            ];
+            if ($imgData) {
+                if (in_array($imgData['mime'], $imgTypes)) {
+                    $create_f = $imgLoaders[$imgData['mime']];
+                    $dump_f = $imgCreators[$imgData['mime']];
+                } else {
+                    // non � un'immagine
+                    return false;
+                }
+
+                // Create two images
+                $origimg = $create_f($img_file_path);
+                $cropimg = imagecreatetruecolor($dim['cropWidth'], $dim['cropHeight']);
+
+                // Get the original size
+                list($width, $height) = getimagesize($img_file_path);
+
+                // Crop
+                imagecopyresized($cropimg, $origimg, 0, 0, $dim['cropStartX'], $dim['cropStartY'], $width, $height, $width, $height);
+
+                $result = imagejpeg($cropimg, $result_file_path);
+
+                // destroy the images
+                imagedestroy($cropimg);
+                imagedestroy($origimg);
+            }
+        } else {
+            // non � stato passato tutti i dati necessari
+            return false;
+        }
+        return $result;
+    }
 
 }
 
@@ -89,7 +189,7 @@ class ImageResizer {
     // helper function: Send headers and returns an image.
     public static function send($filename, $browser_cache = 60*60*24*7 ) {
         $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-        if (in_array($extension, array('png', 'gif', 'jpeg'))) {
+        if (in_array($extension, ['png', 'gif', 'jpeg'])) {
             header("Content-Type: image/".$extension);
         } else {
             header("Content-Type: image/jpeg");
@@ -175,11 +275,11 @@ class ImageResizer {
         // sharpen the image?
         if ($sharpen == TRUE) {
             $intSharpness = ImageResizer::findSharp($width, $new_width);
-            $arrMatrix = array(
-                array(-1, -2, -1),
-                array(-2, $intSharpness + 12, -2),
-                array(-1, -2, -1)
-                );
+            $arrMatrix = [
+                [-1, -2, -1],
+                [-2, $intSharpness + 12, -2],
+                [-1, -2, -1]
+            ];
             imageconvolution($dst, $arrMatrix, $intSharpness, 0);
         }
 
@@ -225,7 +325,7 @@ class ImageResizer {
     // trova una risoluzione valida
     function calcResolution() {
         global $mobile_first;
-        $resolutions   = array(1382, 992, 768, 480, 320); // the resolution break-points to use (screen widths, in pixels)
+        $resolutions   = [1382, 992, 768, 480, 320]; // the resolution break-points to use (screen widths, in pixels)
         /* Check to see if a valid cookie exists */
         if (isset($_COOKIE['resolution'])) {
             if (is_numeric($_COOKIE['resolution'])) {
@@ -343,11 +443,11 @@ class SparklineGenerator {
         $x1 = 0;
         $y1 = $h - $data[0];
         $line = [];
-        $poly = array(0, $h + 50, $x1, $y1);
+        $poly = [0, $h + 50, $x1, $y1];
         for ($i = 1; $i < $count; $i++) {
             $x2 = $x1 + $step;
             $y2 = $h - $data[$i];
-            array_push($line, array($x1, $y1, $x2, $y2));
+            array_push($line, [$x1, $y1, $x2, $y2]);
             array_push($poly, $x2, $y2);
             $x1 = $x2;
             $y1 = $y2;

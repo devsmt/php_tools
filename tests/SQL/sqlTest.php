@@ -25,29 +25,29 @@ iss( SQL::_ensure_like_char('%a%'), '%a%', '_ensure_like_char' );
 iss( SQL::_ensure_like_char('%a%z'), '%a%z', '_ensure_like_char' );
 
 
-iss( SQL::sequence_val(array('a'=>1) ), '`a`=1', 'sequence_val');
-iss( SQL::sequence_val(array('a'=>1, 'b'=>2)) , '`a`=1,`b`=2', 'sequence_val');
-iss( SQL::sequence_val(array('a'=>"a") ), "`a`='a'", 'sequence_val');
-iss( SQL::sequence_val(array('a'=>1.5)) , "`a`='1.5'", 'sequence_val');
-iss( SQL::sequence_val(array()) , '', 'sequence_val');
+iss( SQL::sequence_val(['a'=>1] ), '`a`=1', 'sequence_val');
+iss( SQL::sequence_val(['a'=>1, 'b'=>2]) , '`a`=1,`b`=2', 'sequence_val');
+iss( SQL::sequence_val(['a'=>"a"] ), "`a`='a'", 'sequence_val');
+iss( SQL::sequence_val(['a'=>1.5]) , "`a`='1.5'", 'sequence_val');
+iss( SQL::sequence_val([]) , '', 'sequence_val');
 iss( SQL::sequence_val(null) , '', 'sequence_val');
 
-iss( SQL::where_range('test', array(0,1)) ,'( `test`=0||`test`=1 ) ', 'where_range');
+iss( SQL::where_range('test', [0,1]) ,'( `test`=0||`test`=1 ) ', 'where_range');
 
-iss( SQL::where_range_like('test', array('a','b')) ,' ( `test` like "%a%" || `test` like "%b%" ) ', 'where_range_like');
-iss( SQL::where_range_like( array( 'testa' => 'a', 'testb' => 'b')) ,' ( `testa` like "%a%" || `testb` like "%b%" ) ', 'where_range_like');
+iss( SQL::where_range_like('test', ['a','b']) ,' ( `test` like "%a%" || `test` like "%b%" ) ', 'where_range_like');
+iss( SQL::where_range_like( [ 'testa' => 'a', 'testb' => 'b']) ,' ( `testa` like "%a%" || `testb` like "%b%" ) ', 'where_range_like');
 
-iss( SQL::where_in('test', array(0,1)) , '`test` in ( 0,1 )', 'where_in' );
+iss( SQL::where_in('test', [0,1]) , '`test` in ( 0,1 )', 'where_in' );
 
 
 iss( SQL::where_range_date('date','2009-01-01', '2009-12-12') , "(UNIX_TIMESTAMP(date) > UNIX_TIMESTAMP('2009-01-01')) AND (UNIX_TIMESTAMP(date) < UNIX_TIMESTAMP('2009-12-12'))", 'where_range_date');
-iss( SQL::orderby( array(array('ordine','ASC') ) ), 'ORDER BY `ordine` ASC', 'orderby' );
-iss( SQL::orderby( array('ordine','ASC') ), 'ORDER BY `ordine` ASC', 'orderby' );
+iss( SQL::orderby( [['ordine','ASC'] ] ), 'ORDER BY `ordine` ASC', 'orderby' );
+iss( SQL::orderby( ['ordine','ASC'] ), 'ORDER BY `ordine` ASC', 'orderby' );
 iss( SQL::orderby( 'ordine' ), 'ORDER BY `ordine` ASC', 'orderby' );
 
 
-iss( SQL::insert('test', array('a'=>0) ), "INSERT INTO `test` SET `a`=0", 'insert' );
-iss( SQL::update('test', 'id=1', array('a'=>0)), "UPDATE `test` SET `a`=0 WHERE id=1", 'update' );
+iss( SQL::insert('test', ['a'=>0] ), "INSERT INTO `test` SET `a`=0", 'insert' );
+iss( SQL::update('test', 'id=1', ['a'=>0]), "UPDATE `test` SET `a`=0 WHERE id=1", 'update' );
 
 
 iss( SQL::select('test',array(

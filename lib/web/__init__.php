@@ -54,7 +54,35 @@ class Bootstrap {
             require_once LIB_PATH . DIRECTORY_SEPARATOR . $name;
         }
     }
-
+    // mostra errori formattati quando mvc non sia ancora disponibile
+    public static function niceDie($message, $class='error'){
+        $alias_dir = ALIAS_DIR;
+        $icon_class = 'fi-alert';
+        $alert = '<div class="alert ' . $class . ' " style="position:relative;">
+        <i class="step ' . $icon_class . '" style="font-size: 35px; position: absolute; left:20px; -top:10px;top:0;"></i>
+        ' . ucfirst($message) . '</div>';
+        $html=<<<__END__
+        <html>
+        <head>
+            <link href="$alias_dir/css/site.css" media="screen" rel="stylesheet" type="text/css" >
+        </head>
+        <body style="padding:60px;">
+            $alert
+        </body>
+        <style type="text/css">
+        .alert pre {
+            font-size: 10px;
+            background-color: #f9f9f9;
+            color:#444;
+        }
+        .alert {
+            padding: 10px;
+        }
+        </style>
+        </html>
+__END__;
+        die($html);
+    }
 }
 
 Bootstrap::init();

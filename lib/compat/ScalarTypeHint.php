@@ -1,23 +1,19 @@
 <?php
 
-
-
-
 class ScalarTypeHint {
 
     const TYPEHINT_PCRE = '/^Argument (\d)+ passed to (?:(\w+)::)?(\w+)\(\) must be an instance of (\w+), (\w+) given/';
 
-    private static $check_funcs = array(
+    private static $check_funcs = [
         'boolean' => 'is_bool',
         'integer' => 'is_int',
         'float' => 'is_float',
         'string' => 'is_string',
-        'resource' => 'is_resource'
-    );
-
+        'resource' => 'is_resource',
+    ];
     public static function initializeHandler() {
         // PHP 7 implementa la funzionalità di default
-        if( defined('PHP_VERSION_ID') && ( PHP_VERSION_ID <= 70006 ) ) {
+        if (defined('PHP_VERSION_ID') && (PHP_VERSION_ID <= 70006)) {
             return;
         }
         set_error_handler('ScalarTypeHint::handleTypehint');
@@ -72,9 +68,9 @@ if (basename(__FILE__) == basename($argv[0])) {
         echo $float;
     }
 
-    teststring(array());
-    testinteger(array());
-    testfloat(array());
+    teststring([]);
+    testinteger([]);
+    testfloat([]);
 
     // This will work for class methods as well.
     class T {
@@ -85,5 +81,5 @@ if (basename(__FILE__) == basename($argv[0])) {
 
     }
 
-    T::test(array());
+    T::test([]);
 }

@@ -24,11 +24,11 @@ class IOPipesProcess {
     //     [_] => /usr/local/bin/php
     // );
     public static function exec($cmd, $input, &$output){
-        $descspec = array(
-            0=>array('pipe', 'r'),
-            1=>array('pipe', 'w'),
-            2=>array('pipe', 'w')
-        );
+        $descspec = [
+            0 => ['pipe', 'r'],
+            1 => ['pipe', 'w'],
+            2 => ['pipe', 'w']
+        ];
         $P = proc_open($cmd, $descspec, $pipes);
         if(!$P) {
             return -1;

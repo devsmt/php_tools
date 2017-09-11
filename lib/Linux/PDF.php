@@ -34,9 +34,11 @@ class PDF {
      */
 
     public static function getThumbnail($pdf_path, $opt = ) {
-        $opt = array_merge(array('w' => 150, 'h' => 150, 'scale' => true, 'inflate' => true, 'quality' => 100, 'adapterClass' => null, 'adapterOptions' => , 'force' => false
+        $opt = array_merge(
+            [
+                'w' => 150, 'h' => 150, 'scale' => true, 'inflate' => true, 'quality' => 100, 'adapterClass' => null, 'adapterOptions' => , 'force' => false
                 // forza la riscrittura della thumb
-                ), $opt);
+                ], $opt);
         extract($opt);
         // crea un athumbnail dal PDF
         $img_path = PDF::extractFirstPage($pdf_path);
@@ -53,6 +55,13 @@ class PDF {
         $path = self::getThumbnail($pdf_path, $opt);
         $url = str_replace(sfConfig::get('sf_root_dir') . '/web', '', $path);
         return $url;
+    }
+
+    // totale pagine del documento
+    public static function getPageCount($doc_path) {
+        $cmd = "gs -q -dNODISPLAY -c \"($doc_path) (r) file runpdfbegin pdfpagecount = quit\";";
+        $res = trim( `$cmd` );
+        return $res;
     }
 
 }

@@ -12,7 +12,7 @@ class URL {
 
     // costruisce una url, a partire dalla pagina inviata e dai dati inviati
     // non appende GET automaticamente, se non presente il par $page usa PHP_SELF
-    // $page='', $data=array()
+    // $page='', $data=[]
     function get() {
         $args = func_get_args();
         $c = func_num_args();

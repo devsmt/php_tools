@@ -5,9 +5,9 @@ class Path {
 
     // lista di directory o array lista di directory o stringhe da spezzare per avere una directory
     // Path::join('var','www');
-    // Path::join(array('var','www'));
+    // Path::join(['var','www']);
     // Path::join('var/www','public');
-    // Path::join(array('var/www','public'));
+    // Path::join(['var/www','public']);
     // Path::join('D:\www\webroot', 'template', index.php)
     function join() {
         $num_args = func_num_args();
@@ -51,7 +51,7 @@ class Path {
     // are preserved
     function real($path) {
         $result = '';
-        $path = str_replace(array('/', '\\'), DIRECTORY_SEPARATOR, $path);
+        $path = str_replace(['/', '\\'], DIRECTORY_SEPARATOR, $path);
         if ($path[0] == '/') {
             $result .= '/';
         }
@@ -100,7 +100,7 @@ class Path {
             } else {
                 $directory = dirname($_SERVER["SCRIPT_NAME"]);
             }
-            return "$protocol://" . $_SERVER["HTTP_HOST"] . $directory . (!in_array(substr($directory, -1), array("\\", "/")) && !in_array(substr($path, 0, 1), array("\\", "/")) ? "/" : "") . $path;
+            return "$protocol://" . $_SERVER["HTTP_HOST"] . $directory . (!in_array(substr($directory, -1), ["\\", "/"]) && !in_array(substr($path, 0, 1), ["\\", "/"]) ? "/" : "") . $path;
         }
     }
 
@@ -168,7 +168,7 @@ class Path {
         /*  If "dir" part has one or more slashes at the beginning, erases all.
          *   Then if it has one or more slashes in sequence, replaces for only 1.
          */
-        $path_dir = preg_replace(array("/^\\/+/", "/\\/+/"), array("", "/"), $path_dir);
+        $path_dir = preg_replace(array("/^\\/+/", "/\\/+/"), ["", "/"], $path_dir);
         // Breaks "dir" part on each slash
         $path_parts = explode("/", $path_dir);
         // Creates a new array with the right path. Each element is a new dir (or file in the ending, if exists) in sequence.

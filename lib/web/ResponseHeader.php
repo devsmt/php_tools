@@ -7,27 +7,27 @@ class ResponseHeader {
         header("HTTP/1.0 404 Not Found");
         if ($use_html) {
             $html = '<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">' . "n" .
-                    '<html><head>' . "n" .
-                    '<title>404 Not Found</title>' . "n" .
-                    '</head><body>' . "n" .
-                    '<h1>Not Found</h1>' . "n" .
-                    '<p>The requested URL ' .
-                    str_replace(strstr($_SERVER['REQUEST_URI'], '?'), '', $_SERVER['REQUEST_URI']) .
-                    ' was not found on this server.</p>' . "n" .
-                    '</body></html>' . "n";
+            '<html><head>' . "n" .
+            '<title>404 Not Found</title>' . "n" .
+            '</head><body>' . "n" .
+            '<h1>Not Found</h1>' . "n" .
+            '<p>The requested URL ' .
+            str_replace(strstr($_SERVER['REQUEST_URI'], '?'), '', $_SERVER['REQUEST_URI']) .
+            ' was not found on this server.</p>' . "n" .
+            '</body></html>' . "n";
             die($html);
         }
     }
     // forza il redirect gestendo anche il caso in cui già esista output
     function redirect($url) {
-        if (!headers_sent()){
-            header('Location: '.$url);
+        if (!headers_sent()) {
+            header('Location: ' . $url);
         } else {
             echo '<script type="text/javascript">';
-            echo 'window.location.href="'.$url.'";';
+            echo 'window.location.href="' . $url . '";';
             echo '</script>';
             echo '<noscript>';
-            echo '<meta http-equiv="refresh" content="0;url='.$url.'" />';
+            echo '<meta http-equiv="refresh" content="0;url=' . $url . '" />';
             echo '</noscript>';
         }
     }
@@ -36,18 +36,17 @@ class ResponseHeader {
     protected static function downloadBinary($file_path, Closure $do_after) {
 
         if (!is_file($file_path)) {
-            header($_SERVER['SERVER_PROTOCOL'].' 404 Not Found');
-            die( 'File not found' );
+            header($_SERVER['SERVER_PROTOCOL'] . ' 404 Not Found');
+            die('File not found');
         } else if (!is_readable($file_path)) {
-            header($_SERVER['SERVER_PROTOCOL'].' 403 Forbidden');
-            die( 'File not readable' );
+            header($_SERVER['SERVER_PROTOCOL'] . ' 403 Forbidden');
+            die('File not readable');
         }
         // header($_SERVER['SERVER_PROTOCOL'].' 200 OK');
         // header("Content-Type: application/zip");
         //
         // toglie eventuale output buffer(s)
-        while (ob_get_level() > 0) { ob_end_clean(); }
-
+        while (ob_get_level() > 0) {ob_end_clean();}
 
         // necessario per gestire files grandi
         set_time_limit(0);
@@ -103,7 +102,6 @@ class ResponseHeader {
         }
         $gm_mod = gmdate('D, d M Y H:i:s', $t_mod) . ' GMT';
 
-
         // cache per n gg
         $s_delay = (60 * 60 * 24 * 7);
         $t_delay = time() + $s_delay;
@@ -114,7 +112,6 @@ class ResponseHeader {
         header("Pragma: cache");
         header("Last-Modified: $gm_mod");
         header("Expires: $gm_delay GMT");
-
 
         $if_modified_since = '';
         if (isset($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
@@ -129,11 +126,6 @@ class ResponseHeader {
         }
     }
 
-
-
-
-
-
     // invia una header 304 Not Modified se il contenuto non è variato, altrimneti rigenera la risposta
     // get the last-modified-date of a file
     // $last_modified=filemtime(__FILE__);// or get the time from DB
@@ -146,21 +138,20 @@ class ResponseHeader {
         //get the HTTP_IF_NONE_MATCH header if set (etag: unique file hash)
         $etag_header = (isset($_SERVER['HTTP_IF_NONE_MATCH']) ? trim($_SERVER['HTTP_IF_NONE_MATCH']) : false);
         //set last-modified header
-        header("Last-Modified: ".gmdate("D, d M Y H:i:s", $last_modified)." GMT");
+        header("Last-Modified: " . gmdate("D, d M Y H:i:s", $last_modified) . " GMT");
         //set etag-header
         header("Etag: $etag");
         //make sure caching is turned on
         header('Cache-Control: public');
         //check if page has changed. If not, send 304 and exit
-        if ( $if_modified_since == $last_modified || $etag_header == $etag) {
+        if ($if_modified_since == $last_modified || $etag_header == $etag) {
             header("HTTP/1.1 304 Not Modified");
             exit;
         } else {
             // sprintf('<!-- This page was last modified: %s -->', date("d.m.Y H:i:s",time()) );
-            die( $generator() );
+            die($generator());
         }
     }
-
 
     //----------------------------------------------------------------------------
     // content type headers
@@ -168,7 +159,7 @@ class ResponseHeader {
     //  force file download, anche su IE
     public static function displayPDF($pdf_path) {
         // toglie eventuale output
-        while (ob_get_level() > 0) { ob_end_clean(); }
+        while (ob_get_level() > 0) {ob_end_clean();}
         header('Content-type: application/pdf');
         header(sprintf('Content-Disposition: attachment; filename="%s"', basename($pdf_path)));
         header('Pragma: no-cache');
@@ -187,7 +178,7 @@ class ResponseHeader {
      * Set the HTTP response status and takes care of the used PHP SAPI
      */
     function http_status($code = 200, $text = '') {
-        static $stati = array(
+        static $stati = [
             200 => 'OK',
             201 => 'Created',
             202 => 'Accepted',
@@ -226,19 +217,19 @@ class ResponseHeader {
             502 => 'Bad Gateway',
             503 => 'Service Unavailable',
             504 => 'Gateway Timeout',
-            505 => 'HTTP Version Not Supported'
-        );
+            505 => 'HTTP Version Not Supported',
+        ];
 
-        if($text == '' && isset($stati[$code])) {
+        if ($text == '' && isset($stati[$code])) {
             $text = $stati[$code];
         }
 
         $server_protocol = (isset($_SERVER['SERVER_PROTOCOL'])) ? $_SERVER['SERVER_PROTOCOL'] : false;
 
-        if(substr(php_sapi_name(), 0, 3) == 'cgi'  ) {
+        if (substr(php_sapi_name(), 0, 3) == 'cgi') {
             header("Status: {$code} {$text}", true);
-        } elseif($server_protocol == 'HTTP/1.1' OR $server_protocol == 'HTTP/1.0') {
-            header($server_protocol." {$code} {$text}", true, $code);
+        } elseif ($server_protocol == 'HTTP/1.1' OR $server_protocol == 'HTTP/1.0') {
+            header($server_protocol . " {$code} {$text}", true, $code);
         } else {
             header("HTTP/1.1 {$code} {$text}", true, $code);
         }
@@ -264,17 +255,17 @@ class ImageResponseHeader {
             $ext = substr($path, -3);
             // set the MIME type
             switch ($ext) {
-                case 'jpg':
-                    $mime = 'image/jpeg';
-                    break;
-                case 'gif':
-                    $mime = 'image/gif';
-                    break;
-                case 'png':
-                    $mime = 'image/png';
-                    break;
-                default:
-                    $mime = image_type_to_mime_type(exif_imagetype($path));
+            case 'jpg':
+                $mime = 'image/jpeg';
+                break;
+            case 'gif':
+                $mime = 'image/gif';
+                break;
+            case 'png':
+                $mime = 'image/png';
+                break;
+            default:
+                $mime = image_type_to_mime_type(exif_imagetype($path));
             }
             // if a valid MIME type exists, display the image
             // by sending appropriate headers and streaming the file
@@ -284,59 +275,57 @@ class ImageResponseHeader {
         }
     }
     // helper function: Send headers and returns an image.
-    public static function sendImage($filename, $s_browser_cache = 60*60*24) {
+    public static function sendImage($filename, $s_browser_cache = 60 * 60 * 24) {
         // toglie eventuale output
         $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
-        if (in_array($extension, array('png', 'gif', 'jpeg'))) {
-            header("Content-Type: image/".$extension);
+        if (in_array($extension, ['png', 'gif', 'jpeg'])) {
+            header("Content-Type: image/" . $extension);
         } else {
             header("Content-Type: image/jpeg");
         }
-        header("Cache-Control: public, max-age=".$s_browser_cache);
-        header('Expires: '.gmdate('D, d M Y H:i:s', time()+$s_browser_cache).' GMT');
-        header('Content-Length: '.filesize($filename));
-        while (ob_get_level() > 0) { ob_end_clean(); }
+        header("Cache-Control: public, max-age=" . $s_browser_cache);
+        header('Expires: ' . gmdate('D, d M Y H:i:s', time() + $s_browser_cache) . ' GMT');
+        header('Content-Length: ' . filesize($filename));
+        while (ob_get_level() > 0) {ob_end_clean();}
         readfile($filename);
         exit();
     }
 
-
-
     /*
-      // usa ::cacheControl() o ::ImgSend()
-      // forza il browser a
-      1) assegnare all'oggetto la data di modifica,
-      2) inviare l'header HTTP_IF_MODIFIED_SINCE
-      public static function validate_cache_headers($t_mod) {
-      $gm_mod = gmdate('D, d M Y H:i:s', $t_mod) . ' GMT';
-      if ($_SERVER['IF_MODIFIED_SINCE'] == $gm_mod) {
-      header("HTTP/1.1 304 Not Modified");
-      exit;
-      } else {
-      header("Cache-Control: must-revalidate");
-      header("Last-Modified: $gm_mod");
-      // followsw document content
-      }
-      }
+    // usa ::cacheControl() o ::ImgSend()
+    // forza il browser a
+    1) assegnare all'oggetto la data di modifica,
+    2) inviare l'header HTTP_IF_MODIFIED_SINCE
+    public static function validate_cache_headers($t_mod) {
+    $gm_mod = gmdate('D, d M Y H:i:s', $t_mod) . ' GMT';
+    if ($_SERVER['IF_MODIFIED_SINCE'] == $gm_mod) {
+    header("HTTP/1.1 304 Not Modified");
+    exit;
+    } else {
+    header("Cache-Control: must-revalidate");
+    header("Last-Modified: $gm_mod");
+    // followsw document content
+    }
+    }
      */
 
     /*
-      Some information on the Cache-Control header is as follows
+    Some information on the Cache-Control header is as follows
 
-      HTTP 1.1. Allowed values = PUBLIC | PRIVATE | NO-CACHE | NO-STORE.
+    HTTP 1.1. Allowed values = PUBLIC | PRIVATE | NO-CACHE | NO-STORE.
 
-      Public - may be cached in public shared caches.
-      Private - may only be cached in private cache.
-      No-Cache - may not be cached.
-      No-Store - may be cached but not archived.
+    Public - may be cached in public shared caches.
+    Private - may only be cached in private cache.
+    No-Cache - may not be cached.
+    No-Store - may be cached but not archived.
 
-      The directive CACHE-CONTROL:NO-CACHE indicates cached information should not be
-      used and instead requests should be forwarded to the origin server.
-      This directive has the same semantics as the PRAGMA:NO-CACHE.
+    The directive CACHE-CONTROL:NO-CACHE indicates cached information should not be
+    used and instead requests should be forwarded to the origin server.
+    This directive has the same semantics as the PRAGMA:NO-CACHE.
 
-      Clients SHOULD include both PRAGMA: NO-CACHE and CACHE-CONTROL: NO-CACHE when
-      a no-cache request is sent to a server not known to be HTTP/1.1 compliant.
-      Also see EXPIRES.
+    Clients SHOULD include both PRAGMA: NO-CACHE and CACHE-CONTROL: NO-CACHE when
+    a no-cache request is sent to a server not known to be HTTP/1.1 compliant.
+    Also see EXPIRES.
      */
     // deprecated
     public static function __cacheControl($do_cache, $s_delay = null) {
@@ -351,17 +340,14 @@ class ImageResponseHeader {
                 $s_delay = (60 * 60 * 24 * 1);
             }
             // Client is told to cache these results for set duration
-            header('Cache-Control: public,max-age='.$s_delay.',must-revalidate');
-            header('Expires: '.gmdate('D, d M Y H:i:s',(time()+$s_delay)).' GMT');
-            header('Last-modified: '.gmdate('D, d M Y H:i:s',time()).' GMT');
+            header('Cache-Control: public,max-age=' . $s_delay . ',must-revalidate');
+            header('Expires: ' . gmdate('D, d M Y H:i:s', (time() + $s_delay)) . ' GMT');
+            header('Last-modified: ' . gmdate('D, d M Y H:i:s', time()) . ' GMT');
             // Pragma header removed should the server happen to set it automatically
             // Pragma headers can make browser misbehave and still ask data from server
             header_remove('Pragma');
         }
     }
-
-
-
 
     // basata sulle precedenti, assume che $path sia un'immagine
     public static function cacheImg($path) {
@@ -376,7 +362,7 @@ class ImageResponseHeader {
         header("Last-Modified: $gm_mod");
 
         $file_hash = md5_file($path);
-        header('ETag: ' .$file_hash );
+        header('ETag: ' . $file_hash);
 
         // set expires +1 day
         $s_delay = (60 * 60 * 24 * 1);
@@ -386,7 +372,6 @@ class ImageResponseHeader {
         // cache per n gg
         header("Cache-Control: max-age=" . $s_delay . ', public');
         header("Pragma: cache");
-
 
         // if client data is ok, nothing to do
         if (isset($_SERVER['HTTP_IF_NONE_MATCH'])) {
@@ -410,4 +395,3 @@ class ImageResponseHeader {
         }
     }
 }
-

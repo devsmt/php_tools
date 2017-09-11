@@ -3,32 +3,32 @@
 // helpers
 class Session {
 
-    function has($k) {
+    public static function has($k) {
         $s = new SessionDriverPHP5();
         return $s->has($k);
     }
 
-    function get($k, $d) {
+    public static function get($k, $d) {
         $s = new SessionDriverPHP5();
         return $s->get($k, $d);
     }
 
-    function set($k, $v) {
+    public static function set($k, $v) {
         $s = new SessionDriverPHP5();
         $s->set($k, $v);
     }
 
-    function dump() {
+    public static function dump() {
         $s = new SessionDriverPHP5();
         $s->dump();
     }
 
-    function destroy() {
+    public static function destroy() {
         $s = new SessionDriverPHP5();
         $s->destroy();
     }
 
-    function clear() {
+    public static function clear() {
         $s = new SessionDriverPHP5();
         $s->clear();
     }
@@ -116,7 +116,7 @@ class SessionDriverPHP5 implements ISessionDriver {
 /*
 class SessionDriverDB implements ISessionDriver {
 
-  function __construct($options=array() )  {
+  function __construct($options=[] )  {
   $this->database = Weasel::GetDB();//$locator->get( 'database' );
   $this->request  = Weasel::GetRequest();//$locator->get( 'request' );
 
@@ -330,7 +330,7 @@ class SessionMessages {
             $_SESSION[__FLASH__] = [];
         }
         $type = strtolower($type);
-        if (!in_array($type, array('error', 'success', 'info'));
+        if (!in_array($type, ['error', 'success', 'info']);
         ) {
             $msg = sprintf('Errore %s unrecognized message type "%s" ', __CLASS__, $type);
             throw new Exception($msg);
@@ -338,7 +338,7 @@ class SessionMessages {
         if (isset($_SESSION[__FLASH__][$type])) {
             $_SESSION[__FLASH__][$type][] = $msg;
         } else {
-            $_SESSION[__FLASH__][$type] = array($msg);
+            $_SESSION[__FLASH__][$type] = [$msg];
         }
         return count($_SESSION[__FLASH__][$type]);
     }
@@ -374,5 +374,38 @@ class SessionMessages {
 
 }
 
+/***
+ * Starts a session with a specific timeout and a specific GC probability.
+ * @param int $ttl The number of seconds until it should time out.
+ * @param int $gc_probability The probablity, in int percentage, that the garbage
+ *        collection routine will be triggered right now.
+ * @param strint $cookie_domain The domain path for the cookie.
+ */
+function session_start_timeout($path, $ttl=5, $gc_probability=100, $cookie_domain='/') {
+    // Set the max lifetime
+    ini_set('session.gc_maxlifetime', $ttl);
 
+    // Set the session cookie to timout
+    ini_set('session.cookie_lifetime', $ttl);
+
+
+    // the session must be stored in a separate directory to persist more than
+    // php default/debian default
+    ini_set('session.save_path', $path);
+
+    // Set the chance to trigger the garbage collection.
+    ini_set('session.gc_probability', $gc_probability);
+    ini_set('session.gc_divisor', 100); // Should always be 100
+
+    // Start the session!
+    session_start();
+
+    // Renew the time left until this session times out.
+    // If you skip this, the session will time out based
+    // on the time when it was created, rather than when
+    // it was last used.
+    if(isset($_COOKIE[session_name()])) {
+        setcookie(session_name(), $_COOKIE[session_name()], time() + $ttl, $cookie_domain);
+    }
+}
 

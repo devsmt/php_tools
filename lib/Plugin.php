@@ -56,7 +56,7 @@ class Plugin {
         if (!array_key_exists($className, $this->slots)) {
             $this->map[$className] = [];
         }
-        $this->slots[$className][] = array('event' => $event_name, 'method' => $method);
+        $this->slots[$className][] = ['event' => $event_name, 'method' => $method];
     }
 
 }

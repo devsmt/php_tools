@@ -11,20 +11,20 @@ ok( Path::real('/var/../var/../../../var/www') == '/var/www', Path::real('/var/.
 
 diag( "Path::join");
 ok( Path::join('var','www') == '/var/www' );
-ok( Path::join(array('var','www')) == '/var/www' );
+ok( Path::join(['var','www']) == '/var/www' );
 ok( Path::join('var/www','public') == '/var/www/public' );
-ok( Path::join(array('var/www','public')) == '/var/www/public' );
+ok( Path::join(['var/www','public']) == '/var/www/public' );
 
 diag( "Path::join + real");
-ok( Path::join(array('var/www/mydir','..','public')) == '/var/www/public', Path::join(array('var/www/mydir','..','public')) );
-ok( Path::join(array('var/www/..','www','public')) == '/var/www/public',Path::join(array('var/www/..','www','public')) );
-ok( Path::join(array('var/www/..','www/../www/public')) == '/var/www/public', Path::join(array('var/www/..','www/../www/public')) );
+ok( Path::join(['var/www/mydir','..','public']) == '/var/www/public', Path::join(['var/www/mydir','..','public']) );
+ok( Path::join(['var/www/..','www','public']) == '/var/www/public',Path::join(['var/www/..','www','public']) );
+ok( Path::join(['var/www/..','www/../www/public']) == '/var/www/public', Path::join(['var/www/..','www/../www/public']) );
 
 /*
 diag( "Path::join for windows");
 // win tests
 is( Path::join('D:\www\webroot', 'template') , 'D:\www\webroot\template' );
-is( Path::join(array('D:\www\webroot', 'template', 'index.php')) , 'D:\www\webroot\template\index.php' );
+is( Path::join(['D:\www\webroot', 'template', 'index.php']) , 'D:\www\webroot\template\index.php' );
 */
 
 

@@ -33,7 +33,7 @@ class AutoAPI {
 
 
         // call
-        $res = call_user_func_array(array('Api\OrderList', 'getOrder'), $a_call_param );
+        $res = call_user_func_array(['Api\OrderList', 'getOrder'], $a_call_param );
         die $this->respond('ok', '', $res);
     }
     protected function respond($status, $msg, $data=[]){}

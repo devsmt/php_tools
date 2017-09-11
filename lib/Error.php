@@ -92,7 +92,7 @@ $log_file = APPLICATION_PATH . "/../var/logs/php_error-" . date('my') . ".log";
 ini_set('error_log', $log_file);
 
 if (self::isEnvProd()) {
-set_exception_handler(array('Monitor', 'ExcpLoggerMail'));
+set_exception_handler(['Monitor', 'ExcpLoggerMail']);
 }
 }
  */
@@ -101,7 +101,7 @@ class Error_Monitor {
 
     // informa di possibili problemi online
     // TODO: evitare che si generino troppi messaggi di notifica
-    // USO: set_exception_handler( array('Monitor', 'ExcpLoggerMail') );
+    // USO: set_exception_handler( ['Monitor', 'ExcpLoggerMail'] );
     public static function ExcpLoggerMail($exception) {
 
         $url = sprintf('%s://%s/%s', $_SERVER['REQUEST_SCHEME'], $_SERVER['HTTP_HOST'], $_SERVER['REQUEST_URI']
@@ -199,7 +199,7 @@ class Error_Monitor {
     //     - impedire che il sistema generi un numero esagerato di notifiche
     //     - al momento non servono molti dettagli sul utente
     // uso:
-    //    $old_error_handler = set_error_handler(array('Monitor','ErrorLoggerEmail'));
+    //    $old_error_handler = set_error_handler(['Monitor','ErrorLoggerEmail']);
     //    trigger_error("Cannot divide by zero", E_USER_ERROR);
     public static function ErrorLoggerEmail($errno, $errstr, $errfile, $errline) {
         if (!(error_reporting() & $errno)) {
