@@ -20,7 +20,7 @@ class UrlHash {
 // funzione: genera un parametro checksum dato un parametro id associato
 // assicura che il parametro oggetto(es. un id) non sia manomesso dal utente
 // uso:
-//     url('estrattoconto.php', array('cod_cliente'=>$id, 'C'=>UrlChecksum::getCheck($id)));
+//     url('page.php', array('cod_cliente'=>$id, 'C'=>UrlChecksum::getCheck($id)));
 //     if( UrlChecksum::isValid($id, $_GET['C'] ) ){ ok }
 class UrlChecksum {
 

@@ -177,11 +177,11 @@ class Arr {
             if (array_key_exists($key, $v)) {
                 $array[] = $v[$key];
             }
-
         }
         return $array;
     }
 
+    // da un RS ritorna Array<string>
     function array_pluck($key, $data) {
         return array_reduce($data, function ($result, $array) use ($key) {
             isset($array[$key]) &&
@@ -190,10 +190,68 @@ class Arr {
         }, []);
     }
 
+    // dato un array di dizionari Hash<any>[]  ritorna solo le chiavi indicate, mantenendo le chiavi nel dizionario
+    function h_pluck($a_RS, $key ) {
+        if( is_string($key) ) {
+            return array_reduce($a_RS, function ($result, $rec) use ($key) {
+                    if( isset($rec[$key]) )
+                        $result[] = [ $key => $rec[$key] ];
+                    return $result;
+            }, []);
+        } elseif( is_array($key) ) {
+            $return = [];
+            foreach ($a_RS as $rec) {
+                $a_tmp = [];
+                foreach( $key as $cur_key ) {
+                    if( isset($rec[$cur_key]) ) {
+                        $a_tmp[ $cur_key ] = $rec[$cur_key];
+                    }
+                }
+                $return[] = $a_tmp;
+            }
+            return $return;
+        }
+    }
+
+
     // ritorna un array dei valori di una chiave
     function getKeyValues($key, $input) {
         return self::pluck($key, $input);
     }
+
+    //
+    // Checks array is an hash
+    //
+    function is_array_assoc($array) {
+        if (!is_array($array) || empty($array)) {
+            return false;
+        }
+        $count = count($array);
+        for ($i = 0; $i < $count; ++$i) {
+            if (!array_key_exists($i, $array)) {
+                return true;
+            }
+        }
+        return false;
+    }
+    function is_array_indexed ($array) {
+        if (!is_array($array) || empty($array)) {
+            return false;
+        }
+        return !is_array_assoc($array);
+    }
+
+    // map both keys and values
+    function array_map_keys(array $a1, \Closure $f_k_mapper = null, \Closure $f_v_mapper = null) {
+        $f_k_mapper = $f_k_mapper ?? function ($k, $v) {return $k;};
+        $f_v_mapper = $f_v_mapper ?? function ($v, $k) {return $v;};
+        $a2 = [];
+        foreach ($a1 as $k => $v) {
+            $a2[$f_k_mapper($k, $v)] = $f_v_mapper($v, $k);
+        }
+        return $a2;
+    }
+
 
     // returns the first argument that is not empty()
     function coalesce() {

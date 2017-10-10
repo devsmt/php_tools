@@ -3,13 +3,13 @@
 class Error {
     function initErrorHandling() {
         error_reporting(E_ALL ^ E_NOTICE); // mostra tutti gli errori ma Esclude i NOTICE
-        ini_set("log_errors", "On");
+        ini_set('log_errors', 'On');
         // ensure dir LOG_PATH
-        ini_set("error_log", LOG_PATH);
+        ini_set('error_log', LOG_PATH);
         if (isset($_REQUEST['__verbose__']) && $_REQUEST['__verbose__'] > 0) {
-            ini_set("display_errors", "On");
+            ini_set('display_errors', 'On');
         } else {
-            ini_set("display_errors", "Off");
+            ini_set('display_errors', 'Off');
         }
     }
 }
@@ -281,4 +281,59 @@ class Error_Monitor {
     // });
     //
     //
+}
+
+
+
+// better trace format
+function fmt_exception_trace(Exception $e) {
+    function _serialize_args($args) {
+        $_v_mapper = function ($val) use (&$_v_mapper) {
+            if (is_array($val)) {
+                $a_h = array_map_keys($val,
+                    function ($k) {
+                        return $k;
+                    },
+                    $_v_mapper);
+                return $a_h;
+            } elseif (is_object($val)) {
+                return get_class($val);
+            } elseif (is_resource($val)) {
+                return $val;
+            } elseif (is_string($val)) {
+                $val = trim(strip_tags($val));
+                $is_path = substr($val, 0, 1) == '/' && substr_count($val, '/') >= 2; // inizia con /
+                if (strlen($val) < 15 || $is_path) {
+                    return $val;
+                } else {
+                    return substr($val, 0, 15) . '...';
+                }
+            }
+            return $val;
+        };
+        if (is_array($args)) {
+            $args = array_map($_v_mapper, $args);
+        } else {
+            $args = $_v_mapper($args);
+        }
+        $args = json_encode($args, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+        return $args;
+    }
+    $a_trace = $e->getTrace();
+    $a_trace = array_reverse($a_trace);
+    $result = '';
+    $i = 0;
+    foreach ($a_trace as $trace) {
+        $result .= $str = sprintf('%d) %s%s%s() %s @%s args:%s ' . PHP_EOL,
+            ++$i,
+            @$trace['class'],
+            @$trace['type'],
+            $trace['function'],
+            //
+            $trace["file"],
+            $trace["line"],
+            _serialize_args($trace["args"])
+        );
+    }
+    return $result;
 }
