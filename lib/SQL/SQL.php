@@ -513,4 +513,26 @@ class SQLFilter {
         $s = substr($s, 0, $len);
         return $s;
     }
+
+        // crea un stmt insert bulk anx exec it
+    public static function bulk_insert($table, $labels=null, $data, $truncate = FALSE) {
+        if( empty($labels) ){
+            $labels = array_keys( $data[0] );
+        }
+        $i = 0;
+
+        if ($truncate) {
+            self::truncate($table);
+        }
+
+        $sql = "INSERT INTO $table ($labels) VALUES ";
+        foreach ($data as $key => $value) {
+            $i++;
+            $sql .= '(\'' . implode('\', \'', array_map('addslashes', array_values($value))) . '\')' .
+            (count($data) > $i ? ', ' : '');
+        }
+
+        return $sql ;
+    }
+
 }

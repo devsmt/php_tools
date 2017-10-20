@@ -16,19 +16,19 @@ declare (strict_types = 1);
 $B = new IPBLocker();
 $B->addAttempt($resource_id);
 if( !$B->isLegit() ){
-    $B->makeClientWait();
-    Logger::log("$IP failed to login {$this->max_attempts} times");
-    throw new \Exception('too much login attempts from the current IP. check later.');
+$B->makeClientWait();
+Logger::log("$IP failed to login {$this->max_attempts} times");
+throw new \Exception('too much login attempts from the current IP. check later.');
 }
 ... do login validation
 $is_login_ok = true;
 if( $is_login_ok ) {
-    $B->deleteAttempts($IP);
+$B->deleteAttempts($IP);
 }
-*/
+ */
 class IPBLocker {
-    public function __construct($max_attempts = 5, $ttl_m = 60, $IP=null, $resource_id='ip_login_log') {
-        $this->cache_key = $resource_id ;
+    public function __construct($max_attempts = 5, $ttl_m = 60, $IP = null, $resource_id = 'ip_login_log') {
+        $this->cache_key = $resource_id;
         $this->max_attempts = $max_attempts;
         $this->ttl_secs = $ttl_m * 60;
         $this->IP = coalesce($IP, Net::getIP());
@@ -36,19 +36,19 @@ class IPBLocker {
 
     /*
     public function throttle( \Closure $_login_validator ) {
-        $B->addAttempt();
-        if( !$B->isLegit() ){
-            $B->makeClientWait();
-            Logger::log("$IP failed to login {$this->max_attempts} times");
-            throw new \Exception('too much login attempts from the current IP. check later.');
-        }
-        // ... do login validation
-        $is_login_ok = $_login_validator();
-        if( $is_login_ok ) {
-            $B->deleteAttempts();
-        }
+    $B->addAttempt();
+    if( !$B->isLegit() ){
+    $B->makeClientWait();
+    Logger::log("$IP failed to login {$this->max_attempts} times");
+    throw new \Exception('too much login attempts from the current IP. check later.');
     }
-    */
+    // ... do login validation
+    $is_login_ok = $_login_validator();
+    if( $is_login_ok ) {
+    $B->deleteAttempts();
+    }
+    }
+     */
 
     // get IP
     // log IP for the current date
@@ -73,7 +73,7 @@ class IPBLocker {
         apc_store($this->cache_key, $a_ip_log, $this->ttl_secs);
     }
     // TODO: controllare il tempo intercorso tra le richieste
-    public function getAttemptNum( ) {
+    public function getAttemptNum() {
         $a_ip_log_all = apcu_entry($this->cache_key, function ($key) {
             return [];
         }, $this->ttl_secs);
@@ -88,29 +88,27 @@ class IPBLocker {
         return $is_legit;
     }
     // fa aspettare un client in modo proporzianale al numero di hit fallite
-    public function makeClientWait(){
+    public function makeClientWait() {
         $attempts_num = $this->getAttemptNum();
         sleep(2 ^ ($attempts_num - 1));
     }
     // if login is_a ok, delete attempts older than TTL
     public function deleteAttempts() {
         /*
-        // get data
-        $a_ip_log = apcu_entry($this->cache_key, function ($key) {
-            return [];
-        }, $this->ttl_secs);
-        // elimina
-        unset($a_ip_log[$this->IP]);
-        // store back
-        apc_store($this->cache_key, $a_ip_log, $this->ttl_secs);
-        */
+    // get data
+    $a_ip_log = apcu_entry($this->cache_key, function ($key) {
+    return [];
+    }, $this->ttl_secs);
+    // elimina
+    unset($a_ip_log[$this->IP]);
+    // store back
+    apc_store($this->cache_key, $a_ip_log, $this->ttl_secs);
+     */
     }
 }
 
-
-
 // funzione:
-// per ina risorsa
+// per una risorsa
 // max NUM tentativi(per login o altro) per IP al giorno
 // -scivere in un file, con nome contenente la data odierna, una riga per ogni login(o altra azione)
 // -contare le righe che contengono l'ip
@@ -119,33 +117,33 @@ class IPBLocker {
 uso:
 Boundary::log($id,$resource_id);
 if( Boundary::count($id,$resource_id) > $treshold
-    || Boundary::is_mechanichal($id,$resource_id)
-    ){
-    // .. deny access
+|| Boundary::is_mechanichal($id,$resource_id)
+){
+// .. deny access
 } else {
-    // ok
+// ok
 }
-*/
+ */
 class Boundary {
     // si puo usare ip o username
-    public static function log($id,$resource_id) {
+    public static function log($id, $resource_id) {
         $time = date('Y-m-d_H:i:s');
         file_put_contents(self::getFileName(), "$id:$time\n");
     }
     //
-    public static function count($id,$resource_id) {
+    public static function count($id, $resource_id) {
         $s = file_get_contents(self::getFileName());
         if (empty($s)) {
             return 0;
         }
         $a = explode("\n", $s);
         $a = array_filter($a, function ($s) {
-            return !empty($s) && (strpos($s, $id) !== false);
+            return !empty($s) && (strpos($s, $resource_id) !== false);
         });
         return count($a);
     }
     // se il tempo tra una richiesta e l'altra è eccessivamente breve
-    public static function is_mechanichal($id,$resource_id){}
+    public static function is_mechanichal($id, $resource_id) {}
 
     //
     protected function getFileName() {
@@ -156,15 +154,13 @@ class Boundary {
     }
 }
 
+//  DDOS:
+// different web server processes need to access frequently when a file or database would be too slow.
+// DDOS_Check uses **shared memory** to track accesses to web pages
+// in order to cut off users that abuse a site by bombarding it with requests.
+//
 
-
-/* DDOS:
-different web server processes need to access frequently when a file or database would be too slow.
-Web_Abuse_Check uses **shared memory** to track accesses to web pages
-in order to cut off users that abuse a site by bombarding it with requests.
-*/
-
-class Web_Abuse_Check {
+class DDOS_Check {
     var $sem_key;
     var $shm_key;
     var $shm_size;
@@ -175,7 +171,7 @@ class Web_Abuse_Check {
     var $data;
     var $exclude;
     var $block_message;
-    public function __construct(){
+    public function __construct() {
         $this->sem_key = 5000;
         $this->shm_key = 5001;
         $this->shm_size = 16000;
@@ -254,12 +250,8 @@ END;
 /*
 // uso: call its check_abuse( ) method at the top of a page, passing it the username of a logged in user:
 
-// get_user_IP() is a function that finds out if a user is logged in
-if ($user = get_user_IP()) {
-    $abuse = new pc_Web_Abuse_Check();
-    if ($abuse->check_abuse($user)) {
-        exit;
-    }
+$abuse = new DDOS_Check();
+if ($abuse->check_abuse($IP)) {
+exit;
 }
 */
-

@@ -6,6 +6,12 @@ ini_set('html_errors', false);
 ini_set('implicit_flush', false);
 ini_set('apc.enable_cli', 1);
 
+// Get INI boolean value
+function ini_bool($ini) {
+    $val = ini_get($ini);
+    return (preg_match('~^(on|true|yes)$~i', $val) || (int) $val); // boolean values set by php_value are strings
+}
+
 class CLI {
     //
     public static function std_error($msg) {

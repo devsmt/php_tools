@@ -88,6 +88,11 @@ function base_convert_x(string $p_num = '', int $p_base = 10, int $p_to_base = 6
     return $i_to_base;
 }
 
+// dato un valore massimo e uno minimo, ritorna un valore compreso trai limiti
+function clamp($current, $min=0, $max=999) {
+    return max($min, min($max, $current));
+}
+
 // similar to base_convert_x, this alg:
 // uses only readable chars, decides base from lenght of CODESET
 // works with very big INT (bc math functions)

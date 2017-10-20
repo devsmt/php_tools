@@ -15,6 +15,22 @@ if (!defined('DEBUG')) {
     define('DEBUG', (isset($_GET[DBG_PARAM]) ? (int) $_GET[DBG_PARAM] : $DEBUG_def));
 }
 
+// check che tutti i path esistano
+$a_paths = get_defined_constants(true)['user'];
+$a_paths = array_filter($a_paths, function ($v){
+    $is_path = mb_strpos($v, '_PATH' ) !== false;
+    // false will be skipped
+    return $is_path;
+},  ARRAY_FILTER_USE_KEY  );
+//
+foreach( $a_paths as $name => $path) {
+    if (false === $path ) {
+        $msg = sprintf('Errore Dir Path not readable %s ', $name );
+        throw new \Exception($msg);
+    }
+}
+
+
 class Bootstrap {
 
     public static function init() {
