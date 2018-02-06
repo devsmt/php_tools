@@ -148,6 +148,27 @@ function dec2roman($num) {
     return $roman;
 }
 
+// Returns the least common multiple of two numbers.
+// Use the greatest common divisor (GCD) formula and Math.abs() to determine the least common multiple. The GCD formula uses recursion.
+function lcm($x, $y) {
+    $_gcd = function($x, $y) {
+        return (!$y ? $x : $_gcd($y, $x % $y));
+    };
+    return abs($x * $y) / $_gcd($x, $y);
+}
+// lcm(12, 7); // 84
+
+/*
+Find the middle of the array, use Array.sort() to sort the values. Return the number at the midpoint if length is odd, otherwise the average of the two middle numbers.
+const median = arr => {
+  const mid = Math.floor(arr.length / 2),
+    nums = [...arr].sort((a, b) => a - b);
+  return arr.length % 2 !== 0 ? nums[mid] : (nums[mid - 1] + nums[mid]) / 2;
+};
+median([5, 6, 50, 1, -5]); // 5
+median([0, 10, -2, 7]); // 3.5
+*/
+
 //----------------------------------------------------------------------------
 // BC functions
 //----------------------------------------------------------------------------

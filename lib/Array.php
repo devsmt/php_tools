@@ -48,19 +48,41 @@ class Arr {
         return false;
     }
 
+    //
+    // Determines if an array is associative.
+    // An array is "associative" if it doesn't have sequential numerical keys beginning with zero.
+    //
+    public static function isAssociative3(array $array) {
+        $keys = array_keys($array);
+        return array_keys($keys) !== $keys;
+    }
+
+
     function isSequential($var) {
         return (array_merge($var) === $var && is_numeric(implode(array_keys($var))));
     }
 
     // determina se la chiave e' disponibile e se non lo fosse restituisce $default
     // $k può essere un'array di chiavi
-    function get($a, $k, $default = '') {
-        if (isset($a[$k])) {
-            return $a[$k];
-        } else {
-            return $default;
+    // ottieni una chiave di hash o un defualt
+    function get( array $h, string $k, string $def='') {
+        if( array_key_exists($k, $h) )
+            return $h[$k];
+        // cerca una sottochiave
+        if( strpos($k, '.' ) !== false ) {
+            foreach (explode('.', $k) as $segment) {
+                if (is_array($h) && array_key_exists($h, $segment)) {
+                    $h = $h[$segment];
+                } else {
+                    return $def;
+                }
+            }
+            return $h;
         }
+        // no match
+        return $def;
     }
+
 
     // assicura che tutto ciò che è in $compare sia in $a
     function equals($a, $compare) {
@@ -290,6 +312,23 @@ class Arr {
         }
         return $args[$i = count($args) - 1];
     }
+
+    public static function prepend($array, $value, $key = null)
+    {
+        if (is_null($key)) {
+            array_unshift($array, $value);
+        } else {
+            $array = [$key => $value] + $array;
+        }
+        return $array;
+    }
+    // Get a value from the array, and remove it.
+    public static function pull(&$array, $key, $default = null) {
+        $value = self::get($array, $key, $default);
+        unset($array[$key]);
+        return $value;
+    }
+
 }
 
 class ArrayPaginator {

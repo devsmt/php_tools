@@ -1,9 +1,18 @@
 <?php
-
 // file, nomi file, percorsi
-
 class File {
-
+    /**
+     * Returns true if the string is a valid filename
+     * File names that start with a-Z or 0-9 and contain a-Z, 0-9, underscore(_), dash(-), and dot(.) will be accepted.
+     * File names beginning with anything but a-Z or 0-9 will be rejected (including .htaccess for example).
+     * File names containing anything other than above mentioned will also be rejected (file names with spaces won't be accepted).
+     *
+     * @param string $filename
+     * @return bool
+     */
+    public static function isValidFilename($filename) {
+        return (0 !== preg_match('/(^[a-zA-Z0-9]+([a-zA-Z_0-9.-]*))$/D', $filename));
+    }
     // TEST: if(eregi('\.[a-z]{1,4}$', $file, $a_extension))  return $a_extension[0];
     // $filenameext = pathinfo($filename, PATHINFO_EXTENSION);
     function getExtension($f) {
@@ -14,24 +23,20 @@ class File {
         }
         return "";
     }
-
     // ottiene l'estensione del file, funziona solo se il file esiste, non se è una stringa arbitraria
     function getFileExtension($filename) {
         return pathinfo($filename, PATHINFO_EXTENSION);
     }
-
     function changeExtension($f, $ext) {
         $old = "." . self::getExtension($f);
         $ext = ".$ext";
         return str_replace($old, $ext, $f);
     }
-
     function stripExtension($file) {
         $ext = strrchr($file, '.'); // estraggo l'estensione
         $out_file = substr($file, 0, -strlen($ext)); // tolgo l'estensione
         return $out_file;
     }
-
     /*
     // creates a file ensuring every dir on the path provided is writable
     function write($file, $data) {
@@ -80,7 +85,6 @@ class File {
     return true;
     }
      */
-
     // assicura che la dir esista in ogni sua parte e sia scrivibile
     function createDir($dir) {
         if (!file_exists($dir)) {
@@ -104,7 +108,6 @@ class File {
                     if (isset($_root_dir[3])) {
                         array_shift($_dir_parts);
                     }
-
                 } else {
                     $_new_dir = str_replace('\\', '/', getcwd()) . '/';
                 }
@@ -135,7 +138,6 @@ class File {
             }
         }
     }
-
     /*
     assicura che la dir esista in ogni sua parte e sia scrivibile
     function createDir($dir) {
@@ -188,7 +190,6 @@ class File {
     }
     }
     } */
-
     // determina se $file è + recente di $file_compare
     function is_newer($file, $file_compare) {
         if (filemtime($file) > filemtime($file_compare)) {
@@ -197,14 +198,12 @@ class File {
             return false;
         }
     }
-
     /*
     quando il file da includere è in qualche modo indicato dall'utente,
     occorre assicurarsi che sia all'interno di una whitelist
     $file = $_GET['filename']
     $allowedFiles = ['file1.txt','file2.txt','file3.txt'];
      */
-
     function whitelist_include($file, $allowedFiles) {
         //Include only files that are allowed.
         if (in_array((string) $file, $allowedFiles)) {
@@ -213,7 +212,6 @@ class File {
             exit('not allowed');
         }
     }
-
     // elimina i file più vecchi di n giorni
     // è più vecchio di un numero specifico di giorni
     // filectime: Gets inode change time of file
@@ -239,7 +237,6 @@ class File {
     public static function removeOlder($path, $n_days = 7) {
         return self::unlink_if_older($path, $n_days, $mod = 'c');
     }
-
     // stabilisce se il file è più vecchio di una determinata soglia
     public static function isOlderThan($file_path, $hours) {
         if (!file_exists($file_path)) {
@@ -254,7 +251,6 @@ class File {
         $file_is_old = (time() - filectime($file_path)) >= $timespan;
         return $file_is_old;
     }
-
     // Windows compatible rename
     // rename() can not overwrite existing files on Windows
     // this function will use copy/unlink instead
@@ -269,7 +265,6 @@ class File {
         }
         return true;
     }
-
     //
     // Search a file for matching lines
     //
@@ -297,7 +292,6 @@ class File {
             if (substr($line, -1) != "\n") {
                 continue;
             }
-
             // check if line matches
             if (preg_match($pattern, $line, $match)) {
                 if ($backref) {
@@ -310,11 +304,68 @@ class File {
             if ($max && $max == $cnt) {
                 break;
             }
-
             $line = '';
         }
         fclose($fh);
         return $matches;
     }
-
+    //
+    // Get canonicalized absolute path or callback on non existing path
+    //
+    public static function realpath($path, $cb_on_missing) {
+        if (file_exists($path)) {
+            return realpath($path);
+        } else {
+            return $cb_on_missing($path);
+        }
+    }
+}
+class Dir {
+    /**
+     * Computes the difference of directories. Compares $target against $source and returns a relative path to all files
+     * and directories in $target that are not present in $source.
+     *
+     * @param $source
+     * @param $target
+     *
+     * @return string[]
+     */
+    public static function directoryDiff($source, $target) {
+        $sourceFiles = self::globr($source, '*');
+        $targetFiles = self::globr($target, '*');
+        $sourceFiles = array_map(function ($file) use ($source) {
+            return str_replace($source, '', $file);
+        }, $sourceFiles);
+        $targetFiles = array_map(function ($file) use ($target) {
+            return str_replace($target, '', $file);
+        }, $targetFiles);
+        $diff = array_diff($targetFiles, $sourceFiles);
+        return array_values($diff);
+    }
+    /**
+     * Recursively find pathnames that match a pattern.
+     *
+     * See {@link http://php.net/manual/en/function.glob.php glob} for more info.
+     *
+     * @param string $sDir directory The directory to glob in.
+     * @param string $sPattern pattern The pattern to match paths against.
+     * @param int $nFlags `glob()` . See {@link http://php.net/manual/en/function.glob.php glob()}.
+     * @return array The list of paths that match the pattern.
+     * @api
+     */
+    public static function globr($sDir, $sPattern, $nFlags = null) {
+        if (($aFiles = \_glob("$sDir/$sPattern", $nFlags)) == false) {
+            $aFiles = array();
+        }
+        if (($aDirs = \_glob("$sDir/*", GLOB_ONLYDIR)) != false) {
+            foreach ($aDirs as $sSubDir) {
+                if (is_link($sSubDir)) {
+                    continue;
+                }
+                $aSubFiles = self::globr($sSubDir, $sPattern, $nFlags);
+                $aFiles = array_merge($aFiles, $aSubFiles);
+            }
+        }
+        return $aFiles;
+    }
 }
