@@ -56,27 +56,50 @@ class A {
     public static function isSequential($var) {
         return is_numeric(implode(array_keys($var)));
     }
-    // determina se la chiave e' disponibile e se non lo fosse restituisce $default
-    // $k può essere un'array di chiavi
-    // ottieni una chiave di hash o un defualt
-    public static function get(array $h, string $k, string $def = '') {
-        if (array_key_exists($k, $h)) {
-            return $h[$k];
+    //-------------------------------------------
+    // Checks array is an hash
+    //
+    function is_array_assoc($array) {
+        if (!is_array($array) || empty($array)) {
+            return false;
         }
-        // cerca una sottochiave
-        if (strpos($k, '.') !== false) {
-            foreach (explode('.', $k) as $segment) {
-                if (is_array($h) && array_key_exists($h, $segment)) {
-                    $h = $h[$segment];
-                } else {
-                    return $def;
-                }
+        $count = count($array);
+        for ($i = 0; $i < $count; ++$i) {
+            if (!array_key_exists($i, $array)) {
+                return true;
             }
-            return $h;
         }
-        // no match
-        return $def;
+        return false;
     }
+    function is_array_indexed($array) {
+        if (!is_array($array) || empty($array)) {
+            return false;
+        }
+        return !is_array_assoc($array);
+    }
+    //------------------------------------------
+    // @see H::get
+    // // determina se la chiave e' disponibile e se non lo fosse restituisce $default
+    // // $k può essere un'array di chiavi
+    // // ottieni una chiave di hash o un defualt
+    // public static function get(array $h, string $k, string $def = '') {
+    //     if (array_key_exists($k, $h)) {
+    //         return $h[$k];
+    //     }
+    //     // cerca una sottochiave
+    //     if (strpos($k, '.') !== false) {
+    //         foreach (explode('.', $k) as $segment) {
+    //             if (is_array($h) && array_key_exists($h, $segment)) {
+    //                 $h = $h[$segment];
+    //             } else {
+    //                 return $def;
+    //             }
+    //         }
+    //         return $h;
+    //     }
+    //     // no match
+    //     return $def;
+    // }
     // assicura che tutto ciò che è in $a2 sia in $a
     public static function equals($a, $a2) {
         foreach ($a2 as $k => $v) {
@@ -186,86 +209,7 @@ class A {
     function uniq($a) {
         return array_unique($a);
     }
-    // Usage:  $ids = array_pluck('id', $users);
-    // ritorna un array dei valori di una chiave
-    function pluck($key, $input) {
-        if (is_array($key) || !is_array($input)) {
-            return [];
-        }
-        $array = [];
-        foreach ($input as $v) {
-            if (array_key_exists($key, $v)) {
-                $array[] = $v[$key];
-            }
-        }
-        return $array;
-    }
-    // da un RS ritorna Array<string>
-    function array_pluck($key, $data) {
-        return array_reduce($data, function ($result, $array) use ($key) {
-            isset($array[$key]) &&
-            $result[] = $array[$key];
-            return $result;
-        }, []);
-    }
-    // dato un array di dizionari Hash<any>[]  ritorna solo le chiavi indicate, mantenendo le chiavi nel dizionario
-    function h_pluck($a_RS, $key) {
-        if (is_string($key)) {
-            return array_reduce($a_RS, function ($result, $rec) use ($key) {
-                if (isset($rec[$key])) {
-                    $result[] = [$key => $rec[$key]];
-                }
-                return $result;
-            }, []);
-        } elseif (is_array($key)) {
-            $return = [];
-            foreach ($a_RS as $rec) {
-                $a_tmp = [];
-                foreach ($key as $cur_key) {
-                    if (isset($rec[$cur_key])) {
-                        $a_tmp[$cur_key] = $rec[$cur_key];
-                    }
-                }
-                $return[] = $a_tmp;
-            }
-            return $return;
-        }
-    }
-    // ritorna un array dei valori di una chiave
-    function getKeyValues($key, $input) {
-        return self::pluck($key, $input);
-    }
-    //
-    // Checks array is an hash
-    //
-    function is_array_assoc($array) {
-        if (!is_array($array) || empty($array)) {
-            return false;
-        }
-        $count = count($array);
-        for ($i = 0; $i < $count; ++$i) {
-            if (!array_key_exists($i, $array)) {
-                return true;
-            }
-        }
-        return false;
-    }
-    function is_array_indexed($array) {
-        if (!is_array($array) || empty($array)) {
-            return false;
-        }
-        return !is_array_assoc($array);
-    }
-    // map both keys and values
-    function array_map_keys(array $a1, \Closure $f_k_mapper = null, \Closure $f_v_mapper = null) {
-        $f_k_mapper = $f_k_mapper ?? function ($k, $v) {return $k;};
-        $f_v_mapper = $f_v_mapper ?? function ($v, $k) {return $v;};
-        $a2 = [];
-        foreach ($a1 as $k => $v) {
-            $a2[$f_k_mapper($k, $v)] = $f_v_mapper($v, $k);
-        }
-        return $a2;
-    }
+
     // returns the first argument that is not empty()
     function coalesce() {
         $args = func_get_args();
@@ -363,20 +307,7 @@ class A {
         }
         return $res;
     }
-    // trattiene solo chiavi e valori che passino la funzione di grep
-    function h_grep(array $h, \Closure $_grep): array{
-        $h2 = [];
-        if (empty($h)) {
-            return [];
-        }
-        foreach ($h as $key => $val) {
-            $ok = $_grep($key, $val);
-            if ($ok) {
-                $h2[$key] = $val;
-            }
-        }
-        return $h2;
-    }
+
 }
 //
 //
@@ -423,28 +354,25 @@ class ArrayPaginator {
 if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
     require_once __DIR__ . '/Test.php';
     $a = ["key" => "i'm associative"];
-    ok(A::isAssociative($a) === true, print_r($a, true));
+    ok(A::isAssociative($a), true, print_r($a, true));
     $a = A::del($a, 'key');
-    ok(count($a) === 0, implode(',', $a));
+    ok(count($a), 0, implode(',', $a));
     $a = [1, 2, 3];
-    ok(A::isAssociative($a) === false, implode(',', $a));
+    ok(A::isAssociative($a), false, implode(',', $a));
     $a = A::del($a, 0);
-    ok(count($a) === 2, 'del ' . implode(',', $a));
+    ok(count($a), 2, 'del ' . implode(',', $a));
     $a = [1, 2, 3];
-    ok(A::first($a) === 1, implode(',', $a));
-    ok(A::last($a) === 3, implode(',', $a));
+    ok(A::first($a), 1, implode(',', $a));
+    ok(A::last($a), 3, implode(',', $a));
     $a = ['a' => 0, 'b' => 1, 'c' => 2];
-    is(A::first($a), 0, 'array first');
-    is(A::last($a), 2, 'array last');
-    ok(A::equals([], []), 'empty array equals');
-    ok(A::equals([0, 1, 2, 3, 4], [0, 1, 2, 3, 4]), 'num array equals');
-    ok(A::equals(['a' => 'a'], ['a' => 'a']), 'associative array equals');
-    ok(A::equals(['a' => 'a', 'b' => 'b'], ['a' => 'a']), 'different associative array has all the required values');
-    ok(!A::equals(['a' => 'a'], ['a' => 'a', 'b' => 'b']), 'different associative array (not all the required values)');
-    $a = ['a' => 0, 'b' => 1, 'c' => 2];
-    ok(A::get($a, 'a') == 0, 'get a key');
-    $a = ['a' => 0, 'b' => 1, 'c' => 2];
-    ok(A::get($a, 'unexisting', 1) == 1, 'get a default for a key');
+    ok(A::first($a), 0, 'array first');
+    ok(A::last($a), 2, 'array last');
+    ok(A::equals([], []), true, 'empty array equals');
+    ok(A::equals([0, 1, 2, 3, 4], [0, 1, 2, 3, 4]), true, 'num array equals');
+    ok(A::equals(['a' => 'a'], ['a' => 'a']), true, 'associative array equals');
+    ok(A::equals(['a' => 'a', 'b' => 'b'], ['a' => 'a']), true, 'different associative array has all the required values');
+    ok(!A::equals(['a' => 'a'], ['a' => 'a', 'b' => 'b']), true, 'different associative array (not all the required values)');
+    //
     $a = ['a' => 1, 'b' => null];
-    ok(A::equals(A::deleteEmpty($a), ['a' => 1]), 'delete empty');
+    ok(A::equals(A::deleteEmpty($a), ['a' => 1]), true, 'delete empty');
 }

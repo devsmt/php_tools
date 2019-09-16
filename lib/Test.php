@@ -113,7 +113,7 @@ function ok_excheption($operation, $label) {
     }
     ok($is_e_rised, true, $label . ' rised:' . $e_msg);
 }
-//
+/*
 function is($val, $expected_val, $description = '') {
     $pass = ($val == $expected_val);
     ok($pass, $description);
@@ -133,6 +133,7 @@ function isnt($val, $expected_val, $description = '') {
     }
     return $pass;
 }
+*/
 function like($string, $regex, $description = '') {
     $pass = preg_match($regex, $string);
     ok($pass, $description);

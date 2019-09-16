@@ -4,15 +4,6 @@ require_once __DIR__ . '/SQL.php';
 
 
 
-// memo func param
-// function cache_mem($customer_id) {
-//     static $__cached_data = [];
-//     if (!array_key_exists($customer_id, $__cached_data)) {
-//         $__cached_data[$customer_id] = '';
-//     }
-//     return $__cached_data[$customer_id];
-// }
-
 // get by key:
 // data una tabella, matcha per la key e processa con il mapper
 // è sempre posssibile dare opzioni più sofisticate via $sql_opt
