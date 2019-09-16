@@ -10,6 +10,16 @@ function str_match($str, $sub_str) {
 // alias
 function str_contains($str, $sub_str) {return str_match($str, $sub_str);}
 function str_find($str, $sub_str) {return str_match($str, $sub_str);}
+//
+function str_contains_any($str, array $arr) {
+    foreach ($arr as $substring) {
+        if (stripos($str, $substring) !== false) {
+            return true;
+        }
+    }
+    return false;
+}
+
 // semplifica l'individuazione del numero di occorrenze di una sottostringa
 function str_count_matches($str, $sub_str) {
     $result = mb_strpos($str, $sub_str);
@@ -32,6 +42,17 @@ function str_begins_with() {
         }
     }
     return false;
+}
+function str_ends($str, $end) {
+    $len = mb_strlen($end);
+    $sub = mb_substr($str, (-1 * $len));
+    return (mb_strtolower($sub) === mb_strtolower($end));
+}
+
+// mette testo su singola linea per migliorare il logging
+function str_inline($txt) {
+    $txt = preg_replace($regex = '/(\s{2,}|\\n)/ui', ' ', $txt);
+    return $txt;
 }
 //----------------------------------------------------------------------------
 //  mb version
