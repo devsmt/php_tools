@@ -1,34 +1,21 @@
 <?php
-
 /*
-
 NOTA:
-
 compress.zlib://file.gz
 compress.bzip2://file.bz2
 zip://archive.zip#dir/file.txt
-
 $input = "test.txt";
 $output = $input.".gz";
 file_put_contents("compress.zlib://$output", file_get_contents($input));
-
 `bzip2 -z -k -f -v --best /path/to/file.log`;
  */
-
 abstract class CompressionEngine {
-
     function compress($file, $destination = '', $options = []) {
-
     }
-
     function expand($file, $out_file = '') {
-
     }
-
 }
-
 class CompressionEngineGZ extends CompressionEngine {
-
     //
     function compress($file, $destination = '', $options = []) {
         $level = 5;
@@ -60,20 +47,16 @@ class CompressionEngineGZ extends CompressionEngine {
         }
         return false;
     }
-
     /*
     // GZIPs a file on disk (appending .gz to the name)
     function gzCompressFile($source, $dest='', $opt = []) {
-
     $option = array_merge( [
     'level' => 9
     ], $opt );
     extract($option);
-
     if( empty($dest) ) {
     $dest = $source . '.gz';
     }
-
     $mode = 'wb' . $level;
     $error = false;
     if ($fp_out = gzopen($dest, $mode)) {
@@ -96,7 +79,6 @@ class CompressionEngineGZ extends CompressionEngine {
     }
     }
      */
-
     // un file con estensione .gz, viene letto decompresso in memoria e salvato senza estensione
     function expand($file, $out_file = '') {
         //echo "expanding $file \n";
@@ -116,11 +98,8 @@ class CompressionEngineGZ extends CompressionEngine {
             //echo "ko reading $file\n";
         }
     }
-
 }
-
 class CompressionEngineBZ extends CompressionEngine {
-
     function expand($file, $out_file = '') {
         $bz = bzopen($file, "r");
         $str = '';
@@ -131,17 +110,15 @@ class CompressionEngineBZ extends CompressionEngine {
         bzclose($bz);
         return file_put_contents($out_file, $str);
     }
-
 }
-
 class Compression {
-
     static function compress($f, $nf) {
         return $c->compress($f, $nf);
     }
-
     static function expand($f, $nf) {
         return $c->expand($f, $nf);
     }
-
+}
+if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
+    require_once __DIR__ . '/Test.php';
 }

@@ -369,10 +369,10 @@ function genKey() {
 // ordino le chiavi in modo che a=1&b=2 sia la stessa pagina di b=2&a=1
 // elimino le chiavi nulle o vuote
 $post = $_POST;
-$post = Arr::deleteEmpty($post);
+$post = array_filter( $post, 'strlen' );
 ksort($post);
 $get = $_GET;
-$get = Arr::deleteEmpty($get);
+$get = array_filter( $get, 'strlen' );
 ksort($get);
 //$_SESSION, $_COOKIE
 $req = array_merge($post, $get);
@@ -404,3 +404,32 @@ return $this->storage->deleteAll();
 }
 }
  */
+
+if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
+    require_once __DIR__ . '/Test.php';
+/*
+session_start();
+$_GET = [ 'a'=>0, 'b'=>2];
+$currentKey = PageCache::genKey();
+is( $currentKey, $_SERVER['PHP_SELF'].'-a=0&b=2', 'gen key');
+$c = new PageCache();
+// se esiste una pagina valida viene mostrata altrimenti viene generato del autput da salvare
+if( is_main( __FILE__ ) ){
+    ok( $c->render() , 'response from cahe!');
+} else {
+    $c->clear();
+    // generiamo autput che possimao controllare
+    ob_start();
+    $expected = date('H:m:s') ;
+    echo $expected;
+    // salvo nella cache
+    $c->savePage();
+    ob_end_clean();
+    $result = $c->get($currentKey);
+    is( $result, $expected, "confronto pagina corrente e cache");
+}
+problemi:
+come configurare una pagina per non essere gestita in cache?
+come gestire la cache per sviluppo vs produzione
+*/
+}

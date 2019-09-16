@@ -1,39 +1,30 @@
 <?php
-
 //
 // Key Value Store, un meccanismo per persistere dati
 //
 class KVS {
-
     // config options
     // crea un file per ogni variabile
     static $dir = "./data";
-
     static function set($key, $val) {
         if (!is_dir(self::$dir)) {
             mkdir(self::$dir, 0755);
         }
         file_put_contents(self::$dir . $key, serialize($val));
     }
-
     static function get($key) {
         // fixit name back to normal
         $data = file_get_contents(self::$dir . $key);
         return unserialize($data);
     }
-
     static function delete($key) {
         unlink(self::$dir . $key);
     }
-
 }
-
 // aggiunge a un oggetto la possibilità di persistere le proprietà tra le chiamate
 abstract class PersistentObject {
-
     private $dbm = null;
     private $dbmFile = '';
-
     public function __construct($dir = '', $reset = false) {
         $class = preg_replace('/[^a-zA-Z0-9_]/', '', get_class($this));
         if (empty($dir)) {
@@ -50,11 +41,9 @@ abstract class PersistentObject {
         }
         $this->dbm = dba_popen($this->dbmFile, "c", "flatfile");
     }
-
     public function __destruct() {
         dba_close($this->dbm);
     }
-
     public function __get($name) {
         $data = dba_fetch($name, $this->dbm);
         if ($data) {
@@ -65,11 +54,9 @@ abstract class PersistentObject {
             return false;
         }
     }
-
     public function __set($name, $value) {
         dba_replace($name, serialize($value), $this->dbm);
     }
-
     public static function dump() {
         echo "Available DBA handlers:\n";
         foreach (dba_handlers(true) as $handler_name => $handler_version) {
@@ -87,9 +74,6 @@ abstract class PersistentObject {
         return $assoc;
     }
 }
-
-
-
 // persiste un array in un hash file database
 // $pa = new ArrayPersistent(__DIR__.'/test.cdb');
 // $pa['key'] = time();
@@ -144,9 +128,12 @@ class ArrayPersistentF implements ArrayAccess, Iterator {
         }
     }
 }
-
 // persist an array in memory using APC
 /*
 class ArrayPersistentM implements ArrayAccess, Iterator {
 }
-*/
+ */
+//  run the tests:
+if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
+    require_once __DIR__ . '/Test.php';
+}

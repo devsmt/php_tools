@@ -1,8 +1,6 @@
 <?php
-
 /* cross platform dir manager */
 class Path {
-
     // lista di directory o array lista di directory o stringhe da spezzare per avere una directory
     // Path::join('var','www');
     // Path::join(['var','www']);
@@ -42,7 +40,6 @@ class Path {
         $path = str_replace(DIRECTORY_SEPARATOR . DIRECTORY_SEPARATOR, DIRECTORY_SEPARATOR, $path);
         return Path::real($path);
     }
-
     // Because realpath() does not work on files *that do not already exist*
     // It replaces (consecutive) occurences of / and \\ with
     // whatever is in DIRECTORY_SEPARATOR, and processes /. and /.. fine.
@@ -74,14 +71,11 @@ class Path {
         $result .= implode(DIRECTORY_SEPARATOR, $absolutes);
         return $result . $result_append;
     }
-
     // toglie document root dal path del file passato come argomento
     // in modo da ottenere un link url assoluto
     function toAbsUrl($path) {
-
         /*
         //$realpath=str_replace("\\", "/", realpath($path));
-
         // path alla cartella dove è intallata la lib
         $lib_root_dir = Path::join(__DIR__, '..');
         // trova la sottocartella dove è installata la lib
@@ -89,7 +83,6 @@ class Path {
          */
         return '/' . str_replace($_SERVER['DOCUMENT_ROOT'], '', $path);
     }
-
     function toAbsURI($path) {
         if (preg_match("/^(\w+)[:]\/\//i", $path, $matches)) {
             return $path;
@@ -103,7 +96,6 @@ class Path {
             return "$protocol://" . $_SERVER["HTTP_HOST"] . $directory . (!in_array(substr($directory, -1), ["\\", "/"]) && !in_array(substr($path, 0, 1), ["\\", "/"]) ? "/" : "") . $path;
         }
     }
-
     // mappa la struttura del ramo di dir, ogni nodo è rappresentato in memoria
     // come un array
     // @param filter permette di definire una funzione per filtrare la lista
@@ -131,13 +123,10 @@ class Path {
         }
         return $dir_struct;
     }
-
     //     Normalize the case of a pathname. On Unix, this returns the path unchanged; on case-insensitive filesystems, it converts the path to lowercase.
     //  On Windows, it also converts forward slashes to backward slashes.
     function normcase($path) {
-
     }
-
     //  Normalize a pathname. This collapses redundant separators and up-level references so that A//B, A/./B and A/foo/../B all become A/B.
     //  It does not normalize the case (use normcase() for that). On Windows, it converts forward slashes to backward slashes. It should be understood that this
     //  may change the meaning of the path if it contains symbolic links!
@@ -187,80 +176,119 @@ class Path {
         }
         return $path_root . implode("/", $real_path_parts);
     }
-
     //Return True if both pathname arguments refer to the same file or directory (as indicated by device number and i-node number). Raise an exception if a os.stat() call on either pathname fails. Availability: Macintosh, Unix.
     function samefile($path1, $path2) {
-
     }
-
     //Split the pathname path into a pair, (head, tail) where tail is the last pathname component and head is everything leading up to that. The tail part will never contain a slash; if path ends in a slash, tail will be empty. If there is no slash in path, head will be empty. If path is empty, both head and tail are empty. Trailing slashes are stripped from head unless it is the root (one or more slashes only). In nearly all cases, join(head, tail) equals path (the only exception being when there were multiple slashes separating head from tail).
     function split($path) {
-
     }
-
     /*
-
     date due url, trova il path per raggiungere 2 partendo da 1
-
     function findRelativePath($path_1, $path_2)
     {
     if ($path_1 == ""  ||  $path_2 == "")
     {
     return false;
     }
-
     $path_1 = $this->fix($path_1);
     $path_2 = $this->fix($path_2);
-
     preg_match_all("/^(\\/|\w:\\/|https?:\\/\\/[^\\/]+\\/)?(.*)$/i", $path_1, $matches_1, PREG_SET_ORDER);
     preg_match_all("/^(\\/|\w:\\/|https?:\\/\\/[^\\/]+\\/)?(.*)$/i", $path_2, $matches_2, PREG_SET_ORDER);
-
     if ($matches_1[0][1] != $matches_2[0][1])
     {
     return false;
     }
-
     $path_1_parts = explode("/", $matches_1[0][2]);
     $path_2_parts = explode("/", $matches_2[0][2]);
-
     while (isset($path_1_parts[0])  &&  isset($path_2_parts[0]))
     {
     if ($path_1_parts[0] != $path_2_parts[0])
     {
     break;
     }
-
     array_shift($path_1_parts);
     array_shift($path_2_parts);
     }
-
     for ($i = 0, $path = ""; $i < count($path_1_parts)-1; $i++)
     {
     $path .= "../";
     }
-
     return $path . implode("/", $path_2_parts);
     }
      */
-    /*
-    assicura che la dir esista in ogni sua parte e sia scrivibile
-     */
-
+    //
+    // assicura che la dir esista in ogni sua parte e sia scrivibile
+    //
     function ensure($dir) {
         return File::createDir($dir);
     }
-
     function stripExtension($file) {
         return File::stripExtension($file);
     }
-
     // TEST: if(eregi('\.[a-z]{1,4}$', $file, $a_extension))  return $a_extension[0];
     function getExtension($f) {
         return File::getExtension($f);
     }
-
     function changeExtension($f, $ext) {
         return File::changeExtension($f, $ext);
     }
-
+}
+//  run the tests:
+if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
+    require_once __DIR__ . '/Test.php';
+    diag("Path::real");
+    is(Path::real('/var'), '/var', Path::real('/var'));
+    ok(Path::real('/var/') == '/var/', Path::real('/var/'));
+    ok(Path::real('/var/../var/www') == '/var/www', Path::real('/var/../var/www'));
+    ok(Path::real('/var/../var/../../../var/www') == '/var/www', Path::real('/var/../var/../../../var/www'));
+    diag("Path::join");
+    ok(Path::join('var', 'www') == '/var/www');
+    ok(Path::join(['var', 'www']) == '/var/www');
+    ok(Path::join('var/www', 'public') == '/var/www/public');
+    ok(Path::join(['var/www', 'public']) == '/var/www/public');
+    diag("Path::join + real");
+    ok(Path::join(['var/www/mydir', '..', 'public']) == '/var/www/public', Path::join(['var/www/mydir', '..', 'public']));
+    ok(Path::join(['var/www/..', 'www', 'public']) == '/var/www/public', Path::join(['var/www/..', 'www', 'public']));
+    ok(Path::join(['var/www/..', 'www/../www/public']) == '/var/www/public', Path::join(['var/www/..', 'www/../www/public']));
+/*
+diag( "Path::join for windows");
+// win tests
+is( Path::join('D:\www\webroot', 'template') , 'D:\www\webroot\template' );
+is( Path::join(['D:\www\webroot', 'template', 'index.php']) , 'D:\www\webroot\template\index.php' );
+ */
+//diag( "Path::toAbsUrl");
+    //ok( Path::toAbsUrl(  ) == dirname($_SERVER['PHP_SELF']), Path::toAbsUrl( __FILE__ ));
+    //ok( Path::toAbsUrl( ) == '/apache2-default/pweasel/tests', Path::toAbsUrl( __DIR__ ));
+    /*
+diag( '<pre style="line-height: 25px;">';
+// Loads PathManager class
+require_once "class.pathparser.php";
+$path = 'http://www.php.net:80/./donwloads/../faq/.././manual/en/install.php?version=502#top';
+$Path = new PathParser($path);
+diag( "\nOriginal path: " . $path;
+diag( "\nResolved path: " . $Path->path;
+diag( "\n\nPath parts: ");
+print_r($Path->parse());
+diag( "\n\n\n    Dirty paths:");
+$paths[] = 'C://////////Windows//////System';               //  C:/Windows/System/
+$paths[] = 'C:\HTML\javascript\..\examples\colors.html';    //  C:/HTML/examples/colors.html
+$paths[] = '/root/./wwwroot/scripts/../././webpage';        //  /root/wwwroot/webpage/
+$paths[] = 'wwwroot/webpage/../index.php?querystring';      //  wwwroot/index.php?querystring
+$paths[] = 'http://www.php.net/manual/en/../../downloads';  //  http://www.php.net/downloads/
+$paths[] = 'http://www.php.net/downloads/.././docs.php';    //  http://www.php.net/docs.php
+$paths[] = '../downloads/../docs.php';                      //  ../docs.php
+$paths[] = 'localhost//projetos/../_arquivos/../';          //  localhost/
+$paths[] = 'C:/downloads/../../../';                        //  C:/
+$paths[] = 'downloads/../../../';                           //  ../../
+foreach ($paths as $path) {
+diag( "\n&quot;" . $path . "&quot;  =  &quot;" . $Path->fix($path) . "&quot;";
+}
+diag( "\n\n\n    Finding relative paths:");
+$path_a = 'http://www.php.net/manual/en/install.php';
+$path_b = 'http://www.php.net/downloads';
+diag( "\nPath A:  " . $path_a;
+diag( "\nPath B:  " . $path_b;
+diag( "\nA to B:  " . $Path->findRelativePath($path_a, $path_b); //  ../../downloads/
+diag( "\nB to A:  " . $Path->findRelativePath($path_b, $path_a); //  ../manual/en/install.php
+ */
 }

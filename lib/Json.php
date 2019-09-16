@@ -74,3 +74,7 @@ class JSONOutput {
 }
 
 class JSONException extends \Exception {}
+//  run the tests:
+if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
+    require_once __DIR__ . '/Test.php';
+}

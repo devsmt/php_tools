@@ -1,5 +1,4 @@
 <?php
-
 // l'applicazione o il controller devono configurare e istanziare il logger
 //  uso
 //  $config = [
@@ -12,9 +11,7 @@
 //  ];
 //
 class Logger {
-
     var $adapters = [];
-
     function __construct($config) {
         if (isset($config['adapters'])) {
             foreach ($config['adapters'] as $i => $adapter) {
@@ -22,46 +19,35 @@ class Logger {
             }
         }
     }
-
     function write($msg) {
         foreach ($this->adapters as $i => $adapter) {
             $adapter->write($msg);
         }
     }
-
     function log($msg) {
         $this->write($msg);
     }
-
 }
-
 class LoggerAdapter {
-
     function __construct($config) {
         $this->init($config);
         $this->open();
     }
-
     function __destruct() {
         $this->close();
     }
-
     function init($config) {
         $this->config = $config;
     }
-
     function open() {
         return true;
     }
-
     function close() {
         return true;
     }
-
     function write($msg) {
         return true;
     }
-
     // costrisce il messaggio di log in modo meno verboso
     public function printf() {
         $mgs = func_get_arg(0);
@@ -76,19 +62,14 @@ class LoggerAdapter {
         $msg = call_user_func_array('sprintf', func_get_args());
         return $this->log($msg);
     }
-
 }
-
 //-- adapters ------------------------------------------------------------
 class LoggerAdapterFile extends LoggerAdapter {
-
     var $file;
     var $handle;
     var $subDir = '/../var/log/'; // dir where the log file is placed
-
     // e' possibile configurare un percorso di file di log, oppure verre' usato
     // var/log
-
     function __construct($context) {
         parent::__construct();
         $this->file = __DIR__ .
@@ -96,20 +77,16 @@ class LoggerAdapterFile extends LoggerAdapter {
         sprintf('%s_%s.log', $context, date('m_Y'));
         $this->open();
     }
-
     function open() {
         $this->handle = fopen($this->file, 'a+');
     }
-
     function close() {
         fclose($this->handle);
     }
-
     function write($msg) {
         $s = sprintf("%s %s \n", date('d/m/Y H:i:s '), $msg);
         fwrite($this->handle, $s);
     }
-
     // ruota file di log che eccedano la dimensione specifica in MB
     function rotate($maxsize_MB = 5) {
         // converte da MB in byte come occorre alla filesize
@@ -119,34 +96,24 @@ class LoggerAdapterFile extends LoggerAdapter {
             rename($this->file, $new_name);
         }
     }
-
 }
-
 //
 class LoggerAdapterEcho extends LoggerAdapter {
-
     function write($msg) {
         //$s = sprintf("%s\r\n", date('d/m/Y H:i:s '), $msg );
         echo $msg, "\n";
         flush();
     }
-
 }
-
 class LoggerAdapterMysqlDB extends LoggerAdapter {
-
 }
-
 class LoggerAdapterEmpty extends LoggerAdapter {
-
 }
-
 define('OP_KO', 'error', false);
 define('OP_OK', 'success', false);
 define('OP_INFO', 'info', false);
 // minimal file logger implementation
 class MFLogger {
-
     //\Mobile\Logger::log('order', $op = __METHOD__, 'error '.$msg, $res);
     //\Mobile\Logger::log('order', $op = __METHOD__, false, $msg);
     // $params può essere $_REQUEST o parametri di funzione
@@ -155,7 +122,6 @@ class MFLogger {
             $msg = $msg ? 'success' : 'error';
         }
         $path = self::path($ns);
-
         $pack = function ($str, $label) {
             if (empty($str)) {
                 return '';
@@ -166,9 +132,7 @@ class MFLogger {
                     } else {
                         return $val;
                     }
-
                 }, $str);
-
                 $str = json_encode($str);
                 // subset per impedire scritture di dati arbitrari
                 $str = substr($str, 0, 200);
@@ -177,7 +141,6 @@ class MFLogger {
             }
             return "$label:$str";
         };
-
         $log_data = [
             date('Y-m-d H:i:s'),
             $pack($operation_name, 'operation'),
@@ -185,11 +148,9 @@ class MFLogger {
             $pack($params, 'params'),
             $pack($identity_info, 'identity'),
         ];
-
         $str = implode(' ', array_filter($log_data, function ($s) {
             return !empty($s);
         }));
-
         // implementa una soglia massima
         if (file_exists($path)) {
             $bytes = filesize($path);
@@ -201,7 +162,6 @@ class MFLogger {
         }
         file_put_contents($path, $str . "\n", FILE_APPEND | LOCK_EX);
     }
-
     // dipende dall'applicazione
     public static function path(string $ns): string{
         $path = realpath(__DIR__ . '/../data/log');
@@ -212,7 +172,6 @@ class MFLogger {
         $path = sprintf('%s/%s_%s.log', $path, $ns, date('Y_m'));
         return $path;
     }
-
     //----------------------------------------------------------------------------
     // log procedure apposita per programmi CLI
     //----------------------------------------------------------------------------
@@ -237,5 +196,8 @@ class MFLogger {
             return file_put_contents($log_path, $log_msg, (FILE_APPEND | LOCK_EX));
         }
     }
-
+}
+//  run the tests:
+if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
+    require_once __DIR__ . '/Test.php';
 }

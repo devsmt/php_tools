@@ -6,9 +6,10 @@ function getProcs() {
    if (file_exists('/proc/cpuinfo')) {
       $procs = preg_match_all('/^processor\s/m', file_get_contents('/proc/cpuinfo'), $discard);
    }
-   $procs <<= 1;
    return $procs;
 }
+
+
 
 
 // funzione:

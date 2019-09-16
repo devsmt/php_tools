@@ -29,7 +29,7 @@ class UTF8 {
     // safer encode, only if necessary
     // If you apply the PHP function utf8_encode() to an already-UTF8 string it will return a garbled UTF8 string.
     public static function encode($str) {
-        if (mb_detect_encoding($str) != 'UTF-8' ) {
+        if (mb_detect_encoding($str) != 'UTF-8') {
             $str = utf8_encode($str);
         }
         return $str;
@@ -113,6 +113,96 @@ class UTF8 {
             return $str;
         }
     }
+
+    // converte caratteri oltre il range ASCII nella rappresentazione html entity
+    // function encode_full($str) {
+    //     $str = mb_convert_encoding($str , 'UTF-32', 'UTF-8');
+    //     $t = unpack("N*", $str);
+    //     $t = array_map(function($n) { return "&#$n;"; }, $t);
+    //     return implode("", $t);
+    // }
+    // $str = 'ABCabc àèì +-?= €';
+    // $e = 'ABCabc &#224;&#232;&#236; +-?= &#8364;';
+    // ok(encode_full($str), $e, 'encode_full: ' . $str);
+    function encode_full($str) {
+        $str = mb_convert_encoding($str, 'UTF-32', 'UTF-8'); //big endian
+        $a_splitted = str_split($str, 4);
+        $res = '';
+        foreach ($a_splitted as $c) {
+            $cur = 0;
+            for ($i = 0; $i < 4; $i++) {
+                $cur |= ord($c[$i]) << (8 * (3 - $i));
+            }
+            // 32 = space
+            if (($cur < 32 || $cur > 127)) {
+                $res .= "&#" . $cur . ";";
+            } else {
+                $res .= chr($cur); // ok char
+            }
+        }
+        return $res;
+    }
+
+    // caratteri accentati convertiti nella lettera non accentata più vicina
+    // es. à => a
+    /*
+    test:
+    $utf8 = '€' . 'ÄÖÜ'; // file must be UTF-8 encoded
+    // $iso88591[] = utf8_decode($utf8);
+    $iso88591[] = iconv('UTF-8', 'ASCII//TRANSLIT', $utf8);
+    die(
+    implode( PHP_EOL, $iso88591 )
+    );
+     */
+    public static function transliterate($str) {
+        if (!function_exists('iconv')) {
+            die('installare iconv');
+        }
+        $str = iconv('UTF-8', 'ASCII//TRANSLIT', $str);
+        return $str;
+    }
+    // pure php implementation
+    public static function transliterate_php($str) {
+        $a = ['À', 'Á', 'Â', 'Ã', 'Ä', 'Å', 'Æ', 'Ç', 'È', 'É', 'Ê', 'Ë', 'Ì', 'Í', 'Î', 'Ï', 'Ð', 'Ñ', 'Ò', 'Ó', 'Ô', 'Õ', 'Ö', 'Ø', 'Ù', 'Ú', 'Û', 'Ü', 'Ý', 'ß', 'à', 'á', 'â', 'ã', 'ä', 'å', 'æ', 'ç', 'è', 'é', 'ê', 'ë', 'ì', 'í', 'î', 'ï', 'ñ', 'ò', 'ó', 'ô', 'õ', 'ö', 'ø', 'ù', 'ú', 'û', 'ü', 'ý', 'ÿ', 'Ā', 'ā', 'Ă', 'ă', 'Ą', 'ą', 'Ć', 'ć', 'Ĉ', 'ĉ', 'Ċ', 'ċ', 'Č', 'č', 'Ď', 'ď', 'Đ', 'đ', 'Ē', 'ē', 'Ĕ', 'ĕ', 'Ė', 'ė', 'Ę', 'ę', 'Ě', 'ě', 'Ĝ', 'ĝ', 'Ğ', 'ğ', 'Ġ', 'ġ', 'Ģ', 'ģ', 'Ĥ', 'ĥ', 'Ħ', 'ħ', 'Ĩ', 'ĩ', 'Ī', 'ī', 'Ĭ', 'ĭ', 'Į', 'į', 'İ', 'ı', 'Ĳ', 'ĳ', 'Ĵ', 'ĵ', 'Ķ', 'ķ', 'Ĺ', 'ĺ', 'Ļ', 'ļ', 'Ľ', 'ľ', 'Ŀ', 'ŀ', 'Ł', 'ł', 'Ń', 'ń', 'Ņ', 'ņ', 'Ň', 'ň', 'ŉ', 'Ō', 'ō', 'Ŏ', 'ŏ', 'Ő', 'ő', 'Œ', 'œ', 'Ŕ', 'ŕ', 'Ŗ', 'ŗ', 'Ř', 'ř', 'Ś', 'ś', 'Ŝ', 'ŝ', 'Ş', 'ş', 'Š', 'š', 'Ţ', 'ţ', 'Ť', 'ť', 'Ŧ', 'ŧ', 'Ũ', 'ũ', 'Ū', 'ū', 'Ŭ', 'ŭ', 'Ů', 'ů', 'Ű', 'ű', 'Ų', 'ų', 'Ŵ', 'ŵ', 'Ŷ', 'ŷ', 'Ÿ', 'Ź', 'ź', 'Ż', 'ż', 'Ž', 'ž', 'ſ', 'ƒ', 'Ơ', 'ơ', 'Ư', 'ư', 'Ǎ', 'ǎ', 'Ǐ', 'ǐ', 'Ǒ', 'ǒ', 'Ǔ', 'ǔ', 'Ǖ', 'ǖ', 'Ǘ', 'ǘ', 'Ǚ', 'ǚ', 'Ǜ', 'ǜ', 'Ǻ', 'ǻ', 'Ǽ', 'ǽ', 'Ǿ', 'ǿ'];
+        $b = ['A', 'A', 'A', 'A', 'A', 'A', 'AE', 'C', 'E', 'E', 'E', 'E', 'I', 'I', 'I', 'I', 'D', 'N', 'O', 'O', 'O', 'O', 'O', 'O', 'U', 'U', 'U', 'U', 'Y', 's', 'a', 'a', 'a', 'a', 'a', 'a', 'ae', 'c', 'e', 'e', 'e', 'e', 'i', 'i', 'i', 'i', 'n', 'o', 'o', 'o', 'o', 'o', 'o', 'u', 'u', 'u', 'u', 'y', 'y', 'A', 'a', 'A', 'a', 'A', 'a', 'C', 'c', 'C', 'c', 'C', 'c', 'C', 'c', 'D', 'd', 'D', 'd', 'E', 'e', 'E', 'e', 'E', 'e', 'E', 'e', 'E', 'e', 'G', 'g', 'G', 'g', 'G', 'g', 'G', 'g', 'H', 'h', 'H', 'h', 'I', 'i', 'I', 'i', 'I', 'i', 'I', 'i', 'I', 'i', 'IJ', 'ij', 'J', 'j', 'K', 'k', 'L', 'l', 'L', 'l', 'L', 'l', 'L', 'l', 'l', 'l', 'N', 'n', 'N', 'n', 'N', 'n', 'n', 'O', 'o', 'O', 'o', 'O', 'o', 'OE', 'oe', 'R', 'r', 'R', 'r', 'R', 'r', 'S', 's', 'S', 's', 'S', 's', 'S', 's', 'T', 't', 'T', 't', 'T', 't', 'U', 'u', 'U', 'u', 'U', 'u', 'U', 'u', 'U', 'u', 'U', 'u', 'W', 'w', 'Y', 'y', 'Y', 'Z', 'z', 'Z', 'z', 'Z', 'z', 's', 'f', 'O', 'o', 'U', 'u', 'A', 'a', 'I', 'i', 'O', 'o', 'U', 'u', 'U', 'u', 'U', 'u', 'U', 'u', 'U', 'u', 'A', 'a', 'AE', 'ae', 'O', 'o'];
+        return str_replace($a, $b, $str);
+    }
+
+    public static function rm_accented($text) {
+        $chars = [
+            'ç' => 'c', 'æ' => 'ae', 'œ' => 'oe', 'á' => 'a',
+            'ì' => 'e', 'ò' => 'i', 'ù' => 'o', 'ä' => 'u',
+            'ê' => 'a', 'î' => 'e', 'ô' => 'i', 'û' => 'o',
+            'Æ' => 'u', 'Œ' => 'a', 'Á' => 'e', 'É' => 'i',
+            'Ò' => 'o', 'Ù' => 'u', 'Ä' => 'y', 'Ë' => 'a',
+            'Î' => 'e', 'Ô' => 'i', 'Û' => 'o', 'Å' => 'u',
+            'é' => 'a', 'í' => 'e', 'ë' => 'i', 'ï' => 'o',
+            'å' => 'u', 'e' => 'C', 'Í' => 'AE', 'Ó' => 'OE',
+            'Ï' => 'A', 'Ö' => 'E', 'ó' => 'I', 'ö' => 'O',
+            'i' => 'U', 'Ú' => 'A', 'Ü' => 'E', 'ú' => 'I',
+            'ü' => 'O', 'ø' => 'U', 'À' => 'A', 'Ÿ' => 'E',
+            'à' => 'I', 'ÿ' => 'O', 'u' => 'U', 'È' => 'Y',
+            'Â' => 'A', 'è' => 'E', 'â' => 'I', 'Ç' => 'O',
+            'Ì' => 'U', 'Ê' => 'A', 'Ø' => 'O',
+        ];
+        return str_replace($from=array_keys($chars), $to=array_values($chars), $text);
+    }
+
+    // remove
+    // control characters
+    //  chr(0) to chr(31),
+    // non-printing characters
+    //  above chr(127)
+    public static function rm_unprintable($str) {
+        // If you wish to strip everything except basic printable ASCII characters (all the example characters above will be stripped) you can use:
+        // $string = preg_replace( '/[^[:print:]]/', '',$string);
+        // You can also html-encode low characters (newline, tab, etc.) while stripping high:
+        // $string = filter_var($input, FILTER_UNSAFE_RAW, FILTER_FLAG_ENCODE_LOW|FILTER_FLAG_STRIP_HIGH);
+        // remove highers and uppers
+        $str = preg_replace('/[\x00-\x1F\x7F\xA0]/u', '?', $str);
+        return $str;
+    }
+
 }
 
 // missing mb str func
@@ -265,5 +355,31 @@ if (!extension_loaded('mbstring')) {
         $matches = [];
         return preg_match_all('`' . preg_quote($needle) . '`u', $haystack, $matches);
     }
+
+}
+
+/**
+ * Check if a string is ASCII.
+ *
+ * The negative regex is faster for non-ASCII strings, as it allows
+ * the search to finish as soon as it encounters a non-ASCII character.
+ *
+ * @since 4.2.0
+ *
+ * @param string $string String to check.
+ * @return bool True if ASCII, false if not.
+ */
+function check_ascii($string) {
+    if (function_exists('mb_check_encoding')) {
+        if (mb_check_encoding($string, 'ASCII')) {
+            return true;
+        }
+    } elseif (!preg_match('/[^\x00-\x7F]/', $string)) {
+        return true;
+    }
+    return false;
+}
+if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
+    require_once __DIR__ . '/Test.php';
 
 }

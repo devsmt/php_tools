@@ -95,35 +95,10 @@ class EAN13 {
 
 // function is($res, $label) {return ok($res, $expected = true, $label);}
 
-// if colled directly in CLI, run the tests:
 if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
-    /* own test suite:
-    ok(0, 0, 'ok for same value');// should pass
-    ok(0, null, 'type warning');//should pass with type warning
-    ok(['b'=>2,'a'=>1], ['a'=>1,'b'=>'2']);
-    ok([1,2], [2,1]);
-    ok(['a','b'], ['b','a']);
-    // this should be true in all impelemetations
-    ok([1,2], [1,2]);
-    ok(['a'=>1,'b'=>2], ['a'=>1,'b'=>2]);
-    ok('aaa000', '/^[A-Z0-1]*$/i');
-    */
-    function ok($res, $expected, $label = '') {
-        $_colored = function ($str, $foreground_color = 'green') {
-            static $a_fg = ['red' => '0;31', 'green' => '0;32', 'brown' => '0;33'];
-            return sprintf("\e[%sm", $a_fg[$foreground_color]) . $str . "\033[0m";
-        };
-        // be careful passing arrays, @see array_compare_
-        if ($res === $expected) {
-            echo $_colored("OK $label \n", 'green');
-        } elseif ($res == $expected) {
-            $s = sprintf("OK (but type differ) %s \n", $label, var_export($res, true), var_export($expected, true));
-            echo $_colored($s, 'brown');
-        } else {
-            $s = sprintf("ERROR(%s)  GOT %s <> %s EXP  \n", $label, var_export($res, true), var_export($expected, true));
-            echo $_colored($s, 'red');
-        }
-    }
+    require_once __DIR__ . '/Test.php';
+
+
 
     ok($sum = EAN13::get_sum('000000000000'), 0, 'sum 0');
     ok($sum = EAN13::get_sum('0101'), 6, 'sum 6');

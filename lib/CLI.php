@@ -425,38 +425,44 @@ class CLIMonitor {
         });
     }
 }
+// @see Test::ok()
+// class CLITest {
+//     static $errc = 0;
+//     // @see lib/Test.php
+//     public static function ok($test, $label, $data = null) {
+//         if ($test == false) {
+//             echo CLI::sprintc("ERROR $label: $test", 'red') . "\n\n";
+//             if (!empty($data)) {
+//                 echo var_export($data, 1);
+//             }
+//             self::$errc++;
+//         } else {
+//             echo CLI::sprintc("OK $label", 'green') . "\n\n";
+//         }
+//     }
+//     public static function diag($l, $data = '') {
+//         if (!empty($data)) {
+//             echo CLI::sprintc($l);
+//         } else {
+//             echo CLI::sprintc($l . ':' . var_export($data, 1));
+//         }
+//         echo "\n\n";
+//     }
+// }
+//
+// if (!function_exists('is')) {
+//     function is($val, $expected_val, $description = '') {
+//         $pass = ($val == $expected_val);
+//         CLITest::ok($pass, $description);
+//         if (!$pass) {
+//             CLITest::diag("         got: '$val'");
+//             CLITest::diag("    expected: '$expected_val'");
+//         }
+//         return $pass;
+//     }
+// }
 
-class CLITest {
-    static $errc = 0;
-    public static function ok($test, $label, $data = null) {
-        if ($test == false) {
-            echo CLI::sprintc("ERROR $label: $test", 'red') . "\n\n";
-            if (!empty($data)) {
-                echo var_export($data, 1);
-            }
-            self::$errc++;
-        } else {
-            echo CLI::sprintc("OK $label", 'green') . "\n\n";
-        }
-    }
-    public static function diag($l, $data = '') {
-        if (!empty($data)) {
-            echo CLI::sprintc($l);
-        } else {
-            echo CLI::sprintc($l . ':' . var_export($data, 1));
-        }
-        echo "\n\n";
-    }
-}
+if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
+    require_once __DIR__ . '/Test.php';
 
-if (!function_exists('is')) {
-    function is($val, $expected_val, $description = '') {
-        $pass = ($val == $expected_val);
-        CLITest::ok($pass, $description);
-        if (!$pass) {
-            CLITest::diag("         got: '$val'");
-            CLITest::diag("    expected: '$expected_val'");
-        }
-        return $pass;
-    }
 }

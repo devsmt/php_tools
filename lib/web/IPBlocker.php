@@ -231,7 +231,7 @@ END;
                 $this->data['traffic_start'] = $now;
             } else {
                 if (($now - $this->data['traffic_start']) > $this->recalc_seconds) {
-                    while (list($k, $v) = each($this->data['user_traffic'])) {
+                    foreach($this->data['user_traffic'] as $k => $v ) {
                         if ($v > $this->pageview_threshold) {
                             $this->data['abusive_users'][$k] = $v;
                             // log the user's addition to the abusive user list

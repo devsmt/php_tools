@@ -234,7 +234,7 @@ class sqlSelect extends sqlSelectStmnt {
     }
     // capita di costruire gruppi di query in cui varia solo un parametro(all'inteno di un ciclo...)
     function popWhere($index) {
-        Arr::del($this->_where, $index);
+        unset($this->_where[$index]);
     }
     function addGroupBy($str) {
         $this->_group_by[] = $str;
@@ -258,7 +258,7 @@ class sqlSelect extends sqlSelectStmnt {
     function getWhere() {
         // se per caso entra un valore nullo evito di aggiungere clausole '&&' errate
         foreach ($this->_where as $k => $v) {
-            if ($v == '') Arr::del($this->_where, $k);
+            if ($v == '') unset($this->_where[$k]);
         }
         return implode(' && ', $this->_where);
     }
@@ -268,7 +268,7 @@ class sqlSelect extends sqlSelectStmnt {
     // occorre un controllo per ogni campo, che sia anche trai group by
     function getHavings() {
         foreach ($this->_having as $k => $v) {
-            if (empty($v)) Arr::del($this->_having, $k);
+            if (empty($v)) unset($this->_having[$k]);
         }
         return implode(' && ', $this->_having);
     }

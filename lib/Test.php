@@ -13,9 +13,107 @@ function diag($l, $data = null) {
 //-----------------------------------------------------------------------------------
 //  assertions
 //-----------------------------------------------------------------------------------
-function ok($test, $description = '') {
-    return Test::ok($test, $description, $data = null);
+//
+function ok($res, $expected, $label = '') {
+    $_colored = function ($str, $foreground_color = 'green') {
+        static $a_fg = ['red' => '0;31', 'green' => '0;32', 'brown' => '0;33'];
+        return sprintf("\e[%sm", $a_fg[$foreground_color]) . $str . "\033[0m";
+    };
+    // be careful passing arrays, @see array_compare_
+    if ($res === $expected) {
+        echo $_colored("OK $label \n", 'green');
+    } elseif ($res == $expected) {
+        $s = sprintf("OK (but type differ) name:%s | %s<>%s\n", $label, var_export($res, true), var_export($expected, true));
+        echo $_colored($s, 'brown');
+    } else {
+        $s = sprintf("ERROR(%s)  GOT %s <> %s EXP  \n", $label, var_export($res, true), var_export($expected, true));
+        echo $_colored($s, 'red');
+    }
 }
+// full version
+function ok_($res, $expected, $label = '') {
+    @$GLOBALS['test_count']++;
+    $is_regexp = is_string($expected) && substr($expected, 0, 1) == '/'; // se la stringa inizia con '/' è interpretata come regexp @try preg_match("/^\/.+\/[a-z0-1]*$/i",$expected)
+    $colored = function ($str, $foreground_color = '') {
+        static $a_fg = ['red' => '0;31', 'green' => '0;32', 'brown' => '0;33'];
+        $s = '';
+        if (isset($a_fg[$foreground_color])) {
+            $s .= sprintf("\e[%sm", $a_fg[$foreground_color]);
+        }
+        $s .= $str . "\033[0m";
+        return $s;
+    };
+    $is_hash = function (array $array) {
+        return count(array_filter(array_keys($array), 'is_string')) > 0;
+    };
+    // basic comparison (using $a == $b or $a === $b fails) works for associative arrays but will not work as expected with indexed arrays
+    // which elements are in different order, for example:
+    // (array("x","y") == array("y","x")) === false;
+    $array_equal = function ($a, $b) {
+        return (is_array($a) && is_array($b) &&
+            count($a) == count($b) &&
+            array_diff($a, $b) === array_diff($b, $a));
+    };
+    // comparazione di array associativi
+    $hash_equal = function ($a, $b) {
+        return json_encode(ksort($a, SORT_STRING)) === json_encode(ksort($b, SORT_STRING));
+    };
+    $dmp = function ($v) {return var_export($v, true);};
+
+    if ($res === $expected) {
+        echo $colored("OK $label \n", 'green');
+    } elseif (!is_array($expected) && $res == $expected) {
+        $s = sprintf("OK (but type differ) %s %s<>%s \n", $label, $dmp($res), $dmp($expected));
+        echo $colored($s, 'brown');
+    } elseif (is_array($expected)) {
+        if (!$is_hash($expected)) {
+            if ($array_equal($res, $expected)) {
+                $s = sprintf("OK array  %s %s %s \n", $label, $dmp($res), $dmp($expected));
+                echo $colored($s, 'green');
+            } else {
+                $s = sprintf("ERROR array  %s %s %s \n", $label, $dmp($res), $dmp($expected));
+                echo $colored($s, 'red');
+            }
+        } elseif ($is_hash($expected)) {
+            if ($hash_equal($res, $expected)) {
+                $s = sprintf("OK hash  %s %s %s \n", $label, $dmp($res), $dmp($expected));
+                echo $colored($s, 'green');
+            } else {
+                $s = sprintf("ERROR hash  %s %s %s \n", $label, $dmp($res), $dmp($expected));
+                echo $colored($s, 'red');
+            }
+        }
+    } elseif ($is_regexp) {
+        $m = preg_match($reg = $expected, $str = $res);
+        if (1 === $m) {
+            $s = sprintf("OK regexp %s %s %s %s \n", $label, $dmp($res), $dmp($expected), $dmp($m));
+            echo $colored($s, 'green');
+        } else {
+            $s = sprintf("ERROR regexp %s %s %s %s \n", $label, $dmp($res), $dmp($expected), $dmp($m));
+            echo $colored($s, 'red');
+        }
+    } else {
+        $s = sprintf("ERROR(%s)  GOT %s <> %s EXP  \n", $label, $dmp($res), $dmp($expected));
+        echo $colored($s, 'red');
+    }
+}
+
+// function is($res, $label ) { return ok($res, $expected=true, $label ); }
+// @see test_suite_
+
+// test delle eccezioni
+function ok_excheption($operation, $label) {
+    $is_e_rised = false;
+    $e_msg = '';
+    try {
+        $operation();
+    } catch (Throwable $e) { /*\Exception*/// Throwable $e in php7
+        $e_msg = $e->getMessage();
+        $is_e_rised = true;
+    }
+    ok($is_e_rised, true, $label . ' rised:' . $e_msg);
+}
+//
 function is($val, $expected_val, $description = '') {
     $pass = ($val == $expected_val);
     ok($pass, $description);
@@ -294,72 +392,73 @@ class TestSuite {
 //      }
 //  });
 //
-//
+/*
 class Test {
-    static $errc = 0;
-    public static function ok($test, $label, $data = null) {
-        if (PHP_SAPI != 'cli') {
-            if ($test == false) {
-                echo "<p class=\"error\">ERROR $label: $test</p>\n\n";
-                if (!empty($data)) {
-                    echo "<pre class=\" dump\">" . var_export($data, 1) . "</pre>\n\n";
-                }
-                Test::$errc++;
-            } else {
-                echo "<p class=\"success\">OK $label </p>\n\n";
-            }
-        } else {
-            if ($test) {
-                echo "ok $label\n";
-            } else {
-                echo "ERROR($label)    " . var_export($data, 1) . " \n";
-            }
-        }
-    }
-    public static function diag($l, $data = '') {
-        if (!empty($data)) {
-            echo '<pre class="dump">' . $l . '</pre>';
-        } else {
-            echo '<pre class="dump">' . $l . ':' . var_export($data, 1) . '</pre>';
-        }
-    }
-    // segnala la presenza di errori
-    public static function alarm() {
-        if (Test::$errc) {
-            echo '<style type="text/css">body{background-color:#ff9999}</style>';
-        } else {
-            echo '<style type="text/css">body{background-color:#dbffdb}</style>';
-        }
-    }
-    public static function css() {
-        $html = <<<__END__
+static $errc = 0;
+public static function ok($test, $label, $data = null) {
+if (PHP_SAPI != 'cli') {
+if ($test == false) {
+echo "<p class=\"error\">ERROR $label: $test</p>\n\n";
+if (!empty($data)) {
+echo "<pre class=\" dump\">" . var_export($data, 1) . "</pre>\n\n";
+Test::$errc++;
+}
+} else {
+echo "<p class=\"success\">OK $label </p>\n\n";
+}
+} else {
+if ($test) {
+echo "ok $label\n";
+} else {
+echo "ERROR($label)    " . var_export($data, 1) . " \n";
+}
+}
+}
+public static function diag($l, $data = '') {
+if (!empty($data)) {
+echo '<pre class="dump">' . $l . '</pre>';
+} else {
+echo '<pre class="dump">' . $l . ':' . var_export($data, 1) . '</pre>';
+}
+}
+// segnala la presenza di errori
+public static function alarm() {
+if (Test::$errc) {
+echo '<style type="text/css">body{background-color:#ff9999}</style>';
+} else {
+echo '<style type="text/css">body{background-color:#dbffdb}</style>';
+}
+}
+public static function css() {
+$html = <<<__END__
 <style type="text/css">
 body {
-    font-family: Arial, Helvetica, sans-serif;
-    font-size: 11px;
+font-family: Arial, Helvetica, sans-serif;
+font-size: 11px;
 }
 p,pre {
-    padding:5px;
-    margin:5px;
+padding:5px;
+margin:5px;
 }
 .info{
-    background-color: #ccccff;
+background-color: #ccccff;
 }
 .error{
-    background-color: #ff3333;
+background-color: #ff3333;
 }
 .success{
-    background-color: #66ff99;
+background-color: #66ff99;
 }
 .dump{
-    font-size:8px;
-    background-color: #dedede;
+font-size:8px;
+background-color: #dedede;
 }
 </style>
 __END__;
-        return $html;
-    }
+return $html;
 }
+}
+ */
 //----------------------------------------------------------------------------
 // minimalistic test for API
 //----------------------------------------------------------------------------
@@ -397,4 +496,28 @@ class APIClient {
         ];
         return $a;
     }
+}
+if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
+    // test OK func
+    ok(0, 0, 'ok for same value'); // should pass
+    ok(0, null, 'type warning'); //should pass with type warning
+    ok(['b' => 2, 'a' => 1], ['a' => 1, 'b' => '2']);
+    ok([1, 2], [2, 1]);
+    ok(['a', 'b'], ['b', 'a']);
+    // this should be true in all impelemetations
+    ok([1, 2], [1, 2]);
+    ok(['a' => 1, 'b' => 2], ['a' => 1, 'b' => 2]);
+    ok('aaa000', '/^[A-Z0-1]*$/i');
+
+    // test OK func
+    ok_(0, 0, 'ok for same value'); // should pass
+    ok_(0, null, 'type warning'); //should pass with type warning
+    ok_(['b' => 2, 'a' => 1], ['a' => 1, 'b' => '2']);
+    ok_([1, 2], [2, 1]);
+    ok_(['a', 'b'], ['b', 'a']);
+    // this should be true in all impelemetations
+    ok_([1, 2], [1, 2]);
+    ok_(['a' => 1, 'b' => 2], ['a' => 1, 'b' => 2]);
+    ok_('aaa000', '/^[A-Z0-1]*$/i');
+
 }

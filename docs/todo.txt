@@ -1,4 +1,4 @@
 - togliere codice non utilizzato
-- aggiornare a php 5.3
+- aggiornare a php 7.3
 - implementare i test a livello di unit
 - test a tappeto

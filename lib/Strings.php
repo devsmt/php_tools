@@ -94,25 +94,25 @@ function str_clean($s) {
 }
 // toglie tutti i caratteri non stampabili a terminale (mantiene solo ASCII)
 function str_clean_non_printable($str) {
-    $str = mb_preg_replace('/[[:^print:]]/', '', $str);
+    $str = mb_ereg_replace('/[[:^print:]]/', '', $str);
     return $str;
 }
 // toglie i whitespace
 function str_clean_w($s) {
-    return mb_preg_replace(['/\r\n|\n|\r|\t|\s\s/'], '', $s);
+    return mb_ereg_replace(['/\r\n|\n|\r|\t|\s\s/'], '', $s);
 }
 //Remove inside spaces when more than 1
 function trim_ws($str) {
     //Remove outside spaces
     $str = trim($str);
     //Remove inside spaces when more than 1
-    $str = mb_preg_replace("/ {2,}/", " ", $str);
+    $str = mb_ereg_replace("/ {2,}/", " ", $str);
     //Remove inside spaces when more than 1
-    $str = mb_preg_replace("/\t{2,}/", "\t", $str);
+    $str = mb_ereg_replace("/\t{2,}/", "\t", $str);
     //Change double quotes to single quotes - why?!?!
-    //$str = mb_preg_replace("/\"/", "'", $str);
+    //$str = mb_ereg_replace("/\"/", "'", $str);
     //Remove new lines when more than 2
-    $str = mb_preg_replace("/\n{3,}/", "\n\n", $str);
+    $str = mb_ereg_replace("/\n{3,}/", "\n\n", $str);
     return $str;
 }
 function bool2str($var) {
@@ -125,9 +125,9 @@ function bool2str($var) {
 // Removes line breaks
 //
 function str_oneline($string) {
-    $string = mb_preg_replace('/\t/', ' ', $string);
-    $string = mb_preg_replace('/\r?\n/', ' ', $string);
-    $string = mb_preg_replace('/\s{2,}/', ' ', $string);
+    $string = mb_ereg_replace('/\t/', ' ', $string);
+    $string = mb_ereg_replace('/\r?\n/', ' ', $string);
+    $string = mb_ereg_replace('/\s{2,}/', ' ', $string);
     return $string;
 }
 // trying to insert a string into a utf8 mysql table.
@@ -137,8 +137,8 @@ function str_clean_utf8($string) {
     $s = trim($string);
     $s = iconv("UTF-8", "UTF-8//IGNORE", $s); // drop all non utf-8 characters
     // this is some bad utf-8 byte sequence that makes mysql complain - control and formatting i think
-    $s = mb_preg_replace('/(?>[\x00-\x1F]|\xC2[\x80-\x9F]|\xE2[\x80-\x8F]{2}|\xE2\x80[\xA4-\xA8]|\xE2\x81[\x9F-\xAF])/', ' ', $s);
-    $s = mb_preg_replace('/\s+/', ' ', $s); // reduce all multiple whitespace to a single space
+    $s = mb_ereg_replace('/(?>[\x00-\x1F]|\xC2[\x80-\x9F]|\xE2[\x80-\x8F]{2}|\xE2\x80[\xA4-\xA8]|\xE2\x81[\x9F-\xAF])/', ' ', $s);
+    $s = mb_ereg_replace('/\s+/', ' ', $s); // reduce all multiple whitespace to a single space
     return $s;
 }
 // strip by regexp, specify what you want to include
@@ -146,10 +146,9 @@ function str_clean_r(string $s,
     $opt_chars = "`_.,;@#%~'\+\*\?\[\^\]\$\(\)\{\}\=\!\<\>\|\:\-\\\s",
     array $permit_chars = []
 ): string {
-    // '"
-    return mb_preg_replace("/[^A-Z0-9$opt_chars]+/i", '', $s);
+// '"
+    return mb_ereg_replace("/[^A-Z0-9$opt_chars]+/i", '', $s);
 }
-
 function str_replace_last($what, $with_what, $where) {
     $tmp_pos = mb_strrpos($where, $what);
     if ($tmp_pos !== false) {
@@ -459,24 +458,24 @@ class RandStr {
     function mb_strrev($str) {
         return implode(array_reverse(mb_str_split($str)));
     }
-/*
-if ($err = pc_passwordcheck($_REQUEST['username'],$_REQUEST['password'])) {
-print "Bad password: $err";
-// Make the user pick another password
-}
-Basics
-Use at least eight characters, the more characters the better really, but most people will find anything more than about 15 characters difficult to remember.
-Use a random mixture of characters, upper and lower case, numbers, punctuation, spaces and symbols.
-Don't use a word found in a dictionary, English or foreign.
-Never use the same password twice.
-Things to avoid
-Don't just add a single digit or symbol before or after a word. e.g. "apple1"
-Don't double up a single word. e.g. "appleapple"
-Don't simply reverse a word. e.g. "elppa"
-Don't just remove the vowels. e.g. "ppl"
-Key sequences that can easily be repeated. e.g. "qwerty","asdf" etc.
-Don't just garble letters, e.g. converting e to 3, L or i to 1, o to 0. as in "z3r0-10v3"
- */
+    /*
+    if ($err = password_check($_REQUEST['username'],$_REQUEST['password'])) {
+    print "Bad password: $err";
+    // Make the user pick another password
+    }
+    Basics
+    Use at least eight characters, the more characters the better really, but most people will find anything more than about 15 characters difficult to remember.
+    Use a random mixture of characters, upper and lower case, numbers, punctuation, spaces and symbols.
+    Don't use a word found in a dictionary, English or foreign.
+    Never use the same password twice.
+    Things to avoid
+    Don't just add a single digit or symbol before or after a word. e.g. "apple1"
+    Don't double up a single word. e.g. "appleapple"
+    Don't simply reverse a word. e.g. "elppa"
+    Don't just remove the vowels. e.g. "ppl"
+    Key sequences that can easily be repeated. e.g. "qwerty","asdf" etc.
+    Don't just garble letters, e.g. converting e to 3, L or i to 1, o to 0. as in "z3r0-10v3"
+     */
     function password_check($user, $pass) {
         $lc_pass = mb_strtolower($pass);
         // also check password with numbers or punctuation subbed for letters
@@ -544,6 +543,11 @@ Don't just garble letters, e.g. converting e to 3, L or i to 1, o to 0. as in "z
         return false;
     }
 }
+// genera lista caratteri da a-z
+function get_all_chars() {
+    $a_characters = array_merge(range('a', 'z'), range('A', 'A'));
+    return $a_characters;
+}
 //----------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------
@@ -566,15 +570,24 @@ function str_rm_diacritics($str) {
     ];
     $str_result = trim($str);
     foreach ($DIACRITICS as $letter => $dia_regex) {
-        $str = mb_preg_replace('/' . $dia_regex . '/', $letter, $str);
+        $str = mb_ereg_replace('/' . $dia_regex . '/', $letter, $str);
     }
     return $str_result;
 }
+//----------------------------------------------------------------------------
+// transliteration
+//----------------------------------------------------------------------------
 function str_transliterate($str) {
     if (function_exists('iconv')) {
         $text = iconv('utf-8', 'us-ascii//TRANSLIT', $str);
+    } else {
+        $text = str_rm_diacritics($text);
     }
     return $text;
+}
+// transliterate from utf-8 a ascii
+function str_to_ascii($s) {
+    return str_transliterate($s);
 }
 /*------------------------------------------------------------------------------
 @see utf8 lib
@@ -588,9 +601,9 @@ $str=utf8_bad_strip($str);
 $str = utf8_to_ascii($str, '' );
 ------------------------------------------------------------------------------*/
 function str_rm_nonascii($str) {
-    $res = mb_preg_replace('/[^\x20-\x7E]/', '', $str);
+    $res = mb_ereg_replace('/[^\x20-\x7E]/', '', $str);
     // remove non ascii characters
-    // $res =  mb_preg_replace('/[\x00-\x1F\x80-\xFF]/', '', $str);
+    // $res =  mb_ereg_replace('/[\x00-\x1F\x80-\xFF]/', '', $str);
     return $res;
 }
 function str_is_utf8(string $str): bool {
@@ -653,7 +666,6 @@ function str_asci_simplify($str) {
     $str = mb_str_replace(chr(159), 'Y', $str); // Y Dieresis
     return $str;
 }
-
 //----------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------
@@ -679,25 +691,38 @@ function e($string) {
 //----------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------
-
 // code derived from http://php.vrana.cz/vytvoreni-pratelskeho-url.php
-function str_slugify($text) {
+function str_slugify($text, $word_delimiter = '-') {
     // replace non letter or digits by dash -
-    $text = mb_preg_replace('~[^\\pL\d]+~u', '-', $text);
+    $text = mb_ereg_replace('~[^\\pL\d]+~u', $word_delimiter, $text);
     // trim
-    $text = trim($text, '-');
+    $text = trim($text, $word_delimiter);
     // transliterate
-    if (function_exists('iconv')) {
-        $text = iconv('utf-8', 'us-ascii//TRANSLIT', $text);
-    }
+    $text = str_transliterate($text);
+    // remove consecutive multiple dividers
+    $slug = preg_replace("/[\/_|\+\-\s]+/", $word_delimiter, $text);
     // lowercase
     $text = mb_strtolower($text);
     // remove unwanted characters
-    $text = mb_preg_replace('~[^-\w]+~', '', $text);
+    $text = mb_ereg_replace('~[^-\w]+~', '', $text);
     if (empty($text)) {
-        return 'n-a';
+        return 'n-a'; // error
     }
     return $text;
+}
+//
+// Camelizes a string.
+//
+function str_camelize($id) {
+    return strtr(
+        ucwords(
+            strtr(
+                $id,
+                ['_' => ' ', '.' => '_ ', '\\' => '_ ']
+            )
+        ),
+        [' ' => '']
+    );
 }
 // Interpolates context values into the message placeholders.
 // usage:
@@ -730,10 +755,10 @@ function str_template($str_template, array $a_binds, $default_sub = '__') {
     $_substitute = function ($buffer, $name, $val) {
         $reg = sprintf('{{%s}}', $name);
         $reg = preg_quote($reg, '/');
-        return mb_preg_replace('/' . $reg . '/i', $val, $buffer);
+        return mb_ereg_replace('/' . $reg . '/i', $val, $buffer);
     };
     $_clean_unused_vars = function ($buffer) use ($default_sub) {
-        return mb_preg_replace('/\{\{[a-zA-Z0-9_]*\}\}/i', $default_sub, $buffer);
+        return mb_ereg_replace('/\{\{[a-zA-Z0-9_]*\}\}/i', $default_sub, $buffer);
     };
     $buffer = $str_template;
     // sort keys by +lenght first
@@ -804,7 +829,7 @@ class HEREDOCHelpers {
 //  $startDate = 5/27/1999
 //
 function str_a_reg_replace($str, array $a_binds) {
-    return mb_preg_replace(array_keys($a_binds), array_values($a_binds), $str);
+    return mb_ereg_replace(array_keys($a_binds), array_values($a_binds), $str);
 }
 // dato un array associativo di variabili da interpolare, esegue la sostituzione
 // $a_replace = [
@@ -850,19 +875,12 @@ function str_to_float($s) {
     }
     return (float) $s;
 }
-// transliterate from utf-8 a ascii
-function str_to_ascii($s) {
-    if (function_exists('iconv')) {
-        $s = iconv('utf-8', 'us-ascii//TRANSLIT', $s);
-    }
-    return $s;
-}
 // usa nuova estensione senza '.'
 function str_extension_replace($filename, $new_extension) {
     // alternatives:
     //   $info = pathinfo($filename);
     //   return $info['filename'] . '.' . $new_extension;
-    //   return mb_preg_replace('/\..+$/', '.' . $new_extension, $filename);
+    //   return mb_ereg_replace('/\..+$/', '.' . $new_extension, $filename);
     return mb_substr_replace($filename, $new_extension,
         1 + mb_strrpos($filename, '.')
     );
@@ -874,6 +892,29 @@ function format_bytes($bytes_size, $precision = 2) {
     $b = pow(1024, $base - floor($base));
     $suffix = $suffixes[floor($base)];
     return round($b, $precision) . $suffix;
+}
+//
+function format_time($secs) {
+    static $timeFormats = array(
+        array(0, '< 1 sec'),
+        array(2, '1 sec'),
+        array(59, 'secs', 1),
+        array(60, '1 min'),
+        array(3600, 'mins', 60),
+        array(5400, '1 hr'),
+        array(86400, 'hrs', 3600),
+        array(129600, '1 day'),
+        array(604800, 'days', 86400),
+    );
+    foreach ($timeFormats as $format) {
+        if ($secs >= $format[0]) {
+            continue;
+        }
+        if (2 == count($format)) {
+            return $format[1];
+        }
+        return ceil($secs / $format[2]) . ' ' . $format[1];
+    }
 }
 // data una grandezza in una unità specifica, ritorna la grandezza in bytes
 function format_bytes_size($size = 0, $unit = 'B') {
@@ -919,9 +960,9 @@ function get_by_tag_att($attr, $value, $xml, $tag = null) {
     return $matches[3];
 }
 function text_auto_link($text) {
-    $text = mb_preg_replace("/([a-zA-Z]+:\/\/[a-z0-9\_\.\-]+" . "[a-z]{2,6}[a-zA-Z0-9\/\*\-\_\?\&\%\=\,\+\.]+)/", " <a href=\"$1\" target=\"_blank\">$1</a>", $text);
-    $text = mb_preg_replace("/[^a-z]+[^:\/\/](www\." . "[^\.]+[\w][\.|\/][a-zA-Z0-9\/\*\-\_\?\&\%\=\,\+\.]+)/", " <a href=\"\" target=\"\">$1</a>", $text);
-    $text = mb_preg_replace("/([\s|\,\>])([a-zA-Z][a-zA-Z0-9\_\.\-]*[a-z" . "A-Z]*\@[a-zA-Z][a-zA-Z0-9\_\.\-]*[a-zA-Z]{2,6})" . "([A-Za-z0-9\!\?\@\#\$\%\^\&\*\(\)\_\-\=\+]*)" . "([\s|\.|\,\<])/i", "$1<a href=\"mailto:$2$3\">$2</a>$4", $text);
+    $text = mb_ereg_replace("/([a-zA-Z]+:\/\/[a-z0-9\_\.\-]+" . "[a-z]{2,6}[a-zA-Z0-9\/\*\-\_\?\&\%\=\,\+\.]+)/", " <a href=\"$1\" target=\"_blank\">$1</a>", $text);
+    $text = mb_ereg_replace("/[^a-z]+[^:\/\/](www\." . "[^\.]+[\w][\.|\/][a-zA-Z0-9\/\*\-\_\?\&\%\=\,\+\.]+)/", " <a href=\"\" target=\"\">$1</a>", $text);
+    $text = mb_ereg_replace("/([\s|\,\>])([a-zA-Z][a-zA-Z0-9\_\.\-]*[a-z" . "A-Z]*\@[a-zA-Z][a-zA-Z0-9\_\.\-]*[a-zA-Z]{2,6})" . "([A-Za-z0-9\!\?\@\#\$\%\^\&\*\(\)\_\-\=\+]*)" . "([\s|\.|\,\<])/i", "$1<a href=\"mailto:$2$3\">$2</a>$4", $text);
     return $text;
 }
 // $a_links = text_link_extract($page);
@@ -972,7 +1013,7 @@ function str_highlight($str, $search = null, $replacement = '<em>${0}</em>') {
         if ($is_found) {
             // usa espressione regolare per preservare il case della parola cercata
             $pattern = "/$search/i";
-            $str = mb_preg_replace($pattern, $replacement, $str);
+            $str = mb_ereg_replace($pattern, $replacement, $str);
         }
     }
     if (mb_detect_encoding($str) != "UTF-8") {
@@ -1040,7 +1081,6 @@ class StringSequence {
         return $res;
     }
 }
-
 /** Remove non-digits from a string
  * @param string
  * @return string
@@ -1051,7 +1091,6 @@ function str2int($val) {
 function str2float($val) {
     return floatval(preg_replace('~[^0-9\.\,]+~', '', $val));
 }
-
 //----------------------------------------------------------------------------
 //  pcre utils
 //----------------------------------------------------------------------------
@@ -1082,3 +1121,22 @@ function _pcre_check_last_error(): void{
         throw new PCREException(_pcre_get_error_message($error), $error);
     }
 }
+//----------------------------------------------------------------------------
+// main tests
+//----------------------------------------------------------------------------
+if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
+    require_once __DIR__ . '/Test.php';
+    $ss = str_slugify("This is just a small test for a slug creation");
+    ok($ss, 'this-is-just-a-small-test-for-a-slug-creation');
+
+    $r = str_template('second: {{second}}; first: {{first}}', [
+        'first' => '1st',
+        'second' => '2nd',
+    ]);
+    $e = 'second: 2nd; first: 1st';
+    is($r, $e, 'str_template');
+
+    $s = str_replace_last('.', ".bb.", '.....aaaa.exe');
+    is($s, ".....aaaa.bb.exe", "str_replace_last");
+}
+

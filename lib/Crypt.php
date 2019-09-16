@@ -114,22 +114,9 @@ class CryptDriverDict {
 
 // if colled directly in CLI, run the tests:
 if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
-    function ok($res, $expected, $label = '') {
-        $_colored = function ($str, $foreground_color = 'green') {
-            static $a_fg = ['red' => '0;31', 'green' => '0;32', 'brown' => '0;33'];
-            return sprintf("\e[%sm", $a_fg[$foreground_color]) . $str . "\033[0m";
-        };
-        // be careful passing arrays, @see array_compare_
-        if ($res === $expected) {
-            echo $_colored("OK $label \n", 'green');
-        } elseif ($res == $expected) {
-            $s = sprintf("OK (but type differ) %s \n", $label, var_export($res, true), var_export($expected, true));
-            echo $_colored($s, 'brown');
-        } else {
-            $s = sprintf("ERROR(%s)  GOT %s <> %s EXP  \n", $label, var_export($res, true), var_export($expected, true));
-            echo $_colored($s, 'red');
-        }
-    }
+    require_once __DIR__ . '/Test.php';
+
+
     $r = CryptDriverDict::crypt('0');
     ok($r, 'T', $label = 'test 0');
     $r = CryptDriverDict::crypt('a');

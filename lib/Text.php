@@ -35,5 +35,25 @@ class Text {
         }
         return $s_tbl;
     }
+    function word_select($text, array $matches, $replace='b') {
+        foreach ($matches as $match) {
+            switch ($replace) {
+            case "u":
+            case "b":
+            case "i":
+                $text = preg_replace("/([^\w]+)($match)([^\w]+)/",
+                    "$1<$replace>$2</$replace>$3", $text);
+                break;
+            default:
+                $text = preg_replace("/([^\w]+)$match([^\w]+)/",
+                    "$1$replace$2", $text);
+                break;
+            }
+        }
+        return $text;
+    }
+}
+if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
+    require_once __DIR__ . '/Test.php';
 
 }

@@ -4,13 +4,13 @@
 // per codificare gli ID nelle URL
 // è possibile ottenere dei risultati offuscati cambiando mappa carateri
 require_once __DIR__ . '/Math.php';
-
+//
 class UrlHash {
-
+    //
     public static function encode($i) {
         return base_convert_x($i, 10, 62);
     }
-
+    //
     public static function decode($hash) {
         return base_convert_x($hash, 62, 10);
     }
@@ -26,7 +26,7 @@ class UrlChecksum {
 
     // variare questa costante in modo che
     // 1) non possa essere indovinata facilmente
-    // 2) sia costante tra le 2 richieste
+    // 2) sia costante tra le 2 richieste (no rand, no date)
     // es.
     //const SCRT = __FILE__;
     //const SCRT = `uname -a`;
@@ -38,7 +38,7 @@ class UrlChecksum {
     public static function isValid($parameter, $check_hash) {
         return $check_hash == self::getCheck($parameter);
     }
-
+    //
     public static function getCheck($parameter) {
         $s = md5(self::SCRT . $parameter);
         $s = base64_encode($s);
@@ -46,5 +46,22 @@ class UrlChecksum {
         $s = substr($s, 0, 8);
         return $s;
     }
-
+    //----------------------------------------------------------------------------
+    //  utility to embed / extract the signed param
+    //----------------------------------------------------------------------------
+    // make param for url
+    public static function mkParam($name, $val, $separator = ':') {
+        return sprintf('%s=%s', $name,
+            implode($separator, [$val, self::getCheck($val)])
+        );
+    }
+    // estrae e valida un parametro
+    public static function getParam($name, $separator = ':') {
+        $param = h_get($_REQUEST, $name, '');
+        list($val, $check) = explode($separator, $param);
+        if (!self::isValid($val, $check)) {
+            Bootstrap::nice_die('parameter validation failed for ' . $name);
+        }
+        return $val;
+    }
 }
