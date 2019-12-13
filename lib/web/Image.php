@@ -442,6 +442,31 @@ class SparklineGenerator {
         }
     }
 }
+
+
+function img_resize($path_in, $path_out, $new_width){
+    $im_php = imagecreatefromjpeg( $path_in );
+    $im_php = imagescale($im_php, $new_width, $new_height = -1 , $mode = IMG_BILINEAR_FIXED );
+    $new_height = imagesy($im_php);
+    imagejpeg($im_php, $path_out, 100);
+    return $new_height;// return H of scaled img
+}
+// img_resize($path_in = "input.jpg", $path_out="output.jpg", function($width, $height){
+//     return [ $newwidth = $width/5,	$newheight = $height/5  ];
+// } );
+function img_resize($path_in, $path_out, $_calc_new_dim ){
+	$source = imagecreatefromjpeg($path_in);
+	list($width, $height) = getimagesize($path_in);
+	list( $newwidth , $newheight) = $_calc_new_dim($width, $height)
+	$destination = imagecreatetruecolor($newwidth, $newheight);
+	imagecopyresampled($destination, $source, 0, 0, 0, 0, $newwidth, $newheight, $width, $height);
+	imagejpeg($destination, $path_out, 100);
+}
+
+
+
+
+
 // very basic and not secure captcha code
 // @see http://www.mperfect.net/aiCaptcha/ for more information
 //

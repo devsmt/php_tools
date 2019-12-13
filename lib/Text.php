@@ -35,6 +35,7 @@ class Text {
         }
         return $s_tbl;
     }
+    // evidenzia una parola del testo
     function word_select($text, array $matches, $replace='b') {
         foreach ($matches as $match) {
             switch ($replace) {

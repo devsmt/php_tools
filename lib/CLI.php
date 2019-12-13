@@ -1,35 +1,23 @@
 <?php
-
 ini_set('register_argc_argv', true);
 ini_set('max_execution_time', 0);
 ini_set('html_errors', false);
 ini_set('implicit_flush', false);
 ini_set('apc.enable_cli', 1);
-
-// Get INI boolean value
-function ini_bool($ini) {
-    $val = ini_get($ini);
-    return (preg_match('~^(on|true|yes)$~i', $val) || (int) $val); // boolean values set by php_value are strings
-}
-
+// functions for building console programs
 class CLI {
-    //
-    public static function std_error($msg) {
-        fputs(STDERR, $msg);
-    }
+
     // normalmente non vogliamo permettere l'accesso da web
     public static function checkAccess() {
-        if (PHP_SAPI != 'cli') {
-            die("questo e' uno script CLI.");
+        if (strtolower(PHP_SAPI) != 'cli') {
+            die("questo e' uno script CLI.\n");
         }
     }
-
     // determina se chi sta lanciando lo script è l'utente root
     public static function userIsRoot($user = 'root') {
         $processUser = posix_getpwuid(posix_geteuid());
         return $processUser['name'] == $user;
     }
-
     // nome della macchia su cui si sta eseguendo
     //   La funzione restituisce un array con informazioni sul sistema. Le chiavi dell'array sono:
     //   sysname - nome del sistema operativo (es. Linux)
@@ -41,7 +29,6 @@ class CLI {
     public static function getHostInfo() {
         return posix_uname();
     }
-
     public static function getHostName() {
         $a_info = posix_uname();
         // $server_name = `hostname -f`;
@@ -49,7 +36,6 @@ class CLI {
         return sprintf('%s %s', $a_info['nodename'], $a_info['domainname']
         );
     }
-
     // aggiunge risorse per far girare elaborazioni lunghe
     public static function addResources($s_max = 0, $mem = '-1') {
         //  $max_time == 0 run till completion
@@ -58,26 +44,71 @@ class CLI {
         // '256M'
         ini_set('memory_limit', $mem);
     }
-
     //----------------------------------------------------------------------------
     //  input
     //----------------------------------------------------------------------------
     // cerca tra gli argomenti se è stato passato l'argomento $arg_name es. --doX
-    public static function hasArgument($arg_name) {
-        global $argv;
-        foreach ($argv as $arg) {
-            if ($arg === '--' . $arg_name) {
-                return true;
+    /*public static function hasArgument($arg_name) {
+    global $argv;
+    foreach ($argv as $arg) {
+    if ($arg === '--' . $arg_name) {
+    return true;
+    }
+    }
+    return false;
+    }*/
+    // verifica che sia stato passato un valore in cli
+    public static function hasFlag($flag, $argv = null) {
+        if (empty($argv)) {
+            if (isset($_SERVER['argv']) && !empty($_SERVER['argv'])) {
+                $argv = $_SERVER['argv'];
             }
         }
-        return false;
-    }
-    // verifica che sia stato passato un valore in cli
-    // uso: echo has_flag($argv, 'production-ws') ? 'si':'no';
-    public static function hasFlag($argv, $flag) {
-        $s_argv = implode(' ', $argv);
-        $substr = "--$flag";
+        $s_argv = implode(" ", $argv) . " ";
+        $substr = " --" . $flag . " ";
         return strpos($s_argv, $substr) !== false;
+    }
+    public static $h_args = [];
+    // get a single flag
+    public static function getFlag($flag, $def = '', $argv = null) {
+        if (empty(self::$h_args)) {
+            self::$h_args = self::getConsoleArgs($argv);
+        }
+        return h_get($h_args, $flag, $def);
+    }
+    //
+    // parsing argomenti con dato e flags
+    //
+    // @param   $argv
+    // @return hash [ param => val ]
+    //
+    public static function getConsoleArgs($argv = null) {
+        if (empty($argv)) {
+            if (isset($_SERVER['argv']) && !empty($_SERVER['argv'])) {
+                $argv = $_SERVER['argv'];
+            } else {
+                return; // invalid env
+            }
+        }
+        $a_args = [];
+        foreach ($argv as $arg) {
+            if (preg_match('/--([^=]+)="(.*)"/', $arg, $match)) {
+                // "" enclosed args
+                $k = $match[1];
+                $v = $match[2];
+                $v = trim($v, $charlist = '"');
+                $a_args[$k] = $v;
+            } elseif (preg_match('/--([^=]+)=(.*)/', $arg, $match)) {
+                $k = $match[1];
+                $v = $match[2];
+                $a_args[$k] = $v;
+            } elseif (preg_match('/-([a-zA-Z0-9])/', $arg, $match)) {
+                $a_args[$match[1]] = true;
+            } else {
+                // what's that?
+            }
+        }
+        return $a_args;
     }
     /* uso:
     // example.php -r=1  --optional=text --debug
@@ -145,11 +176,9 @@ class CLI {
             die(__FUNCTION__ . '/' . __LINE__ . ' will not parse option, not in cli');
         }
     }
-
     //----------------------------------------------------------------------------
     // std in/out
     //----------------------------------------------------------------------------
-
     // legge ttutto l'input
     public static function readStdin() {
         if (function_exists('stream_get_contents')) {
@@ -163,19 +192,16 @@ class CLI {
             return $b;
         }
     }
-
     public static function askBoolean($q, $def = false) {
         echo "$q\n>>>";
         $b = self::readStdin();
-        return (trim($b) == 'Y') ? true : false;
+        return (strtoupper(trim($b)) == 'Y') ? true : false;
     }
-
     public static function askInt($q, $def = 0) {
         echo "$q\n>>>";
         $b = self::readStdin();
         return (int) $b;
     }
-
     public static function askString($q, $def = '') {
         echo "$q\n>>>";
         $b = self::readStdin();
@@ -196,10 +222,16 @@ class CLI {
         }
     }
 
+    //----------------------------------------------------------------------------
+    //  output
+    //----------------------------------------------------------------------------
+    //
+    public static function std_error($msg) {
+        fputs(STDERR, $msg);
+    }
     //------------------------------------------------------------------------------
     //  colored output / CliUI
     //------------------------------------------------------------------------------
-
     // stampa stringa colorata
     public static function colored($str, $foreground_color = '', $background_color = '') {
         // ForeGround
@@ -245,7 +277,6 @@ class CLI {
         $str_result .= $str . "\033[0m";
         return $str_result;
     }
-
     // UI reporting automatico sull'esecuzione dello script
     // uso:
     // for($x=1;$x<=100;$x++){
@@ -258,11 +289,9 @@ class CLI {
         if ($done > $total) {
             return;
         }
-
         if (empty($start_time)) {
             $start_time = time();
         }
-
         $now = time();
         $perc = (double) ($done / $total);
         $bar = floor($perc * $size);
@@ -288,24 +317,20 @@ class CLI {
             echo "\n";
         }
     }
-
     function progressBarSimple($progress, $qta, $pl_len = 10) {
         $dec_progress = floor($progress * $pl_len / $qta);
         return sprintf('[%s]', str_pad(str_repeat('=', $dec_progress), $pl_len, '-', STR_PAD_RIGHT));
     }
-
     // print a progress bar
-    function progressBar($finished_percent, $width=80 ) {
-      $finished_percent = str_pad($finished_percent, 2, ' ');
-      $fixed_space = 9; // for spaces, braces [ and number %
-      $width -= $fixed_space;
-      $finished_count = ceil( (($finished_percent*$width)/100) );
-      $empty_count    = $width - $finished_count;
-
-      $finished = str_repeat("#", $finished_count);
-      $empty    = str_repeat("-", $empty_count);
-
-      return "\r[ {$finished}{$empty} ] {$finished_percent}% ";
+    function progressBar($finished_percent, $width = 80) {
+        $finished_percent = str_pad($finished_percent, 2, ' ');
+        $fixed_space = 9; // for spaces, braces [ and number %
+        $width -= $fixed_space;
+        $finished_count = ceil((($finished_percent * $width) / 100));
+        $empty_count = $width - $finished_count;
+        $finished = str_repeat("#", $finished_count);
+        $empty = str_repeat("-", $empty_count);
+        return "\r[ {$finished}{$empty} ] {$finished_percent}% ";
     }
     // uso:
     // $width = intval(`tput cols`);
@@ -313,9 +338,6 @@ class CLI {
     //   echo print_progress_bar($count, $width);
     //   sleep(1);
     // }
-
-
-
     function progressPerc($progress, $qta) {
         $perc_progress = floor($progress * 100 / $qta);
         $perc_progress = str_pad($perc_progress, 3, ' ', STR_PAD_LEFT);
@@ -324,7 +346,6 @@ class CLI {
     //----------------------------------------------------------------------------
     //
     //----------------------------------------------------------------------------
-
     //
     // Runs an external command (runs in own thread) with input and output pipes.
     // Returns the exit code from the process.
@@ -333,8 +354,8 @@ class CLI {
         $descspec = [
             0 => ["pipe", "r"],
             1 => ["pipe", "w"],
-            2 => ["pipe", "w"]
-            ];
+            2 => ["pipe", "w"],
+        ];
         $ph = proc_open($cmd, $descspec, $pipes);
         if (!$ph) {
             return -1;
@@ -346,14 +367,13 @@ class CLI {
         fclose($pipes[1]);
         return proc_close($ph);
     }
-
 }
-
+//----------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------
 // controller for CLI scripts
 class CLIController {
-
     protected $action = 'help';
-
     function __construct() {
         if ($this->getAction()) {
             $this->action = $this->getAction();
@@ -376,17 +396,14 @@ class CLIController {
         }
         return $this->action;
     }
-
     // method catchall
     function ActionHelp() {
         return "implementa ActionHelp\n";
     }
 }
-
 // funzione: permette il monitoring del batch job
 // use: CLIMonitor::registerMonitoringMailHook(['test@gmail.com']);
 class CLIMonitor {
-
     // notifica l'amministratore di errori nella procedura di importazione
     public static function registerMonitoringMailHook(array $a_dev_email) {
         $funcname = __FUNCTION__;
@@ -395,18 +412,15 @@ class CLIMonitor {
             $errstr = "shutdown";
             $errno = E_CORE_ERROR;
             $errline = 0;
-
             $error = error_get_last();
             $trace = print_r(debug_backtrace(false), true);
             $server_name = Common::getServerName();
             $server_IP = Common::getServerIP();
-
             if ($error !== NULL) {
                 $errno = $error["type"];
                 $errfile = $error["file"];
                 $errline = $error["line"];
                 $errstr = $error["message"];
-
                 $content = "";
                 $content .= "Error : $errstr  \n";
                 $content .= "Errno : $errno   \n";
@@ -415,15 +429,18 @@ class CLIMonitor {
                 $content .= "Trace : $trace   \n";
                 $content .= "\n";
                 $content .= sprintf("generated by:%s %s date:", $funcname, __FILE__, date('Y-m-d H:i:s'));
-
                 $subject = "CLI fatal error. server:$server_name($server_IP)";
-
                 foreach ($a_dev_email as $to) {
                     $mail_res = mail($to, $subject, $content);
                 }
             }
         });
     }
+}
+// Get INI boolean value
+function ini_bool($ini) {
+    $val = ini_get($ini);
+    return (preg_match('~^(on|true|yes)$~i', $val) || (int) $val); // boolean values set by php_value are strings
 }
 // @see Test::ok()
 // class CLITest {
@@ -461,8 +478,24 @@ class CLIMonitor {
 //         return $pass;
 //     }
 // }
-
 if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
     require_once __DIR__ . '/Test.php';
-
+    // testing
+    function test_args_parse() {
+        // test str: php myscript.php --user=nobody --password=secret -p --access="host=127.0.0.1 port=456"
+        $t_argv = [
+            'xxx',
+            '--user=nobody',
+            '--password=secret',
+            '-p',
+            '--access="host=127.0.0.1 port=890"',
+        ];
+        $a = CLI::getConsoleArgs($t_argv);
+        echo print_r($a, true);
+        ok($a['user'], $expected = 'nobody', 1);
+        ok($a['password'], $expected = 'secret', 2);
+        ok($a['access'], $expected = "host=127.0.0.1 port=456", 3);
+        ok($a['p'], true, 4);
+    }
+    test_args_parse();
 }
