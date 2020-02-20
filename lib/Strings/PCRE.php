@@ -153,4 +153,38 @@ namespace PCRE {
         }
         return $result;
     }
+    //----------------------------------------------------------------------------
+    //  pcre utils
+    //----------------------------------------------------------------------------
+    function _pcre_get_error_message(int $error): string {
+        switch ($error) {
+        case \PREG_NO_ERROR:
+            return 'No errors';
+        case \PREG_INTERNAL_ERROR:
+            return 'Internal PCRE error';
+        case \PREG_BACKTRACK_LIMIT_ERROR:
+            return 'Backtrack limit (pcre.backtrack_limit) was exhausted';
+        case \PREG_RECURSION_LIMIT_ERROR:
+            return 'Recursion limit (pcre.recursion_limit) was exhausted';
+        case \PREG_BAD_UTF8_ERROR:
+            return 'Malformed UTF-8 data';
+        case \PREG_BAD_UTF8_OFFSET_ERROR:
+            return
+            'The offset didn\'t correspond to the beginning of a valid UTF-8 code point';
+        case 6/* PREG_JIT_STACKLIMIT_ERROR */:
+            return 'JIT stack space limit exceeded';
+        default:
+            return 'Unknown error';
+        }
+    }
+    function _pcre_check_last_error(): void{
+        $error = \preg_last_error();
+        if ($error !== \PREG_NO_ERROR) {
+            throw new PCREException(_pcre_get_error_message($error), $error);
+        }
+    }
+}
+// if colled directly in CLI, run the tests:
+if( isset($argv[0]) && basename($argv[0]) == basename(__FILE__) ) {
+    require_once __DIR__ . '/Test.php';
 }

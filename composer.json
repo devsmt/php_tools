@@ -1,0 +1,14 @@
+{
+    "name": "devsmt/tools",
+    "type": "library",
+    "require-dev": {
+        "php": "^7.2"
+    },
+    "authors": [
+        {
+            "name": "devsmt",
+            "email": "devsmt@gmail.com"
+        }
+    ],
+    "require": {}
+}

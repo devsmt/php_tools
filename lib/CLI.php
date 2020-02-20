@@ -221,6 +221,33 @@ class CLI {
             return $def;
         }
     }
+    //----- input() function
+    // read from the command line
+    function prompt($prompt, $_is_valid = null, $_on_invalid = null) {
+        // default lascia passare tutto
+        $_is_valid = $_is_valid ?? function ($v) {return true;};
+        $_on_invalid = $_on_invalid ?? function ($v) {die("invalid input $v \n");};
+        // Define STDIN for compatibility
+        if (!defined("STDIN")) {
+            define("STDIN", fopen('php://stdin', 'rb')); //"b" Here for Binary-Safe
+        }
+        //
+        echo $prompt . PHP_EOL;
+        $input = null;
+        while (empty($input) && $input !== 0) {
+            $input = fgets(STDIN, 128); // read max 128 char
+            $input = rtrim($input);
+        }
+        if ($_is_valid($input)) {
+            return $input;
+        } else {
+            return $_on_invalid($input);
+        }
+    }
+    /*
+    $action = cli_input("chose an action (1,2,3): ");
+    echo "action: $action \n";
+     */
 
     //----------------------------------------------------------------------------
     //  output

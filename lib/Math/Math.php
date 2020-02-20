@@ -444,7 +444,7 @@ function percentile($data, $percentile) {
 //----------------------------------------------------------------------------
 // if colled directly, run the tests:
 if (isset($_SERVER['argv']) && basename($_SERVER['argv'][0]) == basename(__FILE__)) {
-    require_once 'Test.php';
+    require_once __DIR__.'/../Test.php';
     bcscale(4); // setta il default scale, va settato prima delle chiamate
     switch ($argv[1]) {
     case 'base':
@@ -466,8 +466,7 @@ if (isset($_SERVER['argv']) && basename($_SERVER['argv'][0]) == basename(__FILE_
         is(bc_parse("(10.2+(5.05*6.1))/3.2"), '12.8140', 'complex expression');
         break;
     }
-}
-if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
+ 
     require_once __DIR__ . '/Test.php';
     for ($i = 0; $i < 10; $i++) {
         $c = base_convert_x($i);

@@ -581,10 +581,26 @@ class SafeSQL {
         return $buffer;
     }
 }
+/* TODO
+// wrapper su SafeSQL::template();
+$filters_data = [
+    'int' => [
+        'id' => 1,
+    ],
+    'str' => [
+        'txt' = 'xxx',
+    ],
+    ... other filters
+]
+*/
+function safe_sql(string $tmp, array $filters_data):string {
+
+}
+
 // if colled directly in CLI, run the tests:
 if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
     require_once __DIR__ . '/../Test.php';
-    require_once __DIR__ . '/../H.php';
+    require_once __DIR__ . '/../DS/H.php';
     require_once __DIR__ . '/../Safe.php';
     //
     //
@@ -593,6 +609,10 @@ if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
     //
     $safe_sql = SafeSQL::template($sql_template, $h_filters = ['id' => SafeSQL::int], $data_i);
     ok($safe_sql, '1', 'test 1');
+    //
+    $safe_sql = SafeSQL::template('{{id}} {{id}}', $h_filters  , $data_i);
+    ok($safe_sql, '1 1', 'test double subst');
+
     $safe_sql = SafeSQL::template($sql_template, $h_filters = ['id' => SafeSQL::str], $data = ['id' => 'aa']);
     ok($safe_sql, "`aa`", 'test 2');
     //

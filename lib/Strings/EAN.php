@@ -96,7 +96,7 @@ class EAN13 {
 // function is($res, $label) {return ok($res, $expected = true, $label);}
 
 if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
-    require_once __DIR__ . '/Test.php';
+    require_once __DIR__ . '/../Test.php';
 
 
 

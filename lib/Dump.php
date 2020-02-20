@@ -1,5 +1,6 @@
 <?php
 
+
 class Dump {
     // mostra i valori di un RS
     static function RS($rs, $label = "", $config = []) {
