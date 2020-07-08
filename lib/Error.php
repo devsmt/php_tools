@@ -1,7 +1,10 @@
 <?php
 
-class Error {
-    function initErrorHandling() {
+define('LOG_PATH', __DIR__, false);
+define('APP_SUPPORT_EMAIL', '', false); // da customizzare
+
+class ErrorHandler {
+    function initErrorHandling():void {
         error_reporting(E_ALL ^ E_NOTICE); // mostra tutti gli errori ma Esclude i NOTICE
         ini_set('log_errors', 'On');
         // ensure dir LOG_PATH
@@ -18,7 +21,7 @@ class Error {
 // Log fatal errors using register_shutdown_function,
 // requires PHP 5.2+:
 register_shutdown_function(function () {
-    $format_error = function ($errno, $errstr, $errfile, $errline) {
+    $format_error = function ($errno, $errstr, $errfile, $errline):string {
         $trace = print_r(debug_backtrace(false), true);
         $content = "
         <table>
@@ -64,6 +67,7 @@ register_shutdown_function(function () {
     }
 });
 
+/** @psalm-suppress UndefinedClass  */
 set_error_handler(function ($errno, $errstr, $errfile, $errline, array $errcontext) {
     // error was suppressed with the @-operator
     if (0 === error_reporting()) {
@@ -71,8 +75,9 @@ set_error_handler(function ($errno, $errstr, $errfile, $errline, array $errconte
     }
     throw new ErrorException($errstr, 0, $errno, $errfile, $errline);
 },
-// on which error report level the user-defined error will trigger. Default is "E_ALL"
-    $on_err_level = self::isEnvProd() ? E_WARNING : E_ALL
+    // on which error report level the user-defined error will trigger. Default is "E_ALL"
+    /** @psalm-suppress UndefinedClass  */
+    $on_err_level = ENV::isProd() ? E_WARNING : E_ALL
 
 );
 
@@ -102,19 +107,17 @@ class Error_Monitor {
     // informa di possibili problemi online
     // TODO: evitare che si generino troppi messaggi di notifica
     // USO: set_exception_handler( ['Monitor', 'ExcpLoggerMail'] );
-    public static function ExcpLoggerMail($exception) {
-
-        $url = sprintf('%s://%s/%s', $_SERVER['REQUEST_SCHEME'], $_SERVER['HTTP_HOST'], $_SERVER['REQUEST_URI']
-        );
-
+    public static function ExcpLoggerMail(\Exception $exception):bool {
+        $url = sprintf('%s://%s/%s', $_SERVER['REQUEST_SCHEME'], $_SERVER['HTTP_HOST'], $_SERVER['REQUEST_URI']);
         // get user for Zend Apps
-        $auth = Zend_Auth::getInstance();
-        if (!empty($auth)) {
-            $idnt = $auth->getIdentity();
-            if (!empty($idnt)) {
-                $user = $idnt->getUsername();
-            }
-        }
+        // $auth = Zend_Auth::getInstance();
+        // if (!empty($auth)) {
+        //     $idnt = $auth->getIdentity();
+        //     if (!empty($idnt)) {
+        //         $user = $idnt->getUsername();
+        //     }
+        // }
+        $user = '';
         // fallback
         if (empty($user)) {
             $a_sess = $_SESSION;
@@ -127,7 +130,7 @@ class Error_Monitor {
                     return !empty($s) && is_scalar($s);
                 }
             });
-            $user = var_export($a_sess, 1);
+            $user = var_export($a_sess, true);
         }
 
         $str = '
@@ -147,23 +150,23 @@ class Error_Monitor {
         Message: "{{message}}"
         Stack trace: {{trace}}
         </pre>';
-        $data = array(
+        $data = [
             'server' => $_SERVER['SERVER_NAME'],
             'time' => date('d-m-Y H:i:s'),
             'user' => $user,
             'ip' => $_SERVER['SERVER_ADDR'],
             'url' => $url,
             'method' => $_SERVER['REQUEST_METHOD'],
-            'request' => var_export($_REQUEST, 1),
+            'request' => var_export($_REQUEST, true),
             'line' => $exception->getLine(),
             'file' => $exception->getFile(),
             'exc_class' => get_class($exception),
             'message' => $exception->getMessage(),
             'trace' => $exception->getTraceAsString(),
-        );
+        ];
         // interpola data
         foreach ($data as $k => $v) {
-            $str = str_replace('{{' . $k . '}}', $v, $str);
+            $str = str_replace('{{' . $k . '}}', (string)$v, $str);
         }
 
         // trim delle righe per formattare
@@ -194,19 +197,16 @@ class Error_Monitor {
         // If the function returns FALSE then the normal error handler continues.
         return false;
     }
-
-    // error handler function
-    //     - impedire che il sistema generi un numero esagerato di notifiche
-    //     - al momento non servono molti dettagli sul utente
+    //
+    // error handler function, show details of malfunctioning
     // uso:
-    //    $old_error_handler = set_error_handler(['Monitor','ErrorLoggerEmail']);
+    //    $old_error_handler = set_error_handler(['Monitor','ErrorLogger']);
     //    trigger_error("Cannot divide by zero", E_USER_ERROR);
-    public static function ErrorLoggerEmail($errno, $errstr, $errfile, $errline) {
+    public static function ErrorLogger(int $errno, string $errstr, string $errfile, int $errline):bool {
         if (!(error_reporting() & $errno)) {
             // This error code is not included in error_reporting
-            return;
+            return false;
         }
-
         switch ($errno) {
         case E_USER_ERROR:
             $str = '
@@ -233,13 +233,13 @@ class Error_Monitor {
                 'ip' => $_SERVER['SERVER_ADDR'],
                 'url' => sprintf('%s://%s/%s', $_SERVER['REQUEST_SCHEME'], $_SERVER['HTTP_HOST'], $_SERVER['REQUEST_URI']),
                 'method' => $_SERVER['REQUEST_METHOD'],
-                'request' => var_export($_REQUEST, 1),
+                'request' => var_export($_REQUEST, true),
                 'line' => $errline,
                 'file' => $errfile,
             );
             // interpola data
             foreach ($data as $k => $v) {
-                $str = str_replace('{{' . $k . '}}', $v, $str);
+                $str = str_replace('{{' . $k . '}}', (string)$v, $str);
             }
             // trim delle righe per formattare
             $a = explode(PHP_EOL, $str);
@@ -268,7 +268,6 @@ class Error_Monitor {
         }
         // If the function returns FALSE then the normal error handler continues.
         return false;
-
     }
 
     //
@@ -283,57 +282,60 @@ class Error_Monitor {
     //
 }
 
+require_once __DIR__.'/DS/H.php';
 
 
 // better trace format
-function fmt_exception_trace(Exception $e) {
-    function _serialize_args($args) {
-        $_v_mapper = function ($val) use (&$_v_mapper) {
-            if (is_array($val)) {
-                $a_h = array_map_keys($val,
-                    function ($k) {
-                        return $k;
-                    },
-                    $_v_mapper);
-                return $a_h;
-            } elseif (is_object($val)) {
-                return get_class($val);
-            } elseif (is_resource($val)) {
-                return $val;
-            } elseif (is_string($val)) {
-                $val = trim(strip_tags($val));
-                $is_path = substr($val, 0, 1) == '/' && substr_count($val, '/') >= 2; // inizia con /
-                if (strlen($val) < 15 || $is_path) {
-                    return $val;
-                } else {
-                    return substr($val, 0, 15) . '...';
-                }
-            }
-            return $val;
-        };
+class exception_trace {
+    function fmt(Exception $e):string {
+        $a_trace = $e->getTrace();
+        $a_trace = array_reverse($a_trace);
+        $result = '';
+        $i = 0;
+        foreach ($a_trace as $trace) {
+            $result .= $str = sprintf('%d) %s%s%s() %s @%s args:%s ' . PHP_EOL,
+                ++$i,
+                @$trace['class'],
+                @$trace['type'],
+                $trace['function'],
+                //
+                $trace['file'],
+                $trace['line'],
+                self::_serialize_args($trace['args'])
+            );
+        }
+        return $result;
+    }
+    function _serialize_args(array $args): string {
         if (is_array($args)) {
-            $args = array_map($_v_mapper, $args);
+            $args = array_map('self::_v_mapper', $args);
         } else {
-            $args = $_v_mapper($args);
+            $args = self::_v_mapper($args);
         }
         $args = json_encode($args, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         return $args;
     }
-    $a_trace = $e->getTrace();
-    $a_trace = array_reverse($a_trace);
-    $result = '';
-    $i = 0;
-    foreach ($a_trace as $trace) {
-        $result .= $str = sprintf('%d) %s%s%s() %s @%s args:%s ' . PHP_EOL,
-            ++$i,
-            @$trace['class'],
-            @$trace['type'],
-            $trace['function'],
-            //
-            $trace["file"],
-            $trace["line"],
-            _serialize_args($trace["args"])
-        );
+    /** @param mixed  $val
+     * @return mixed */
+    public static function _v_mapper($val) {
+        if (is_array($val)) {
+            $a_h = H::map_keys($val, function (string $k) :string {
+                return $k;
+            }, 'self::_v_mapper');
+            return $a_h;
+        } elseif (is_object($val)) {
+            return get_class($val);
+        } elseif (is_resource($val)) {
+            return $val;
+        } elseif (is_string($val)) {
+            $val = trim(strip_tags($val));
+            $is_path = substr($val, 0, 1) == '/' && substr_count($val, '/') >= 2; // inizia con /
+            if (strlen($val) < 15 || $is_path) {
+                return $val;
+            } else {
+                return substr($val, 0, 15) . '...';
+            }
+        }
+        return $val;
     }
-    return $result;
 }

@@ -5,25 +5,46 @@ class Date {
     //----------------------------------------------------------------------------
     //  recognize
     //----------------------------------------------------------------------------
-    //
-    public static function isTimeStamp(string $date): bool{
+    /**
+     * @param string|int|null $date
+     */
+    public static function isTimeStamp($date): bool {
+        if (empty($date)) {
+            return false;
+        }
         // e' un intero composto di 10 cifre
         $rexp = '/^[0-9]{10}$/';
-        return 1 == preg_match($rexp, $date);
+        return 1 == preg_match($rexp, (string) $date);
     }
+    /**
+     * @param string|int|null $date
+     */
     // formato yyyy-MM-dd
-    public static function isISO(string $date): bool{
+    public static function isISO($date): bool {
+        if (empty($date)) {
+            return false;
+        }
         $rexp = '/^([0-9]{4})-([0-9]{2})-([0-9]{2})$/';
         return !empty($date) && 1 == preg_match($rexp, $date);
     }
-    //
-    public static function isIT(string $date): bool{
+    /**
+     * @param string|int|null $date
+     */
+    public static function isIT($date): bool {
+        if (empty($date)) {
+            return false;
+        }
         $rexp = '/^[0-9]{1,2}\/[0-9]{1,2}\/[0-9]{2,4}$/';
         $rexp2 = '/^[0-9]{1,2}-[0-9]{1,2}-[0-9]{2,4}$/';
         return !empty($date) && (1 == preg_match($rexp, $date) || 1 == preg_match($rexp2, $date));
     }
-    //
-    public static function isISODateTime(string $date): bool{
+    /**
+     * @param string|int|null $date
+     */
+    public static function isISODateTime($date): bool {
+        if (empty($date)) {
+            return false;
+        }
         $rexp = '/^([0-9]{4})-([0-9]{2})-([0-9]{2}) ([0-9]{2}):([0-9]{2}):([0-9]{2})$/';
         return !empty($date) && 1 == preg_match($rexp, $date);
     }
@@ -44,51 +65,54 @@ class Date {
         return true;
     }
     //
-    public static function isEmpty(string $date): bool {
-        return is_null($date) || in_array($date, ['00-00-0000', '00/00/0000', '0000-00-00', '0000/00/00']);
+    public static function isEmpty( ? string $date) : bool {
+        return is_null($date) || in_array($date, ['', '00-00-0000', '00/00/0000', '0000-00-00', '0000/00/00']);
     }
     //----------------------------------------------------------------------------
     //
     //----------------------------------------------------------------------------
     // prova a riconoscere diversi formati e se ne riconosce uno, converte la data
+    /**
+     * @param mixed $date
+     */
     public static function toTimeStamp(string $date): string {
         if (self::isEmpty($date)) {
-            return 0;
+            return '0';
         } elseif (self::isTimeStamp($date)) {
             return $date;
         } elseif (self::isIT($date)) {
             list($d, $m, $y) = explode('/', str_replace('-', '/', $date));
-            return mktime(0, 0, 0, $m, $d, $y);
+            return (string) mktime(0, 0, 0, (int) $m, (int) $d, (int) $y);
         } elseif (self::isISO($date)) {
             list($y, $m, $d) = explode('-', str_replace('/', '-', $date));
-            return mktime(0, 0, 0, $m, $d, $y);
+            return (string) mktime(0, 0, 0, (int) $m, (int) $d, (int) $y);
         } elseif (self::isISODateTime($date)) {
             list($date_d, $date_t) = explode(' ', $date);
             list($y, $m, $d) = explode('-', str_replace('/', '-', $date_d));
-            list($s, $min, $h) = explode($date_t);
-            return mktime($s, $min, $h, $m, $d, $y);
+            list($s, $min, $h) = explode(':', $date_t);
+            return (string) mktime((int) $s, (int) $min, (int) $h, (int) $m, (int) $d, (int) $y);
         } else {
-            return 0;
+            return '0';
         }
     }
     //
     public static function toFmt(string $date, string $fmt = 'Y-m-d'): string {
-        return date($fmt, Self::toTimeStamp($date));
+        return date($fmt, (int) Self::toTimeStamp($date));
     }
     //
     public static function toISO(string $date): string {
-        return date('Y-m-d', Self::toTimeStamp($date));
+        return date('Y-m-d', (int) Self::toTimeStamp($date));
     }
     //
     public static function toIT(string $date): string {
-        return date('d/m/Y', Self::toTimeStamp($date));
+        return date('d/m/Y', (int) Self::toTimeStamp($date));
     }
     //----------------------------------------------------------------------------
     //
     //----------------------------------------------------------------------------
     // ultimo giorno di ogni mese
     public static function lastMonthDay(string $month): string {
-        return self::daysInMonth($y = date('Y'), $month);
+        return (string) self::daysInMonth($y = (int) date('Y'), (int) $month);
     }
     //
     public static function daysInMonth(int $y, int $m): int {
@@ -101,7 +125,7 @@ class Date {
         if (self::isLeapYear($y)) {
             $months[1] = 29;
         }
-        return $months[$m - 1];
+        return (int) $months[$m - 1];
     }
     // stabilisce se la data e' nel passato
     public static function isPast(string $date): bool{
@@ -119,14 +143,14 @@ class Date {
     }
     // stabilisce se la data corrente e' tra le due date
     // in input. ritorna false se uno dei due par e' nullo
-    public static function isBetween(string $past, string $future, $date = null): bool {
-        if (is_null($past) || is_null($future)) {
+    public static function isBetween(string $past, string $future, string $date = ''): bool {
+        if (empty($past) || empty($future)) {
             return false;
         }
-        $date = self::toTimeStamp($date);
+        $ts = self::toTimeStamp($date);
         $future = self::toTimeStamp($future);
         $past = self::toTimeStamp($past);
-        return ($date < $future) && ($date > $past);
+        return ($ts < $future) && ($date > $past);
     }
     // $date format 'Y-m-d' '2000-01-01'
     public static function add(string $date, int $days): string{
@@ -141,8 +165,11 @@ class Date {
         return date_format($date, 'Y-m-d');
     }
     // basic implementation of ruby time_ago_in_words()
-    public static function time_ago_in_words($time): string{
-        $time = (!is_int($time)) ? strtotime($time) : $time;
+    /**
+     * @param int|string $time_p
+     */
+    public static function time_ago_in_words($time_p): string{
+        $time = (!is_int($time_p)) ? strtotime($time_p) : $time_p;
         $now = time();
         $remainder = $now - $time;
         if ($remainder < 60) {
@@ -162,7 +189,7 @@ class Date {
         }
     }
     //
-    public static function formatAge($value): string{
+    public static function formatAge(string $value = "now"): string{
         $now = new DateTime();
         $created = new DateTime($value);
         $interval = $now->diff($created);
@@ -182,7 +209,8 @@ class Date {
     }
     // formatta un numero elevato di secondi(es sottrazione di due timestamp)
     // secsToStr( time() - $_SERVER['REQUEST_TIME'] )
-    public static function secsToStr($secs) {
+    public static function secsToStr(int $secs): string{
+        $r = '';
         if ($secs >= 86400) {
             $days = floor($secs / 86400);
             $secs = $secs % 86400;
@@ -195,7 +223,7 @@ class Date {
             }
         }
         if ($secs >= 3600) {
-            $hours = floor($secs / 3600);
+            $hours = (string) floor($secs / 3600);
             $secs = $secs % 3600;
             $r .= $hours . ' hour';
             if ($hours != 1) {
@@ -224,8 +252,8 @@ class Date {
     }
     // dato un timestamp $ts (operation begin[(es. $_SERVER['REQUEST_TIME'] )])
     // ritorna una stringa leggibile
-    public static function duration($ts) {
-        $time = time();
+    public static function duration(int $ts): string{
+        $time = (int) time();
         $years = (int) ((($time - $ts) / (7 * 86400)) / 52.177457);
         $rem = (int) (($time - $ts) - ($years * 52.177457 * 7 * 86400));
         $weeks = (int) (($rem) / (7 * 86400));
@@ -270,8 +298,8 @@ class Date {
     }
     // determina se è l'orario corrente rientra negli orari di lavoro
     public static function isBusinessDayAndHour(): bool{
-        $h = date('H');
-        $d = date('w'); // w   Numeric representation of the day of the week, 0 (for Sunday) through 6 (for Saturday)
+        $h = (int) date('H');
+        $d = (int) date('w'); // w   Numeric representation of the day of the week, 0 (for Sunday) through 6 (for Saturday)
         $is_h = $h >= 7 && $h < 23; //no la notte
         $is_d = $d >= 1; //no la domenica
         return $is_h && $is_d;
@@ -284,6 +312,9 @@ class Date {
     public static function isValidDate(int $y, int $m, int $d): bool {
         return $m >= 1 && $m <= 12 && $d >= 1 && $d <= self::daysInMonth($y, $m);
     }
+}
+if (function_exists('__')) {
+    function __(string $f, string $plurals, int $x): string {return $f;}
 }
 if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
     require_once __DIR__ . '/Test.php';
@@ -323,20 +354,23 @@ if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
     ok(Date::isEmpty($date), "isEmpty $date");
     $date = date('Y-m-d');
     ok(!Date::isEmpty($date), "!isEmpty $date");
+    //
+    function date_i(string $f): int {return (int) date($f);}
+    //
     $date = date('d-m-Y');
-    $expected = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
+    $expected = mktime(0, 0, 0, date_i('m'), date_i('d'), date_i('Y'));
     ok(Date::toTimeStamp($date) == $expected, "toTimeStamp $date is $expected");
-    $date = date('d/m/Y');
-    $expected = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
+    $date = date_i('d/m/Y');
+    $expected = mktime(0, 0, 0, date_i('m'), date_i('d'), date_i('Y'));
     ok(Date::toTimeStamp($date) == $expected, "toTimeStamp $date is $expected");
     $date = time();
     $expected = time();
     ok(Date::toTimeStamp($date) == $expected, "toTimeStamp $date is $expected");
-    $date = date('Y-m-d');
-    $expected = mktime(0, 0, 0, date('m'), date('d'), date('Y'));
+    $date = date_i('Y-m-d');
+    $expected = mktime(0, 0, 0, date_i('m'), date_i('d'), date_i('Y'));
     ok(Date::toTimeStamp($date) == $expected, "toTimeStamp($date) " . Date::toTimeStamp($date) . " is $expected");
     $expected = 0;
-    ok(Date::toTimeStamp(null) == $expected, "toTimeStamp NULL is $expected");
+    // ok(Date::toTimeStamp(null) == $expected, "toTimeStamp NULL is $expected");
     $date = date('d-m-Y');
     $expected = date('Y-m-d');
     ok(Date::toISO($date) == $expected, "toISO($date) is $expected");

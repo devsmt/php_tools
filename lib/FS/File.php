@@ -355,7 +355,7 @@ class Dir {
      */
     public static function globr($sDir, $sPattern, $nFlags = null) {
         if (($aFiles = \_glob("$sDir/$sPattern", $nFlags)) == false) {
-            $aFiles = array();
+            $aFiles = [];
         }
         if (($aDirs = \_glob("$sDir/*", GLOB_ONLYDIR)) != false) {
             foreach ($aDirs as $sSubDir) {

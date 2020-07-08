@@ -32,7 +32,7 @@ $GLOBALS['__SHAPE_REGISTRY'] = [];
 //
 //
 //
-function shape_define($shape_name, array $shape_def) {
+function shape_define(string $shape_name, array $shape_def): void {
     if (substr($shape_name, 0, 1) != 'T') {
         $msg = sprintf('Errore %s ', 'Shape should be defined with beginning uppercase T');
         throw new \Exception($msg); // exceptions_
@@ -43,10 +43,10 @@ function shape_define($shape_name, array $shape_def) {
 //
 // applica default sensati a un record che si presuppone abbia una determinata forma
 //
-function shape_init($shape_name, $rec) {
+function shape_init(string $shape_name, array $rec): void{
     $shape_def = $GLOBALS[SHAPE_REG][$shape_name];
     foreach ($shape_def as $key => $expected_type) {
-        if (is_object($value)) {
+        if (is_object($expected_type)) {
             // TODO? è possibile solo se l'oggetto ha un costruttore vuoto
         } else {
             switch ($expected_type) {
@@ -82,13 +82,13 @@ function shape_init($shape_name, $rec) {
     }
 }
 // crea un record di una determinata forma, inizializzato
-function shape_mk($shape_name, $rec) {
-    return shape_init($shape_name, $rec = []);
+function shape_mk(string $shape_name, array $rec): void{
+    shape_init($shape_name, $rec = []);
 }
 //
 // definisce un tipo Hash<T>, hash i cui valori possono essere di un solo tipo T
 // shape_define_dictionary('THashString', string);
-function shape_define_dictionary($dictionary_name, $dictionary_type) {
+function shape_define_dictionary(string $dictionary_name, string $dictionary_type): void {
     // 'THash', string
     if (substr($dictionary_name, 0, 5) != 'THash') {
         $msg = sprintf('Errore %s ', 'Dictionary should be defined with beginning THash');
@@ -99,7 +99,7 @@ function shape_define_dictionary($dictionary_name, $dictionary_type) {
 }
 //
 // definisce una List<T> o Array<T>
-function shape_define_list($list_name, $list_type) {
+function shape_define_list(string $list_name, string $list_type): void {
     // 'THash', string
     if (substr($list_name, 0, 5) != 'TList') {
         $msg = sprintf('Errore %s ', 'List should be defined with beginning THash');
@@ -111,7 +111,7 @@ function shape_define_list($list_name, $list_type) {
 //
 // valida la forma di un hash
 //
-function shape_validate($shape_name, array $shaped_array) {
+function shape_validate(string $shape_name, array $shaped_array): bool{
     $shape_def = $GLOBALS[SHAPE_REG][$shape_name];
     // gestione shape THash || TList
     if (
@@ -148,6 +148,8 @@ function shape_validate($shape_name, array $shaped_array) {
             }
         }
     } else {
+        // THashString
+        // TListString
         $expected_type = $shape_def;
         $t = substr($shape_name, 0, 5);
         switch ($t) {
@@ -179,60 +181,53 @@ function shape_validate($shape_name, array $shaped_array) {
 
 // if colled directly in CLI, run the tests:
 if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
-
-    require_once __DIR__.'/Test.php';
-
-
-
-
-
+    require_once __DIR__ . '/../Test.php';
     //----------------------------------------------------------------------------
     //
     //----------------------------------------------------------------------------
-
     shape_define('TPoint', ['x' => int, 'y' => int]);
     //
     ok_excheption(function () {
-        shape_validate(TPoint, $p1 = []);
+        shape_validate('TPoint', $p1 = []);
     }, 'should detect missing x');
     ok_excheption(function () {
-        shape_validate(TPoint, $p1 = ['x' => 'string', 'y' => 0]);
+        shape_validate('TPoint', $p1 = ['x' => 'string', 'y' => 0]);
     }, 'should detect missing x type');
-    ok(true, shape_validate(TPoint, $p1 = ['x' => 1, 'y' => 0]), 'should be ok');
-    ok(true, shape_validate(TPoint, $p1 = ['x' => 1, 'y' => 0, 'z' => 3]), 'should be ok if redundant');
+    ok(true, shape_validate('TPoint', $p1 = ['x' => 1, 'y' => 0]), 'should be ok');
+    ok(true, shape_validate('TPoint', $p1 = ['x' => 1, 'y' => 0, 'z' => 3]), 'should be ok if redundant');
     ok_excheption(function () {
-        shape_validate(TPoint, $p1 = ['x' => 1, 'y' => null]);
+        shape_validate('TPoint', $p1 = ['x' => 1, 'y' => null]);
     }, 'should not be valid if null');
     //
     shape_define('TPointN', ['x' => int, 'y' => nullable('int')]);
-    ok(true, shape_validate(TPointN, $p1 = ['x' => 1, 'y' => null]), 'should be ok with null');
+    ok(true, shape_validate('TPointN', $p1 = ['x' => 1, 'y' => null]), 'should be ok with null');
     //
     // recursive, sub data types
     //
     shape_define('TRecursive', [
-        'point' => TPoint,
+        'point' => 'TPoint',
         'id' => int,
     ]);
     ok_excheption(function () {
-        shape_validate(TRecursive, $p1 = ['id' => 1, 'point' => []]);
+        shape_validate('TRecursive', $p1 = ['id' => 1, 'point' => []]);
     }, 'recursive should signal an empty substructure');
-    ok(true, shape_validate(TRecursive, $p1 = ['id' => 1, 'point' => ['x' => 0, 'y' => 1]]), 'recursive validation ok');
+    ok(true, shape_validate('TRecursive', $p1 = ['id' => 1, 'point' => ['x' => 0, 'y' => 1]]), 'recursive validation ok');
     //
     //
     // TODO:
     shape_define_dictionary('THashString', string);
-    ok(true, shape_validate(THashString, ['id' => 'a', 'b' => 'b']), 'THashString ok');
+    ok(true, shape_validate('THashString', ['id' => 'a', 'b' => 'b']), 'THashString ok');
     ok_excheption(function () {
-        shape_validate(THashString, ['id' => 0]);
+        shape_validate('THashString', ['id' => 0]);
     }, 'THashString should detect invalid type');
     //
     shape_define_list('TListString', string);
-    ok(true, shape_validate(TListString, ['a', 'b']), 'TListString ok');
+    ok(true, shape_validate('TListString', ['a', 'b']), 'TListString ok');
     // more complex type
-    shape_define_list('TListPoint', TPoint);
+    shape_define_list('TListPoint', 'TPoint');
     // define complex defs
     shape_define('TInvoice', [
-        'head' => TPoint,
-        'rows' => TListPoint,
+        'head' => 'TPoint',
+        'rows' => 'TListPoint',
     ]);
 }

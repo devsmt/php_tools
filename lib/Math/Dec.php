@@ -1,7 +1,5 @@
 <?php
-declare(strict_types=1);
-
-
+declare (strict_types = 1);
 
 //----------------------------------------------------------------------------
 //  Decimal
@@ -54,9 +52,18 @@ class Dec {
     // somma un array di numeri formato bc
     function array_sum_dec(array $a_num) {
         $final_v = array_reduce($a_num, function ($carry_v, $cur_v) {
-            $carry_v = bcadd($carry_v, $cur_v);
+            if (self::str_is_dec($cur_v)) {
+                $carry_v = bcadd($carry_v, $cur_v);
+            } else {
+                $msg = sprintf('Errore %s ', 'must be dec ' . print_r($cur_v, true));
+                throw new \Exception($msg);
+            }
             return $carry_v;
         }, $initial_v = '0.00');
         return $final_v;
     }
 }
+
+if( isset($argv[0]) && basename($argv[0]) == basename(__FILE__) ) {
+}
+

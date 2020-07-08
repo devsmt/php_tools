@@ -13,7 +13,7 @@
  */
 class ListObject implements IteratorAggregate, ArrayAccess, Serializable, Countable {
     protected $storage = [];
-    function __construct($array = []) {
+    function __construct(array $array = []) {
         if (!is_array($array) && !$array instanceof Traversable) {
             throw new InvalidArgumentException('Traversable object or array expected');
         }
@@ -21,32 +21,38 @@ class ListObject implements IteratorAggregate, ArrayAccess, Serializable, Counta
             $this->storage[] = $v;
         }
     }
-    function append($what) {
+    /** @param mixed $what */
+    function append($what): void {
         if (is_array($what)) {
-            return $this->extend($what);
+            $this->extend($what);
         }
         $this->storage[] = $what;
     }
-    function add($what) {
+    /** @param mixed $what */
+    function add($what): void{
         $this->append($what);
     }
-    function extend($iterable) {
+    function extend(array $iterable): void {
         foreach ($iterable as $v) {
             $this->storage[] = $v;
         }
     }
-    function insert($i, $value) {
+    /** @param mixed $value */
+    function insert(int $i, $value): void {
         if ($i < 0) {
             $i += count($this->storage) + 1;
         }
-        array_splice($this->storage, $i, 0, array($value));
+        array_splice($this->storage, $i, 0, [$value]);
     }
-    function remove($value) {
+    /** @param mixed $value */
+    function remove($value): void {
         if (!($k = $this->index($value))) {
             throw new OutOfRangeException('No such item in the list');
         }
         unset($this->storage[$k]);
     }
+    /** @param mixed $at
+     * @return mixed */
     function pop($at = false) {
         if ($at === false) {
             return array_pop($this->storage);
@@ -57,13 +63,17 @@ class ListObject implements IteratorAggregate, ArrayAccess, Serializable, Counta
             return $rv[0];
         }
     }
-    function slice($offset, $length = null) {
+    /** @return mixed */
+    function slice(int $offset, int $length = null) {
         return array_slice($this->storage, $offset, $length);
     }
-    function splice($offset, $length = 0, $replacement = null) {
+    /** @param mixed $replacement
+     * @return mixed */
+    function splice(int $offset, int $length = 0, $replacement = []) {
         return array_splice($this->storage, $offset, $length, $replacement);
     }
-    function index($value) {
+    /** @param mixed $value */
+    function index($value): int {
         return array_search($this->storage, $value);
     }
     /**
@@ -74,8 +84,11 @@ class ListObject implements IteratorAggregate, ArrayAccess, Serializable, Counta
      *      or one of the SORT_ constants used by the array_multisort
      *      function
      * $reverse - (bool) true if the list should be sorted descending
+     *
+     * @param callable|int $key
+     * @param bool $reverse
      */
-    function sort($key = false, $reverse = false) {
+    function sort($key = 0, $reverse = false): void {
         if (is_callable($key)) {
             $keys = array_map($key, $this->storage);
             array_multisort($keys, $this->storage,
@@ -89,28 +102,29 @@ class ListObject implements IteratorAggregate, ArrayAccess, Serializable, Counta
             sort($this->storage);
         }
     }
-    function reverse() {
+    function reverse(): array{
         return array_reverse($this->storage);
     }
-    function filter($callable) {
+    function filter(callable $callable): self{
         $new = new static();
         foreach ($this->storage as $i => $v) {
             if ($callable($v, $i)) {
-                $new[] = $v;
+                $new->add($v);
             }
         }
         return $new;
     }
     // IteratorAggregate
-    function getIterator() {
+    function getIterator(): ArrayIterator {
         return new ArrayIterator($this->storage);
     }
     // Countable
-    function count($mode = COUNT_NORMAL) {
+    function count(int $mode = COUNT_NORMAL): int {
         return count($this->storage, $mode);
     }
     // ArrayAccess
-    function offsetGet($offset) {
+    /** @return mixed */
+    function offsetGet(int $offset) {
         if (!is_int($offset)) {
             throw new InvalidArgumentException('List indices should be integers');
         } elseif ($offset < 0) {
@@ -121,9 +135,13 @@ class ListObject implements IteratorAggregate, ArrayAccess, Serializable, Counta
         }
         return $this->storage[$offset];
     }
-    function offsetSet($offset, $value) {
+    /**
+    @param int|null $offset
+    @param mixed $value
+     */
+    function offsetSet($offset, $value): void {
         if ($offset === null) {
-            return $this->storage[] = $value;
+            $this->storage[] = $value;
         } elseif (!is_int($offset)) {
             throw new InvalidArgumentException('List indices should be integers');
         } elseif ($offset < 0) {
@@ -134,7 +152,7 @@ class ListObject implements IteratorAggregate, ArrayAccess, Serializable, Counta
         }
         $this->storage[$offset] = $value;
     }
-    function offsetExists($offset) {
+    function offsetExists(int $offset): bool {
         if (!is_int($offset)) {
             throw new InvalidArgumentException('List indices should be integers');
         } elseif ($offset < 0) {
@@ -142,7 +160,7 @@ class ListObject implements IteratorAggregate, ArrayAccess, Serializable, Counta
         }
         return isset($this->storage[$offset]);
     }
-    function offsetUnset($offset) {
+    function offsetUnset(int $offset): void {
         if (!is_int($offset)) {
             throw new InvalidArgumentException('List indices should be integers');
         } elseif ($offset < 0) {
@@ -151,13 +169,14 @@ class ListObject implements IteratorAggregate, ArrayAccess, Serializable, Counta
         unset($this->storage[$offset]);
     }
     // Serializable
-    function serialize() {
+    function serialize(): string {
         return serialize($this->storage);
     }
-    function unserialize($what) {
+    /** @param mixed $what */
+    function unserialize($what): void{
         $this->storage = unserialize($what);
     }
-    function __toString() {
+    function __toString(): string {
         return '[' . implode(', ', $this->storage) . ']';
     }
 }

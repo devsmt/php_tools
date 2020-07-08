@@ -4,7 +4,8 @@
 // Dictionary: store and retrieve objects using key-value pairs.
 //
 class A {
-    public static function first($a) {
+    /** @return mixed */
+    public static function first(array $a) {
         if (self::isAssociative($a)) {
             foreach ($a as $k => $v) {
                 return $v;
@@ -13,7 +14,8 @@ class A {
             return reset($a);
         }
     }
-    public static function last($a) {
+    /** @return mixed */
+    public static function last(array $a) {
         if (is_array($a)) {
             if (self::isAssociative($a)) {
                 $keys = array_keys($a);
@@ -25,7 +27,7 @@ class A {
         }
     }
     // se c'è anche solo una chiave int è assoc
-    public static function isAssociative($a) {
+    public static function isAssociative(array $a): bool{
         $a_k = array_keys($a);
         for ($i = 0; $i < count($a_k); $i++) {
             if (is_int($a_k[$i])) {
@@ -49,18 +51,18 @@ class A {
     // Determines if an array is associative.
     // An array is "associative" if it doesn't have sequential numerical keys beginning with zero.
     //
-    public static function isAssociative3(array $array) {
+    public static function isAssociative3(array $array): bool{
         $keys = array_keys($array);
         return array_keys($keys) !== $keys;
     }
-    public static function isSequential($var) {
-        return is_numeric(implode(array_keys($var)));
+    public static function isSequential(array $a): bool {
+        return is_numeric(implode('', array_keys($a)));
     }
     //-------------------------------------------
     // Checks array is an hash
     //
-    function is_array_assoc($array) {
-        if (!is_array($array) || empty($array)) {
+    function is_array_assoc(array $array): bool {
+        if (empty($array)) {
             return false;
         }
         $count = count($array);
@@ -71,11 +73,11 @@ class A {
         }
         return false;
     }
-    function is_array_indexed($array) {
-        if (!is_array($array) || empty($array)) {
+    function is_array_indexed(array $array): bool {
+        if (empty($array)) {
             return false;
         }
-        return !is_array_assoc($array);
+        return !self::is_array_assoc($array);
     }
     //------------------------------------------
     // @see H::get
@@ -101,7 +103,7 @@ class A {
     //     return $def;
     // }
     // assicura che tutto ciò che è in $a2 sia in $a
-    public static function equals($a, $a2) {
+    public static function equals(array $a, array $a2): bool {
         foreach ($a2 as $k => $v) {
             if (isset($a[$k])) {
                 if ($a[$k] != $v) {
@@ -113,12 +115,15 @@ class A {
         }
         return true;
     }
-    public static function del(&$a, $k) {
+    /**
+     * @param int|string $k
+     */
+    public static function del(array &$a, $k): array{
         unset($a[$k]);
         return $a;
     }
     // @see compact
-    public static function deleteEmpty($a) {
+    public static function deleteEmpty(array $a): array{
         foreach ($a as $i => $value) {
             if (is_null($value) || $value === '') {
                 unset($a[$i]);
@@ -129,7 +134,8 @@ class A {
     // $records = [['a' => 'y', 'b' => 'z', 'c' => 'e'], ['a' => 'x', 'b' => 'w', 'c' => 'f']];
     // $subset1 = array_collect($records, 'a'); // $subset1 will be: [['a' => 'y'], ['a' => 'x']];
     // $subset2 = array_collect($records, ['a', 'c']); // $subset2 will be: [['a' => 'y', 'c' => 'e'], ['a' => 'x', 'c' => 'f']];
-    public static function collect($array, $params) {
+    /** @param array|string $params */
+    public static function collect(array $array, $params): array{
         $return = [];
         if (!is_array($params)) {
             $params = [$params];
@@ -147,7 +153,7 @@ class A {
         }
         return $return;
     }
-    public static function isEmpty($a) {
+    public static function isEmpty(array $a): bool {
         return count($a) == 0;
     }
     /* ----------------------------------------------------------------
@@ -165,7 +171,7 @@ class A {
     //     });
     // }
     // Returns a copy of array with all empty elements removed.
-    public static function compact($a) {
+    public static function compact(array $a): array{
         // array_values() to discard the non consecutive index
         $array_f = array_values(array_filter($a, function ($v) {
             // false will be skipped
@@ -175,13 +181,19 @@ class A {
     }
     // array.reject {|item| block } ? an_array
     // Returns a new array containing the items in self for which the block is not true.
-    public static function reject($a, $f) {
+    /**
+     * @param callable(mixed): bool $f
+     */
+    public static function reject(array $a, callable $f): array{
         return self::delete_if($a, $f);
     }
     // Deletes every element of self for which block evaluates to true.
     // The array is changed instantly every time the block is called and not after the iteration is over.
     // See also reject
-    public static function delete_if($array, $block) {
+    /**
+     * @param callable(mixed): bool $block
+     */
+    public static function delete_if(array $array, callable $block): array{
         // false will be skipped
         $array = array_values(array_filter($array, $block));
         return $array;
@@ -191,8 +203,10 @@ class A {
     // Invokes the block passing in successive elements from array, returning an array containing those elements for which the block returns a true value (equivalent to Enumerable#select).
     // a = %w{ a b c d e f }
     // a.select {|v| v =~ /[aeiou]/}   #=> ["a", "e"]
-    //
-    function select($array, $block) {
+    /**
+     * @param callable(mixed): bool $block
+     */
+    function select(array $array, callable $block): array{
         // false will be skipped
         $array = array_values(array_filter($array, function ($v) use ($block) {
             $test = $block($v);
@@ -206,11 +220,12 @@ class A {
     // a = [ "a", "a", "b", "b", "c" ]
     // a.uniq   #=> ["a", "b", "c"]
     //
-    function uniq($a) {
+    function uniq(array $a): array{
         return array_unique($a);
     }
 
     // returns the first argument that is not empty()
+    /** @return mixed */
     function coalesce() {
         $args = func_get_args();
         foreach ($args as $arg) {
@@ -221,10 +236,14 @@ class A {
         return null;
     }
     // returns the first argument that is not == false.
+    /** @return mixed */
     function coalesce_f() {
-        return array_shift(array_filter(func_get_args()));
+        $args = func_get_args();
+        $arg2 = array_filter($args);
+        return array_shift($arg2);
     }
     // returns the first argument that is not strictly NULL
+    /** @return mixed */
     function coalesce_n() {
         $args = func_get_args();
         foreach ($args as $arg) {
@@ -236,6 +255,7 @@ class A {
     }
     // se non ci sono match ritorna l'ultimo argomento passato
     // coalesce_l(null, [] ) => []
+    /** @return mixed */
     function coalesce_l() {
         $args = func_get_args();
         foreach ($args as $arg) {
@@ -245,29 +265,24 @@ class A {
         }
         return $args[$i = count($args) - 1];
     }
-    public static function prepend($array, $value, $key = null) {
-        if (is_null($key)) {
+    /** @param mixed $value */
+    public static function prepend(array $array, $value, string $key = ''): array{
+        if (empty($key)) {
             array_unshift($array, $value);
         } else {
             $array = [$key => $value] + $array;
         }
         return $array;
     }
-    // Get a value from the array, and remove it.
-    public static function pull(&$array, $key, $default = null) {
-        $value = self::get($array, $key, $default);
-        unset($array[$key]);
-        return $value;
-    }
+
     // from [2, 3, [4,5], [6,7], 8] to [2,3,4,5,6,7,8]
-    function flatten($array = null) {
+    /** @param array $args */
+    function flatten(...$args): array{
         $result = [];
-        if (!is_array($array)) {
-            $array = func_get_args();
-        }
+        $array = func_get_args();
         foreach ($array as $key => $value) {
             if (is_array($value)) {
-                $result = array_merge($result, array_flatten($value));
+                $result = array_merge($result, self::flatten($value));
             } else {
                 $result = array_merge($result, [$key => $value]);
             }
@@ -277,7 +292,7 @@ class A {
     //
     // Returns true if the given predicate is true for all elements.
     //
-    public static function every(callable $callback, array $arr) {
+    public static function every(callable $callback, array $arr): bool {
         foreach ($arr as $element) {
             if (!$callback($element)) {
                 return false;
@@ -288,7 +303,7 @@ class A {
     //
     // Returns true if the given predicate is true for at least one element.
     //
-    public static function some(callable $callback, array $arr) {
+    public static function some(callable $callback, array $arr): bool {
         foreach ($arr as $element) {
             if ($callback($element)) {
                 return true;
@@ -297,7 +312,7 @@ class A {
         return false;
     }
     // array_merge fa casino con le chiavi, se numeriche, ad esempio i codici articolo o altro risultato da query
-    public static function merge() {
+    public static function merge(): array{
         $arg_list = func_get_args();
         $res = [];
         foreach ($arg_list as $arg) {
@@ -325,11 +340,11 @@ class ArrayPaginator {
     }
      */
     // ritorna una pagina di una determinata lunghezza partendo dall'array
-    public static function paginate($a_items, $pagelen, $page = 1) {
+    public static function paginate(array $a_items, int $pagelen, int $page = 1): array{
         return array_slice($a_items, (($page - 1) * $pagelen), $pagelen);
     }
     // rende i paginatori per un array di records
-    public static function render($count, $pagelen, $page) {
+    public static function render(int $count, int $pagelen, int $page): string{
         $add_pages = 5;
         $html = '
         <ul class="pagination">
@@ -352,7 +367,7 @@ class ArrayPaginator {
     }
 }
 if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
-    require_once __DIR__ . '/Test.php';
+    require_once __DIR__ . '/../Test.php';
     $a = ["key" => "i'm associative"];
     ok(A::isAssociative($a), true, print_r($a, true));
     $a = A::del($a, 'key');

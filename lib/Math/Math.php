@@ -116,27 +116,37 @@ class BigIntToStr {
         return bcmul($c, 1, 0);
     }
 }
-// takes a decimal number and returnrs roman
+/**
+ * converts decimal numbers to roman numerals
+ *
+ * @param int $num
+ * @return string
+ */
 function dec2roman($num) {
-    $a_chars = 'IVXLCDM';
-    $c_len = strlen($a_chars);
-    $b = 0;
-    $roman = '';
-    for ($i = 5; $num > 0; $b++, $i ^= 7) {
-        for ($j = $num % $i,
-            $num = $num / $i ^ 0;
-            $j--;
-        ) {
-            if ($j > 2) {
-                $j = 1;
-                $idx = $b + $num - ($num &= -2) + $j;
-            } else {
-                $idx = $b;
-            }
-            $roman = $a_chars[$idx] . $roman;
-        }
+    static $ones = ['', 'i', 'ii', 'iii', 'iv', 'v', 'vi', 'vii', 'viii', 'ix'];
+    static $tens = ['', 'x', 'xx', 'xxx', 'xl', 'l', 'lx', 'lxx', 'lxxx', 'xc'];
+    static $hund = ['', 'c', 'cc', 'ccc', 'cd', 'd', 'dc', 'dcc', 'dccc', 'cm'];
+    static $thou = ['', 'm', 'mm', 'mmm'];
+    if (!is_numeric($num)) {
+        throw new Exception('dec2roman() requires a numeric argument.');
     }
-    return $roman;
+    if ($num > 4000 || $num < 0) {
+        return '(out of range)';
+    }
+    $num = strrev((string) $num);
+    $ret = '';
+    switch (mb_strlen($num)) {
+    case 4:
+        $ret .= $thou[$num[3]];
+    case 3:
+        $ret .= $hund[$num[2]];
+    case 2:
+        $ret .= $tens[$num[1]];
+    case 1:
+        $ret .= $ones[$num[0]];
+        default:break;
+    }
+    return $ret;
 }
 // Returns the least common multiple of two numbers.
 // Use the greatest common divisor (GCD) formula and Math.abs() to determine the least common multiple. The GCD formula uses recursion.
@@ -437,14 +447,12 @@ function percentile($data, $percentile) {
     return $result;
 }
 
-
-
 //----------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------
 // if colled directly, run the tests:
 if (isset($_SERVER['argv']) && basename($_SERVER['argv'][0]) == basename(__FILE__)) {
-    require_once __DIR__.'/../Test.php';
+    require_once __DIR__ . '/../Test.php';
     bcscale(4); // setta il default scale, va settato prima delle chiamate
     switch ($argv[1]) {
     case 'base':
@@ -466,7 +474,7 @@ if (isset($_SERVER['argv']) && basename($_SERVER['argv'][0]) == basename(__FILE_
         is(bc_parse("(10.2+(5.05*6.1))/3.2"), '12.8140', 'complex expression');
         break;
     }
- 
+
     require_once __DIR__ . '/Test.php';
     for ($i = 0; $i < 10; $i++) {
         $c = base_convert_x($i);

@@ -7,14 +7,21 @@ and difficult to trip yourself up with while still providing some flexibility
 //-----------------------------------------------------------------------------------
 //  test formating
 //-----------------------------------------------------------------------------------
-function diag($l, $data = null) {
-    return Test::diag($l, $data);
+/** @param mixed  $data */
+function diag(string $l, $data = null): void {
+    echo sprintf("Label:%s data:%s \n", $l, var_export(
+        $data, true
+    ));
 }
 //-----------------------------------------------------------------------------------
 //  assertions
 //-----------------------------------------------------------------------------------
 //
-function ok($res, $expected, $label = '') {
+/**
+ * @param mixed $res
+ * @param mixed $expected
+ */
+function ok($res, $expected, string $label = ''): void{
     $_colored = function ($str, $foreground_color = 'green') {
         static $a_fg = ['red' => '0;31', 'green' => '0;32', 'brown' => '0;33'];
         return sprintf("\e[%sm", $a_fg[$foreground_color]) . $str . "\033[0m";
@@ -31,7 +38,11 @@ function ok($res, $expected, $label = '') {
     }
 }
 // full version
-function ok_($res, $expected, $label = '') {
+/**
+ * @param mixed $res
+ * @param mixed $expected
+ */
+function ok_($res, $expected, string $label = ''): void {
     @$GLOBALS['test_count']++;
     $is_regexp = is_string($expected) && substr($expected, 0, 1) == '/'; // se la stringa inizia con '/' è interpretata come regexp @try preg_match("/^\/.+\/[a-z0-1]*$/i",$expected)
     $colored = function ($str, $foreground_color = '') {
@@ -48,7 +59,7 @@ function ok_($res, $expected, $label = '') {
     };
     // basic comparison (using $a == $b or $a === $b fails) works for associative arrays but will not work as expected with indexed arrays
     // which elements are in different order, for example:
-    // (array("x","y") == array("y","x")) === false;
+    // ( ["x","y"] == ["y","x"]   ) === false;
     $array_equal = function ($a, $b) {
         return (is_array($a) && is_array($b) &&
             count($a) == count($b) &&
@@ -59,7 +70,6 @@ function ok_($res, $expected, $label = '') {
         return json_encode(ksort($a, SORT_STRING)) === json_encode(ksort($b, SORT_STRING));
     };
     $dmp = function ($v) {return var_export($v, true);};
-
     if ($res === $expected) {
         echo $colored("OK $label \n", 'green');
     } elseif (!is_array($expected) && $res == $expected) {
@@ -97,12 +107,10 @@ function ok_($res, $expected, $label = '') {
         echo $colored($s, 'red');
     }
 }
-
 // function is($res, $label ) { return ok($res, $expected=true, $label ); }
 // @see test_suite_
-
 // test delle eccezioni
-function ok_excheption($operation, $label) {
+function ok_excheption(callable $operation, string $label): void{
     $is_e_rised = false;
     $e_msg = '';
     try {
@@ -115,27 +123,27 @@ function ok_excheption($operation, $label) {
 }
 /*
 function is($val, $expected_val, $description = '') {
-    $pass = ($val == $expected_val);
-    ok($pass, $description);
-    if (!$pass) {
-        diag("         got: '$val'");
-        diag("    expected: '$expected_val'");
-    }
-    return $pass;
+$pass = ($val == $expected_val);
+ok($pass, $description);
+if (!$pass) {
+diag("         got: '$val'");
+diag("    expected: '$expected_val'");
+}
+return $pass;
 }
 function isnt($val, $expected_val, $description = '') {
-    $pass = ($val != $expected_val);
-    ok($pass, $description);
-    if (!$pass) {
-        diag("    '$val'");
-        diag("        !=");
-        diag("    '$expected_val'");
-    }
-    return $pass;
+$pass = ($val != $expected_val);
+ok($pass, $description);
+if (!$pass) {
+diag("    '$val'");
+diag("        !=");
+diag("    '$expected_val'");
 }
-*/
-function like($string, $regex, $description = '') {
-    $pass = preg_match($regex, $string);
+return $pass;
+}
+ */
+function like(string $string, string $regex, string $description = ''): bool{
+    $pass = (bool) preg_match($regex, $string);
     ok($pass, $description);
     if (!$pass) {
         diag("                  '$string'");
@@ -143,8 +151,8 @@ function like($string, $regex, $description = '') {
     }
     return $pass;
 }
-function unlike($string, $regex, $description = '') {
-    $pass = !preg_match($regex, $string);
+function unlike(string $string, string $regex, string $description = ''): bool{
+    $pass = (bool) !preg_match($regex, $string);
     ok($pass, $description);
     if (!$pass) {
         diag("                  '$string'");
@@ -152,16 +160,19 @@ function unlike($string, $regex, $description = '') {
     }
     return $pass;
 }
-function cmp_ok($val, $operator, $expected_val, $description = '') {
-    eval('$pass = ($val ' . $operator . ' $expected_val);');
-    ok($pass, $description);
-    if (!$pass) {
-        diag("         got: '$val'");
-        diag("    expected: '$expected_val'");
-    }
-    return $pass;
-}
-function can_ok($object, $methods) {
+// function cmp_ok($val, $operator, $expected_val, $description = '') {
+//     eval('$pass = ($val ' . $operator . ' $expected_val);');
+//     ok($pass, $description);
+//     if (!$pass) {
+//         diag("         got: '$val'");
+//         diag("    expected: '$expected_val'");
+//     }
+//     return $pass;
+// }
+/**
+ * @param mixed $object
+ */
+function can_ok($object, array $methods): bool{
     $pass = true;
     $errors = [];
     foreach ($methods as $method) {
@@ -174,13 +185,16 @@ function can_ok($object, $methods) {
         ok(true, "method_exists(\$object, ...)");
     } else {
         ok(false, "method_exists(\$object, ...)");
-        diag($errors);
+        diag(__FUNCTION__, $errors);
     }
     return $pass;
 }
-function isa_ok($object, $expected_class, $object_name = 'The object') {
+/**
+ * @param mixed $object
+ */
+function isa_ok($object, string $expected_class, string $object_name = 'The object'): bool{
     $got_class = get_class($object);
-    if (version_compare(php_version(), '5', '>=')) {
+    if (version_compare((string) PHP_VERSION_ID, '5', '>=')) {
         $pass = ($got_class == $expected_class);
     } else {
         $pass = ($got_class == strtolower($expected_class));
@@ -192,18 +206,21 @@ function isa_ok($object, $expected_class, $object_name = 'The object') {
     }
     return $pass;
 }
-function pass($description = '') {
-    return ok(true, $description);
+function pass(string $description = ''): void{
+    ok(true, $description);
 }
-function fail($description = '') {
-    return ok(false, $description);
+function fail(string $description = ''): void{
+    ok(false, $description);
 }
-function include_ok($module) {
+function include_ok(string $module): void{
     // Test success of including file, but continue testing if possible even if unable to include
+    $included_files = get_included_files();
+    foreach ($included_files as $filename) {
+        echo "$filename\n";
+    }
 }
-function require_ok($module) {
-}
-function skip($message, $num) {
+//
+function skip(string $message, int $num): void {
     global $_num_skips;
     if ($num < 0) {
         $num = 0;
@@ -214,7 +231,11 @@ function skip($message, $num) {
     $_num_skips = $num;
 }
 // Recursively check datastructures for equalness
-function is_deeply($got, $expected, $test_name) {
+/**
+ * @param mixed $got
+ * @param mixed $expected
+ */
+function is_deeply($got, $expected, string $test_name): bool{
     $s_got = serialize($got);
     $s_exp = serialize($expected);
     $pass = $s_got == $s_exp;
@@ -228,21 +249,21 @@ function is_deeply($got, $expected, $test_name) {
     return $pass;
 }
 // usa weblint per assicurarsi che html prodotto sia standard
-function html_ok($str, $name = "") {
-    $fname = tempnam(getenv("TMP"), 'lint-');
-    $fh = fopen($fname, "w");
+function html_ok(string $str, string $name = ''): void{
+    $fname = tempnam((string) getenv('tmp'), 'lint-');
+    $fh = fopen($fname, 'w');
     fwrite($fh, $str);
     fclose($fh);
     $results = [];
+    /** @psalm-suppress ForbiddenCode  */
     $results = shell_exec("weblint $fname");
     unlink($fname);
     if ($results) {
-        $ok = fail($name);
+        fail($name);
         diag($results);
     } else {
-        $ok = pass($name);
+        pass($name);
     }
-    return $ok;
 }
 // confrontare Float
 // The arguments required for both functions are three numbers: the first and second arguments can be either the calculated value, or the target comparison value, and the third is the precision.
@@ -255,19 +276,19 @@ function html_ok($str, $name = "") {
 // is_float_essentially_equal($a, $b, 0.05)); // this is false, 95.01 * 0.05 < 100 - 95.1
 //
 // The approximatelyEqual function uses the larger of the two values and multiples it by epsilon to determine the margin of error.
-function is_float_approximately_equal($a, $b, $epsilon) {
+function is_float_approximately_equal(float $a, float $b, float $epsilon): bool{
     // Abs Returns the absolute value of number. abs(-4.2) -> 4.2;
     $A = abs($a);
-    $B = abs($B);
+    $B = abs($b);
     return abs($A - $B) <= ($A < $B ? $B : $A) * $epsilon;
 }
 // The essentiallyEqual function uses the smaller of the two values and multiples it by epsilon
 // to determine the margin of error. Therefore, unless values A and B are equal, the
 // essentiallyEqual function will always require the values to be more precise than the
 // approximatelyEqual function.
-function is_float_essentially_equal($a, $b, $epsilon) {
+function is_float_essentially_equal(float $a, float $b, float $epsilon): bool{
     $A = abs($a);
-    $B = abs($B);
+    $B = abs($b);
     return abs($A - $B) <= ($A > $B ? $B : $A) * $epsilon;
 }
 //-----------------------------------------------------------------------------------
@@ -285,16 +306,18 @@ $o->isSomething(); // ritorna "val"
  */
 class SimpleMock {
     var $data = [];
-    function getValue($i) {
-        return $this->data[$i];
+    /** @return mixed */
+    function get(string $s) {
+        return $this->data[$s];
     }
-    function get($i) {
-        return $this->getValue($i);
+    /**
+     * @param mixed $v
+     */
+    function set(string $s, $v): void{
+        $this->data[$s] = $v;
     }
-    function set($i, $v) {
-        $this->data[$i] = $v;
-    }
-    function __call($name, $arguments) {
+    /** @return mixed */
+    function __call(string $name, array $arguments = []) {
         return $this->get($name);
     }
 }
@@ -308,27 +331,27 @@ class SimpleMock {
 interface ITestCommand {
     public function __construct();
     // run test cases
-    public function run();
-    public function cleanup();
+    public function run(): void;
+    public function cleanup(): void;
 }
 // da CLI o pagina statica, leggge tutte le classi definite come tests e le esegue
 class TestSuite {
     public function __construct() {
     }
     // classe da far girare
-    public function getClass() {
+    public function getClass(): string {
         // implementazione cli
-        return isset($argv[1]) ? $argv[1] : null;
+        return (string) isset($_SERVER['argv'][1]) ? $_SERVER['argv'][1] : '';
     }
     // esegui i test scelti
-    public function run() {
+    public function run(): void{
         $class = $this->getClass();
         switch ($class) {
         case 'all':
             // fa girare tutte le classi di test in sequenza
             foreach ($a = get_declared_classes() as $class_name) {
                 if (substr($class_name, -4) == 'Test') {
-                    $logger->info("running $class_name");
+                    echo ("running $class_name"); // or $logger->info()
                     $t = new $class_name();
                     $t->run();
                     $t->cleanup();
@@ -350,12 +373,14 @@ class TestSuite {
     }
     // si occupa di rendere leggibile il risultato dei test nel container(cli,web)
     // di esecuzione prescelto
-    public function render_result() {
+    public function render_result(): string {
+        return '';
     }
     // uso del test
-    public function render_usage() {
+    public function render_usage(): string {
+        return '';
     }
-    function listAll() {
+    function listAll(): void{
         $dir_path = dirname(__FILE__ . DIRECTORY_SEPARATOR . 'tests');
         $dir = dir($dir_path);
         echo "<h3>tests:</h3>\n";
@@ -464,30 +489,44 @@ return $html;
 // minimalistic test for API
 //----------------------------------------------------------------------------
 class APIClient {
-    public static function get($method, $param = []) {
+    const DEBUG = true;
+    const URL = ''; // da personalizzare
+    const CLIENT_ID = '';
+    public static function get(string $method, array $param = []): array{
         $param_auth = self::getAuth();
         $a_param = array_merge($param_auth, $param);
         $url = sprintf('%s/%s?%s', self::URL, $method, http_build_query($a_param));
         $json_str = file_get_contents($url);
-        if (DEBUG) {
+        if (self::DEBUG) {
             echo "## URL: $url \n";
         }
+        // test data
         $data = json_decode($json_str, $use_assoc = true);
+        $is_err = json_last_error() !== JSON_ERROR_NONE;
         if (empty($data)) {
-            if (DEBUG) {
+            if (self::DEBUG) {
                 echo "## UNPARSABLE RESPONSE --------------------------------------\n";
                 echo "$json_str\n";
                 echo "## END RESPONSE    ------------------------------------------\n";
             }
-            return $json_str;
+            return [
+                'result' => false,
+                'message' => "JSON decode error: " . json_last_error_msg() . "\n",
+                'json' => $json_str,
+            ];
         }
-        if (DEBUG && (isset($data['exec_time']) || isset($data['memory']))) {
+        /** @return mixed */
+        $_ = function (array $h, string $k) {return array_key_exists($k, $h) ? $h[$k] : '';};
+        if (self::DEBUG && (isset($data['exec_time']) || isset($data['memory']))) {
             echo sprintf('## time:%s mem:%s data_len:%s' . PHP_EOL,
-                @$data['exec_time'], @$data['memory'], @count($data['data']));
+                $_($data, 'exec_time'),
+                $_($data, 'memory'),
+                (string)(is_array($data) ? count($_($data, 'data')) : 0)
+            );
         }
         return $data;
     }
-    protected static function getAuth() {
+    protected static function getAuth(): array{
         $time = time();
         $hash = ''; // some hashing algorithm like sha1(self::KEY.'-'.$time);
         $a = [
@@ -509,7 +548,6 @@ if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
     ok([1, 2], [1, 2]);
     ok(['a' => 1, 'b' => 2], ['a' => 1, 'b' => 2]);
     ok('aaa000', '/^[A-Z0-1]*$/i');
-
     // test OK func
     ok_(0, 0, 'ok for same value'); // should pass
     ok_(0, null, 'type warning'); //should pass with type warning
@@ -520,5 +558,4 @@ if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
     ok_([1, 2], [1, 2]);
     ok_(['a' => 1, 'b' => 2], ['a' => 1, 'b' => 2]);
     ok_('aaa000', '/^[A-Z0-1]*$/i');
-
 }

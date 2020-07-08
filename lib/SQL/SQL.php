@@ -275,6 +275,14 @@ class SQL {
             $where = $prepend_and($where);
             $where = implode(' ', $where);
         }
+        // check sql filter inizi con &&
+        $_str_begins = function ($str, $s_begin) {
+            $sub = substr($str, 0, $len = strlen($s_begin));
+            return $sub === $s_begin;
+        };
+        if (!$_str_begins($where, '&&')) {
+            $where = "&& $where";
+        }
         if (is_array($group_by)) {
             $group_by = $rm_empty($group_by);
             $group_by = implode(',', $group_by);

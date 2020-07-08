@@ -14,17 +14,25 @@ echo '</pre>';
  */
 class Stack {
     private $stack = [];
-    public function add($item) {
+    /**
+     * @param mixed $item
+     */
+    public function add($item):Stack {
         $this->stack[] = $item;
         return $this;
     }
+    /** @return mixed */
     public function next() {
         return array_pop($this->stack);
     }
-    public function count() {
-        return ($c = count($this->stack) >= 1) ? $c : 0;
+    public function count():int {
+        $c = count($this->stack);
+        return ($c >= 1) ? $c : 0;
     }
-    public function contains($item, $strict = false) {
+    /**
+     * @param mixed $item
+     */
+    public function contains($item, bool $strict = false):bool {
         return in_array($item, $this->stack, $strict) ? true : false;
     }
 }
@@ -43,7 +51,7 @@ $q[] = $newTask;
 class Queue extends SplQueue {
 }
 if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
-    require_once __DIR__ . '/Test.php';
+    require_once __DIR__ . '/../Test.php';
     $stack = new Stack();
 
     $stack->add('apples')

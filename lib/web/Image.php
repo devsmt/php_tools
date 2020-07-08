@@ -7,25 +7,25 @@
 // @see https://github.com/avalanche123/Imagine
 class Image {
     // Data URI per incorporare immagini
-    // <img src="<?=data_uri('elephant.png', 'image/png')?>" alt="An elephant" />
-    // header('Content-Type:text/css'); ?>
-    // div.menu { background-image:url('<?= data_uri('elephant.png', 'image/png') ?>'); }
-    function embed($file, $mime='image/png') {
+    // <img src="  data_uri('elephant.png', 'image/png')  " alt="An elephant" />
+    // header('Content-Type:text/css');
+    // div.menu { background-image:url('  data_uri('elephant.png', 'image/png')   '); }
+    function embed($file, $mime = 'image/png') {
         return "data:$mime;base64," . base64_encode(file_get_contents($file));
     }
     // crea un'innagine da un testo, un'idea per proteggere una email dagli spider
-    public static function txt($string){
-        $font  = 4;
+    public static function txt($string) {
+        $font = 4;
         //  create
         $height = imagefontheight($font);
-        $width  = imagefontwidth($font) * strlen($string);
-        $image = imagecreatetruecolor ($width,$height);
+        $width = imagefontwidth($font) * strlen($string);
+        $image = imagecreatetruecolor($width, $height);
         // todo: gestire il colore di BG
-        $color_BG = imagecolorallocate($image,255,255,255);
-        $color_TXT = imagecolorallocate($image,0,0,0);
+        $color_BG = imagecolorallocate($image, 255, 255, 255);
+        $color_TXT = imagecolorallocate($image, 0, 0, 0);
         // fill color
-        imagefill($image,0,0,$color_BG);
-        imagestring ($image,$font,0,0,$string,$color_TXT);
+        imagefill($image, 0, 0, $color_BG);
+        imagestring($image, $font, 0, 0, $string, $color_TXT);
         // out
         header("Content-type: image/png");
         imagepng($image);
@@ -39,26 +39,26 @@ class Image {
     $thumbnail = $image->thumbnail(new Imagine\Image\Box($w, $h));
     $thumbnail->save($save_path);
     }
-    */
+     */
     // sends image $resource descriptor to browser and destroy the resource if headers not sent.
     // use php constants IMAGETYPE_GIF, IMAGETYPE_JPEG, IMAGETYPE_PNG
-    final public static function show_resource($resource, $type){
-        if(!headers_sent()){
-            switch($type){
-            case IMAGETYPE_GIF :
+    final public static function show_resource($resource, $type) {
+        if (!headers_sent()) {
+            switch ($type) {
+            case IMAGETYPE_GIF:
                 header('Content-type: image/gif');
-                header('Content-Disposition: filename='.basename(__FILE__).'.gif');
+                header('Content-Disposition: filename=' . basename(__FILE__) . '.gif');
                 imagegif($resource);
                 break;
-            case IMAGETYPE_JPEG :
+            case IMAGETYPE_JPEG:
                 header('Content-type: image/jpeg');
-                header('Content-Disposition: filename='.basename(__FILE__).'.jpg');
+                header('Content-Disposition: filename=' . basename(__FILE__) . '.jpg');
                 imagejpeg($resource, NULL, 99);
                 break;
-            case IMAGETYPE_PNG :
+            case IMAGETYPE_PNG:
                 header('Content-type: image/png');
-                header('Content-Disposition: filename='.basename(__FILE__).'.png');
-                imagepng($resource, NULL, 0,  NULL);
+                header('Content-Disposition: filename=' . basename(__FILE__) . '.png');
+                imagepng($resource, NULL, 0, NULL);
                 break;
             }
             imagedestroy($resource);
@@ -156,34 +156,34 @@ class Image {
 // funzione: genera una immagine adatta a una detrerminata risoluzione
 /* uso:
 if (file_exists($cache_file)) {
-    Image::send($cache_file, $browser_cache);
+Image::send($cache_file, $browser_cache);
 } else {
-    $file = Image::generate($source_file, $cache_file, $resolution);
-    Image::send($file, $browser_cache);
+$file = Image::generate($source_file, $cache_file, $resolution);
+Image::send($file, $browser_cache);
 }
-*/
+ */
 class ImageResizer {
     // helper function: Send headers and returns an image.
-    public static function send($filename, $browser_cache = 60*60*24*7 ) {
+    public static function send($filename, $browser_cache = 60 * 60 * 24 * 7) {
         $extension = strtolower(pathinfo($filename, PATHINFO_EXTENSION));
         if (in_array($extension, ['png', 'gif', 'jpeg'])) {
-            header("Content-Type: image/".$extension);
+            header("Content-Type: image/" . $extension);
         } else {
             header("Content-Type: image/jpeg");
         }
-        header("Cache-Control: public, max-age=".$browser_cache);
-        header('Expires: '.gmdate('D, d M Y H:i:s', time()+$browser_cache).' GMT');
-        header('Content-Length: '.filesize($filename));
+        header("Cache-Control: public, max-age=" . $browser_cache);
+        header('Expires: ' . gmdate('D, d M Y H:i:s', time() + $browser_cache) . ' GMT');
+        header('Content-Length: ' . filesize($filename));
         readfile($filename);
         exit();
     }
     // helper function: Create and send an image with an error message.
     public static function sendError($message) {
-        $im         = ImageCreateTrueColor(800, 200);
+        $im = ImageCreateTrueColor(800, 200);
         $text_color = ImageColorAllocate($im, 233, 14, 91);
         ImageString($im, 1, 5, 5, $message, $text_color);
         header("Cache-Control: no-cache");
-        header('Expires: '.gmdate('D, d M Y H:i:s', time()-1000).' GMT');
+        header('Expires: ' . gmdate('D, d M Y H:i:s', time() - 1000) . ' GMT');
         header('Content-Type: image/jpeg');
         ImageJpeg($im);
         ImageDestroy($im);
@@ -192,10 +192,10 @@ class ImageResizer {
     // sharpen images function
     public static function findSharp($intOrig, $intFinal) {
         $intFinal = $intFinal * (750.0 / $intOrig);
-        $intA     = 52;
-        $intB     = -0.27810650887573124;
-        $intC     = .00047337278106508946;
-        $intRes   = $intA + $intB * $intFinal + $intC * $intFinal * $intFinal;
+        $intA = 52;
+        $intB = -0.27810650887573124;
+        $intC = .00047337278106508946;
+        $intRes = $intA + $intB * $intFinal + $intC * $intFinal * $intFinal;
         return max(round($intRes), 0);
     }
     // generates the given cache file for the given source file with the given resolution
@@ -205,16 +205,16 @@ class ImageResizer {
         $resolution = self::CalcResolution();
         $extension = strtolower(pathinfo($source_file, PATHINFO_EXTENSION));
         // Check the image dimensions
-        $dimensions   = GetImageSize($source_file);
-        $width        = $dimensions[0];
-        $height       = $dimensions[1];
+        $dimensions = GetImageSize($source_file);
+        $width = $dimensions[0];
+        $height = $dimensions[1];
         // Do we need to downscale the image?
         if ($width <= $resolution) { // no, because the width of the source image is already less than the client width
             return $source_file;
         }
         // We need to resize the source image to the width of the resolution breakpoint we're working with
-        $ratio      = $height/$width;
-        $new_width  = $resolution;
+        $ratio = $height / $width;
+        $new_width = $resolution;
         $new_height = ceil($new_width * $ratio);
         switch ($extension) {
         case 'png':
@@ -228,9 +228,9 @@ class ImageResizer {
             break;
         }
         $dst = ImageCreateTrueColor($new_width, $new_height); // re-sized image
-        if($extension=='png'){
+        if ($extension == 'png') {
             imagealphablending($dst, false);
-            imagesavealpha($dst,true);
+            imagesavealpha($dst, true);
             $transparent = imagecolorallocatealpha($dst, 255, 255, 255, 127);
             imagefilledrectangle($dst, 0, 0, $new_width, $new_height, $transparent);
         }
@@ -242,7 +242,7 @@ class ImageResizer {
             $arrMatrix = [
                 [-1, -2, -1],
                 [-2, $intSharpness + 12, -2],
-                [-1, -2, -1]
+                [-1, -2, -1],
             ];
             imageconvolution($dst, $arrMatrix, $intSharpness, 0);
         }
@@ -282,7 +282,7 @@ class ImageResizer {
     // trova una risoluzione valida
     function calcResolution() {
         global $mobile_first;
-        $resolutions   = [1382, 992, 768, 480, 320]; // the resolution break-points to use (screen widths, in pixels)
+        $resolutions = [1382, 992, 768, 480, 320]; // the resolution break-points to use (screen widths, in pixels)
         /* Check to see if a valid cookie exists */
         if (isset($_COOKIE['resolution'])) {
             if (is_numeric($_COOKIE['resolution'])) {
@@ -296,7 +296,7 @@ class ImageResizer {
                     }
                 }
             } else {
-                setcookie("resolution", "", time() -1); // delete the mangled cookie
+                setcookie("resolution", "", time() - 1); // delete the mangled cookie
             }
         }
         /* No resolution was found (no cookie or invalid cookie) */
@@ -309,10 +309,10 @@ class ImageResizer {
 }
 /*
 based on:
-    URL:        http://github.com/jamiebicknell/Sparkline
-    Author:     Jamie Bicknell
-    Twitter:    @jamiebicknell
-*/
+URL:        http://github.com/jamiebicknell/Sparkline
+Author:     Jamie Bicknell
+Twitter:    @jamiebicknell
+ */
 class SparklineGenerator {
     function __construct(array $data, array $opt) {
         // dependency check
@@ -325,9 +325,9 @@ class SparklineGenerator {
         $line = isset($opt['line']) ? Color::isHex($opt['line']) ? $opt['line'] : '1388db' : '1388db';
         $fill = isset($opt['fill']) ? Color::isHex($opt['fill']) ? $opt['fill'] : 'e6f2fa' : 'e6f2fa';
         $salt = __CLASS__;
-        $opt['data'] = implode(',',$data);// data fa parte della chiave di cache
-        ksort($opt);//in-place sort!
-        $this->hash = md5($salt . implode(',', $opt ) );
+        $opt['data'] = implode(',', $data); // data fa parte della chiave di cache
+        ksort($opt); //in-place sort!
+        $this->hash = md5($salt . implode(',', $opt));
         // if client data is ok, nothing to do
         if (isset($_SERVER['HTTP_IF_NONE_MATCH'])) {
             if ($_SERVER['HTTP_IF_NONE_MATCH'] == $this->hash) {
@@ -335,15 +335,15 @@ class SparklineGenerator {
                 die();
             }
         }
-        $path = APPLICATION_PATH.'/../var/sparkline';
-        if( !file_exists($path) ) {
-            die( "$path non esiste" )
+        $path = APPLICATION_PATH . '/../var/sparkline';
+        if (!file_exists($path)) {
+            die("$path non esiste");
         }
-        $this->file_path = sprintf("%s/sparkline_%s.png", $path, $this->hash );
+        $this->file_path = sprintf("%s/sparkline_%s.png", $path, $this->hash);
     }
     // legge file su disco
     public function render() {
-        if( !file_exists($this->file_path) ) {
+        if (!file_exists($this->file_path)) {
             $this->generateImageFile($data, $size, $back, $line, $fill);
         }
         return self::cacheImg($this->file_path);
@@ -410,11 +410,11 @@ class SparklineGenerator {
         // indichiamo a browser e proxy la data dell'immagine
         header("Last-Modified: $gm_mod");
         $file_hash = md5_file($path);
-        header('ETag: ' .$file_hash );
+        header('ETag: ' . $file_hash);
         // set expires +1 day
         $s_delay = (60 * 60 * 24 * 1);
         $t_tomorrow = time() + $s_delay; //strtotime("+2 day")
-        header("Expires: " . date(DATE_RFC822, $t_tomorrow ));
+        header("Expires: " . date(DATE_RFC822, $t_tomorrow));
         // cache per n gg
         header("Cache-Control: max-age=" . $s_delay . ', public');
         header("Pragma: cache");
@@ -443,29 +443,24 @@ class SparklineGenerator {
     }
 }
 
-
-function img_resize($path_in, $path_out, $new_width){
-    $im_php = imagecreatefromjpeg( $path_in );
-    $im_php = imagescale($im_php, $new_width, $new_height = -1 , $mode = IMG_BILINEAR_FIXED );
+function img_resize($path_in, $path_out, $new_width) {
+    $im_php = imagecreatefromjpeg($path_in);
+    $im_php = imagescale($im_php, $new_width, $new_height = -1, $mode = IMG_BILINEAR_FIXED);
     $new_height = imagesy($im_php);
     imagejpeg($im_php, $path_out, 100);
-    return $new_height;// return H of scaled img
+    return $new_height; // return H of scaled img
 }
 // img_resize($path_in = "input.jpg", $path_out="output.jpg", function($width, $height){
-//     return [ $newwidth = $width/5,	$newheight = $height/5  ];
+//     return [ $newwidth = $width/5,    $newheight = $height/5  ];
 // } );
-function img_resize($path_in, $path_out, $_calc_new_dim ){
-	$source = imagecreatefromjpeg($path_in);
-	list($width, $height) = getimagesize($path_in);
-	list( $newwidth , $newheight) = $_calc_new_dim($width, $height)
-	$destination = imagecreatetruecolor($newwidth, $newheight);
-	imagecopyresampled($destination, $source, 0, 0, 0, 0, $newwidth, $newheight, $width, $height);
-	imagejpeg($destination, $path_out, 100);
+function img_resize_2($path_in, $path_out, $_calc_new_dim) {
+    $source = imagecreatefromjpeg($path_in);
+    list($width, $height) = getimagesize($path_in);
+    list($newwidth, $newheight) = $_calc_new_dim($width, $height);
+    $destination = imagecreatetruecolor($newwidth, $newheight);
+    imagecopyresampled($destination, $source, 0, 0, 0, 0, $newwidth, $newheight, $width, $height);
+    imagejpeg($destination, $path_out, 100);
 }
-
-
-
-
 
 // very basic and not secure captcha code
 // @see http://www.mperfect.net/aiCaptcha/ for more information
@@ -511,12 +506,12 @@ class CAPTCHA {
     ...
     session_start();
     if($_POST['captcha'] != $_SESSION['digit'])
-        die("Sorry, the CAPTCHA code entered was incorrect!");
+    die("Sorry, the CAPTCHA code entered was incorrect!");
     session_destroy();
     ...
     }
     ?>
-    */
+     */
     public static function render() {
         // initialise image with dimensions of 120 x 30 pixels
         $image = @imagecreatetruecolor(120, 30) or die("Cannot Initialize new GD image stream");
@@ -527,14 +522,14 @@ class CAPTCHA {
         $textcolor1 = imagecolorallocate($image, 0x00, 0x00, 0x00);
         $textcolor2 = imagecolorallocate($image, 0xFF, 0xFF, 0xFF);
         // draw random lines on canvas
-        for($i=0; $i < 6; $i++) {
-            imagesetthickness($image, rand(1,3));
-            imageline($image, 0, rand(0,30), 120, rand(0,30) , $linecolor);
+        for ($i = 0; $i < 6; $i++) {
+            imagesetthickness($image, rand(1, 3));
+            imageline($image, 0, rand(0, 30), 120, rand(0, 30), $linecolor);
         }
         session_start();
         // add random digits to canvas using random black/white colour
         $rand_str = '';
-        for($x = 15; $x <= 95; $x += 20) {
+        for ($x = 15; $x <= 95; $x += 20) {
             $textcolor = (rand() % 2) ? $textcolor1 : $textcolor2;
             $rand_char = self::get_rand_char();
             $rand_str .= $rand_char;
@@ -565,6 +560,41 @@ class Color {
         $hex = ltrim(strtolower($hex), '#');
         $hex = isset($hex[3]) ? $hex : $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
         $dec = hexdec($hex);
-        return array(0xFF & ($dec >> 0x10), 0xFF & ($dec >> 0x8), 0xFF & $dec);
+        return [0xFF & ($dec >> 0x10), 0xFF & ($dec >> 0x8), 0xFF & $dec];
+    }
+
+/**
+ * Converts a CMYK color to RGB
+ *
+ * @param int $c
+ * @param int $m
+ * @param int $y
+ * @param int $k
+ * @return object
+ */
+    function cmyk_to_rgb($c, $m = null, $y = null, $k = null) {
+        if (is_array($c)) {
+            list($c, $m, $y, $k) = $c;
+        }
+        $c *= 255;
+        $m *= 255;
+        $y *= 255;
+        $k *= 255;
+        $r = (1 - round(2.55 * ($c + $k)));
+        $g = (1 - round(2.55 * ($m + $k)));
+        $b = (1 - round(2.55 * ($y + $k)));
+        if ($r < 0) {
+            $r = 0;
+        }
+        if ($g < 0) {
+            $g = 0;
+        }
+        if ($b < 0) {
+            $b = 0;
+        }
+        return [
+            $r, $g, $b,
+            'r' => $r, 'g' => $g, 'b' => $b,
+        ];
     }
 }

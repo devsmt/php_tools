@@ -185,7 +185,7 @@ class UTF8 {
             'Â' => 'A', 'è' => 'E', 'â' => 'I', 'Ç' => 'O',
             'Ì' => 'U', 'Ê' => 'A', 'Ø' => 'O',
         ];
-        return str_replace($from=array_keys($chars), $to=array_values($chars), $text);
+        return str_replace($from = array_keys($chars), $to = array_values($chars), $text);
     }
 
     // remove
@@ -239,7 +239,7 @@ function mb_sprintf($format) {
 }
 
 function mb_vsprintf($format, $argv) {
-    $newargv = array();
+    $newargv = [];
 
     preg_match_all("`\%('.+|[0 ]|)([1-9][0-9]*|)s`U", $format, $results, PREG_SET_ORDER);
 
@@ -311,9 +311,12 @@ if (!extension_loaded('mbstring')) {
         function mb_convert_encoding($str, $to, $from = 'utf-8') {
             if (strcasecmp($to, $from) == 0) {
                 return $str;
-            } elseif (in_array(strtolower($to), array(
-                'us-ascii', 'latin-1', 'iso-8859-1'))
-                && function_exists('utf8_encode')) {
+            } elseif (
+                in_array(strtolower($to),
+                    ['us-ascii', 'latin-1', 'iso-8859-1']
+                )
+                && function_exists('utf8_encode')
+            ) {
                 return utf8_encode($str);
             } else {
                 return $str;
@@ -354,6 +357,80 @@ if (!extension_loaded('mbstring')) {
     function mb_substr_count($haystack, $needle) {
         $matches = [];
         return preg_match_all('`' . preg_quote($needle) . '`u', $haystack, $matches);
+    }
+
+    define('MB_OVERLOAD_MAIL', 1);
+    define('MB_OVERLOAD_STRING', 2);
+    define('MB_OVERLOAD_REGEX', 4);
+    define('MB_CASE_UPPER', 0);
+    define('MB_CASE_LOWER', 1);
+    define('MB_CASE_TITLE', 2);
+    function mb_convert_encoding($data, $to_encoding, $from_encoding = 'UTF-8') {
+        if (str_replace('-', '', strtolower($to_encoding)) === 'utf8') {
+            return utf8_encode($data);
+        } else {
+            return utf8_decode($data);
+        }
+    }
+    function mb_detect_encoding($data, $encoding_list = ['iso-8859-1'], $strict = false) {
+        return 'iso-8859-1';
+    }
+    function mb_detect_order($encoding_list = ['iso-8859-1']) {
+        return 'iso-8859-1';
+    }
+    function mb_internal_encoding($encoding = null) {
+        if (isset($encoding)) {
+            return true;
+        } else {
+            return 'iso-8859-1';
+        }
+    }
+    function mb_strlen($str, $encoding = 'iso-8859-1') {
+        switch (str_replace('-', '', strtolower($encoding))) {
+        case 'utf8':return strlen(utf8_encode($str));
+        case '8bit':return strlen($str);
+        default:return strlen(utf8_decode($str));
+        }
+    }
+    function mb_strpos($haystack, $needle, $offset = 0) {
+        return strpos($haystack, $needle, $offset);
+    }
+    function mb_strrpos($haystack, $needle, $offset = 0) {
+        return strrpos($haystack, $needle, $offset);
+    }
+    function mb_strtolower($str) {
+        return strtolower($str);
+    }
+    function mb_strtoupper($str) {
+        return strtoupper($str);
+    }
+    function mb_substr($string, $start, $length = null, $encoding = 'iso-8859-1') {
+        if (is_null($length)) {
+            return substr($string, $start);
+        } else {
+            return substr($string, $start, $length);
+        }
+    }
+    function mb_substr_count($haystack, $needle, $encoding = 'iso-8859-1') {
+        return substr_count($haystack, $needle);
+    }
+    function mb_encode_numericentity($str, $convmap, $encoding) {
+        return htmlspecialchars($str);
+    }
+    function mb_convert_case($str, $mode = MB_CASE_UPPER, $encoding = []) {
+        switch ($mode) {
+        case MB_CASE_UPPER:return mb_strtoupper($str);
+        case MB_CASE_LOWER:return mb_strtolower($str);
+        case MB_CASE_TITLE:return ucwords(mb_strtolower($str));
+        default:return $str;
+        }
+    }
+    function mb_list_encodings() {
+        return [
+            'ISO-8859-1',
+            'UTF-8',
+            '8bit',
+        ];
     }
 
 }
