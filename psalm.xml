@@ -21,20 +21,20 @@
 
         <!-- level 3 issues - slightly lazy code writing, but provably low false-negatives -->
 
-        <DeprecatedMethod errorLevel="info" />
-        <DeprecatedProperty errorLevel="info" />
-        <DeprecatedClass errorLevel="info" />
-        <DeprecatedConstant errorLevel="info" />
-        <DeprecatedFunction errorLevel="info" />
-        <DeprecatedInterface errorLevel="info" />
-        <DeprecatedTrait errorLevel="info" />
+        <DeprecatedMethod errorLevel="error" />
+        <DeprecatedProperty errorLevel="error" />
+        <DeprecatedClass errorLevel="error" />
+        <DeprecatedConstant errorLevel="error" />
+        <DeprecatedFunction errorLevel="error" />
+        <DeprecatedInterface errorLevel="error" />
+        <DeprecatedTrait errorLevel="error" />
 
         <InternalMethod errorLevel="info" />
         <InternalProperty errorLevel="info" />
         <InternalClass errorLevel="info" />
 
         <MissingClosureReturnType errorLevel="info" />
-        <MissingReturnType errorLevel="info" />
+        <MissingReturnType errorLevel="error" />
         <MissingPropertyType errorLevel="info" />
         <InvalidDocblock errorLevel="info" />
         <MisplacedRequiredParam errorLevel="info" />
@@ -42,7 +42,7 @@
         <PropertyNotSetInConstructor errorLevel="info" />
         <MissingConstructor errorLevel="info" />
         <MissingClosureParamType errorLevel="info" />
-        <MissingParamType errorLevel="info" />
+        <MissingParamType errorLevel="error" />
 
         <RedundantCondition errorLevel="info" />
 
@@ -54,5 +54,11 @@
         <RawObjectIteration errorLevel="info" />
 
         <InvalidStringClass errorLevel="info" />
+        <TypeDoesNotContainType errorLevel="info" />
+        <PossiblyInvalidArgument errorLevel="info" />
+
+
+
+        <UndefinedFunction errorLevel="info" />
     </issueHandlers>
 </psalm>

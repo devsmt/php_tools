@@ -447,6 +447,21 @@ function percentile($data, $percentile) {
     return $result;
 }
 
+ // according the Wikipedia Second varitant, which is the one used in Excel and NumPi(https://en.wikipedia.org/wiki/Percentile#Second_variant). 
+function Percentile_2v($array, $percentile)
+{
+    $percentile = min(100, max(0, $percentile));
+    $array = array_values($array);
+    sort($array);
+    $index = ($percentile / 100) * (count($array) - 1);
+    $fractionPart = $index - floor($index);
+    $intPart = floor($index);
+    $percentile = $array[$intPart];
+    $percentile += ($fractionPart > 0) ? $fractionPart * ($array[$intPart + 1] - $array[$intPart]) : 0;
+    return $percentile;
+}
+
+
 //----------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------

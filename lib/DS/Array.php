@@ -223,7 +223,6 @@ class A {
     function uniq(array $a): array{
         return array_unique($a);
     }
-
     // returns the first argument that is not empty()
     /** @return mixed */
     function coalesce() {
@@ -274,7 +273,6 @@ class A {
         }
         return $array;
     }
-
     // from [2, 3, [4,5], [6,7], 8] to [2,3,4,5,6,7,8]
     /** @param array $args */
     function flatten(...$args): array{
@@ -323,6 +321,30 @@ class A {
         return $res;
     }
 
+    //----------------------------------------------------------------------------
+    //  Array come coda o stak
+    //----------------------------------------------------------------------------
+
+    /** @param mixed $v */
+    public static function append_l(array $a, $v): array{
+        $count = array_unshift($a, $v);
+        return $a;
+    }
+    /** @param mixed $v */
+    public static function append_r(array $a, $v): array{
+        $count = array_push($a, $v);
+        return $a;
+    }
+    /** @return mixed */
+    public static function pop_l(array $a) {
+        $v = array_shift($a); //get and remove first el
+        return $v;
+    }
+    /** @return mixed */
+    public static function pop_r(array $a) {
+        $v = array_pop($a); //get and remove last el
+        return $v;
+    }
 }
 //
 //
@@ -390,4 +412,16 @@ if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
     //
     $a = ['a' => 1, 'b' => null];
     ok(A::equals(A::deleteEmpty($a), ['a' => 1]), true, 'delete empty');
+    //
+    $ar = A::append_l([2, 3], 1);
+    ok($ar, [1, 2, 3]);
+    //
+    $ar = A::append_r([1, 2], 3);
+    ok($ar, [1, 2, 3]);
+    //
+    $v1 = A::pop_l([1, 2]);
+    ok($v1, 1);
+    //
+    $v2 = A::pop_r([1, 2]);
+    ok($v2, 2);
 }
