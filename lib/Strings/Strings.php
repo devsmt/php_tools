@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 //----------------------------------------------------------------------------
 //  str_find
 //----------------------------------------------------------------------------
@@ -737,11 +739,12 @@ function str_replace_deep(string $search, string $replace, array $a_str) {
 }
 
 /**
+ * @param string|array<string> $m_sub
  * @param string|array<string> $m_re
  */
-function str_replace_all(string $s_sub, $m_re, string $str): string {
+function str_replace_all($m_sub, $m_re, string $str): string {
     do {
-        $str = str_replace($s_sub, $m_re, $str, $c);
+        $str = str_replace($m_sub, $m_re, $str, $c);
     } while ($c > 0);
     return $str;
 }

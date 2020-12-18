@@ -99,8 +99,9 @@ class P {
             // ci sono stati errori, lascia la traccia per debug
         }
     }
-    // esegui sequanzilamente il codiceper testare che funzioni correttamente prima di parallelizzare
+    // esegui sequenzialmente il codice per testare che funzioni correttamente prima di parallelizzare
     public static function execute_sequential(): array{
+        $__out= [] ;
         foreach (self::$a_closures as $name => $t) {
             list($c, $__in) = $t;
             try {
@@ -139,9 +140,11 @@ function __main(array \$__in):array {
 __END__;
     }
     // runtime code
+    /** @psalm-suppress UndefinedConstant  */
     public static function runtime(string $file_path_json, array $data): string{
         $json_data = json_encode($data);
         // the runtime of the script
+        /** @psalm-suppress UndefinedConstant */
         $__prelude = function () {
             //---------------------------- runtime IPC
             error_reporting(-1); // E_ALL Report all PHP errors
@@ -166,7 +169,10 @@ __END__;
                 }
             });
             // send an exception
-            function __Exception_send(\Exception $e):void {
+            /**
+             * @param mixed $e
+             */
+            function __Exception_send( $e):void {
                 __send(__envelope(false, [
                     'Exception' => $e->getMessage(),
                     'file' => $e->getFile(),
@@ -194,11 +200,15 @@ __END__;
             }
         };
         // the main funcytion of the script
+        /**
+        * @psalm-suppress UndefinedConstant
+        * @psalm-suppress UndefinedFunction
+        */
         $__main = function () {
             //-------- main
             try {
                 ob_start();
-                $__in = json_decode(JSON_IN, $use_assoc = true);
+                $__in = json_decode(JSON_IN, $_use_assoc = true);
                 $result = __main($__in);
                 __send(__envelope(true, $result));
             } catch (\Exception $e) {
@@ -216,7 +226,7 @@ __END__
         self::closure_dump($__main)."\n";
         return $runtime;
     }
-    function closure_dump(Closure $c): string{
+    public static function closure_dump(Closure $c): string{
         // $str = 'function (';
         $str = '';
         $r = new ReflectionFunction($c);
@@ -252,21 +262,23 @@ if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
     }, ['a' => 1, 'b' => 2]);
     P::go('test_cpu_time', function (array $__in): array{
         // test a timout error
+        $result = [];
         for ($j = 0; $j < (3); $j++) {
             for ($i = 0; $i < (100); $i++) {
-                $__out[] = password_hash("a$i", PASSWORD_DEFAULT);
+                $result[] = password_hash("a$i", PASSWORD_DEFAULT);
             }
-            $__out = [];
+            $result = [];
         }
-        return [];
+        return $result;
     });
     P::go('test2', function (array $__in): array{
+        $result = [];
         $c = 6;
         for ($i = 0; $i < $c; $i++) {
-            $__out[] = "b$i";
+            $result[] = "b$i";
             sleep(2);
         }
-        return [];
+        return $result;
     });
     P::go('test_echo', function (array $__in): array{
         for ($i = 0; $i < 5; $i++) {
@@ -276,7 +288,8 @@ if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
     });
     $a_result = P::execute();
     // $a_result = P::execute_sequential();
-    echo var_export($a_result), "\n";
+    var_export($a_result);
+    echo "\n";
     $time_from_begin = round(microtime(true) - $_SERVER['REQUEST_TIME_FLOAT'], 4);
     echo $time_from_begin . "\n";
     // todo: partition big array of data and split it to multiple processes

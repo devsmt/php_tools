@@ -12,7 +12,7 @@ namespace DB {
             self::$conn = new \SQLite3($path);
             if (!self::$conn) {
                 $msg = sprintf('Errore %s ', self::$conn->lastErrorMsg());
-                throw new \Exception($msg); // exceptions_
+                throw new \Exception($msg);  
             }
         }
         // app specific
@@ -26,46 +26,11 @@ namespace DB {
             }
             return $path;
         }
-
-        // test sul db appena aperto
-        public static function _run_test() {
-            $sql = "CREATE TABLE IF NOT EXISTS TEST_TBL (
-            ID INTEGER PRIMARY KEY ,
-            NAME     TEXT NOT NULL,
-            AGE      INT  NOT NULL,
-            ADDRESS  CHAR(50),
-            NUM      REAL  );";
-
-            $sql = "SELECT count(*) as COUNT from TEST_TBL;";
-            $cnt = self::qry_one($sql, 'COUNT' );
-            echo var_dump( $cnt ), "\n";
-            //
-            $ret = self::exec('delete from TEST_TBL ');
-            //
-            $sql = "
-            INSERT INTO TEST_TBL ( NAME, AGE, ADDRESS, NUM ) VALUES ( 'Paul',  32, 'California', 20000.00 );
-            INSERT INTO TEST_TBL ( NAME, AGE, ADDRESS, NUM ) VALUES ( 'Allen', 25, 'Texas',      15000.00 );
-            INSERT INTO TEST_TBL ( NAME, AGE, ADDRESS, NUM ) VALUES ( 'Teddy', 23, 'Norway',     20000.00 );
-            INSERT INTO TEST_TBL ( NAME, AGE, ADDRESS, NUM ) VALUES ( 'Mark',  25, 'Rich-Mond ', 65000.00 ); ";
-            //
-            $ret = self::exec($sql);
-            //
-            $sql = "UPDATE TEST_TBL set NUM = 25000 where ID=1;";
-            $ret = self::exec($sql);
-            if ($ret) {
-                echo self::$conn->changes(), " Record updated successfully\n";
-            }
-            //
-            $sql = "SELECT * from TEST_TBL;";
-            $a_rows = self::qry($sql);
-            echo var_dump( $a_rows), "\n";
-            // select parameter
-            $sql = "SELECT * from TEST_TBL where AGE = :age;";
-            $a_rows = self::qry($sql, [':age' => 23 ]);
-            echo var_dump(  $a_rows), "\n";
+        public static function disconnect() {
+            // echo "SL disconnect \n";
+            self::$conn->close();
+            self::$conn = null;
         }
-
-
         // assicura che la connessione sia aperta
         public static function ensureConnection() {
             if (empty(self::$conn)) {
@@ -79,14 +44,14 @@ namespace DB {
         public static function qry(string $sql, array $params = []): array{
             // assicura che ci sia la connessione aperta
             self::ensureConnection();
-            if( empty($params)  ) {
+            if (empty($params)) {
                 $ret = self::$conn->query($sql);
             } else {
                 // 'SELECT bar FROM foo WHERE id=:id'
                 $stmt = self::$conn->prepare($sql);
-                foreach($params as $key => $val ) {
+                foreach ($params as $key => $val) {
                     // $key like ':id'
-                    $stmt->bindValue($key, $val, self::getArgType($val) );
+                    $stmt->bindValue($key, $val, self::getArgType($val));
                 }
                 $ret = $stmt->execute();
             }
@@ -117,13 +82,13 @@ namespace DB {
         // SQLITE3_NULL: The value is a NULL value.
         public static function getArgType($arg) {
             switch (gettype($arg)) {
-                case 'double': return SQLITE3_FLOAT;
-                case 'integer': return SQLITE3_INTEGER;
-                case 'boolean': return SQLITE3_INTEGER;
-                case 'NULL': return SQLITE3_NULL;
-                case 'string': return SQLITE3_TEXT;
-                default:
-                    throw new \InvalidArgumentException('Argument is of invalid type '.gettype($arg));
+            case 'double':return SQLITE3_FLOAT;
+            case 'integer':return SQLITE3_INTEGER;
+            case 'boolean':return SQLITE3_INTEGER;
+            case 'NULL':return SQLITE3_NULL;
+            case 'string':return SQLITE3_TEXT;
+            default:
+                throw new \InvalidArgumentException('Argument is of invalid type ' . gettype($arg));
             }
         }
 
@@ -146,8 +111,8 @@ namespace DB {
         //
         public static function exec(string $sql, array $params = []): bool {
             if (self::isSelect($sql)) {
-                $msg = sprintf('Errore %s ', 'exec() sql è un statement select');
-                throw new SqlException($msg);
+                $msg = sprintf('Errore %s ', 'exec() sql è un statement select, usare per insert');
+                throw new \Exception($msg);
             }
             // assicura che ci sia la connessione aperta
             self::ensureConnection();
@@ -161,7 +126,6 @@ namespace DB {
             if (!$ret) {
                 $msg = sprintf('Errore %s %s', self::$conn->lastErrorMsg(), $sql);
                 throw new \Exception($msg);
-                return false;
             }
             return $ret;
         }
@@ -213,6 +177,45 @@ namespace {
             echo "sql $i ",var_dump( $ret ),"\n";
         }
     }
+
+        // test sul db appena aperto
+        public static function _run_test() {
+            $sql = "CREATE TABLE IF NOT EXISTS TEST_TBL (
+            ID INTEGER PRIMARY KEY ,
+            NAME     TEXT NOT NULL,
+            AGE      INT  NOT NULL,
+            ADDRESS  CHAR(50),
+            NUM      REAL  );";
+
+            $sql = "SELECT count(*) as COUNT from TEST_TBL;";
+            $cnt = self::qry_one($sql, 'COUNT' );
+            echo var_dump( $cnt ), "\n";
+            //
+            $ret = self::exec('delete from TEST_TBL ');
+            //
+            $sql = "
+            INSERT INTO TEST_TBL ( NAME, AGE, ADDRESS, NUM ) VALUES ( 'Paul',  32, 'California', 20000.00 );
+            INSERT INTO TEST_TBL ( NAME, AGE, ADDRESS, NUM ) VALUES ( 'Allen', 25, 'Texas',      15000.00 );
+            INSERT INTO TEST_TBL ( NAME, AGE, ADDRESS, NUM ) VALUES ( 'Teddy', 23, 'Norway',     20000.00 );
+            INSERT INTO TEST_TBL ( NAME, AGE, ADDRESS, NUM ) VALUES ( 'Mark',  25, 'Rich-Mond ', 65000.00 ); ";
+            //
+            $ret = self::exec($sql);
+            //
+            $sql = "UPDATE TEST_TBL set NUM = 25000 where ID=1;";
+            $ret = self::exec($sql);
+            if ($ret) {
+                echo self::$conn->changes(), " Record updated successfully\n";
+            }
+            //
+            $sql = "SELECT * from TEST_TBL;";
+            $a_rows = self::qry($sql);
+            echo var_dump( $a_rows), "\n";
+            // select parameter
+            $sql = "SELECT * from TEST_TBL where AGE = :age;";
+            $a_rows = self::qry($sql, [':age' => 23 ]);
+            echo var_dump(  $a_rows), "\n";
+        }
+
 
     // if colled directly, run the tests:
     if (isset($argv) && basename($argv[0]) == basename(__FILE__)) {

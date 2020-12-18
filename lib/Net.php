@@ -10,9 +10,9 @@ class Net {
         return h_get($_SERVER, 'REMOTE_ADDR', $def);
     }
     public static function get_forwarded_IP() {
-        //Do not check any HTTP_* headers for the client IP unless you specifically know your application is configured behind a reverse proxy.
-        //Trusting the values of these headers unconditionally will allow users to spoof their IP address.
-        //The only $_SERVER field containing a reliable value is REMOTE_ADDR.
+        // Do not check any HTTP_* headers for the client IP unless you specifically know your application is configured behind a reverse proxy.
+        // Trusting the values of these headers unconditionally will allow users to spoof their IP address.
+        // The only $_SERVER field containing a reliable value is REMOTE_ADDR.
         return $IP = coalesce(
             h_get($_SERVER, 'HTTP_X_REAL_IP'), // nginx rewrite
             h_get($_SERVER, 'REMOTE_ADDR'),
@@ -87,71 +87,7 @@ class Net {
             return gethostbyaddr(trim($ips));
         }
     }
-    // @see https://github.com/rmccue/Requests
-    // permette di ottenre il contenuto della pagina servita ad un indirizzo specifico
-    public static function getContent($url, $opts = []) {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_HEADER, 0);
-        curl_setopt($ch, CURLOPT_FAILONERROR, 0);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
-        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.0)');
-        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-        if (preg_match('/^https:\/\//sim', $url) == true) {
-            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, false);
-        }
-        // apply opts
-        if (is_array($opts) && $opts) {
-            foreach ($opts as $key => $val) {
-                curl_setopt($ch, $key, $val);
-            }
-        }
-        // transfer
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        if (FALSE === ($retval = curl_exec($ch))) {
-            $err = curl_error($ch);
-            $msg = sprintf('Errore CURL %s ', $err);
-            throw new Exception($msg);
-        } else {
-            curl_close($ch);
-            return $retval;
-        }
-    }
-    // richiama una url con dati in post
-    protected static function post($url, array $fields) {
-        foreach ($fields as $key => $value) {
-            $value = urlencode($value);
-            $fields_string .= $key . '=' . $value . '&';
-        }
-        rtrim($fields_string, '&');
-        // open connection
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_POST, count($fields));
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $fields_string);
-        // transfer
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        if (FALSE === ($retval = curl_exec($ch))) {
-            $err = curl_error($ch);
-            $msg = sprintf('Errore CURL %s ', $err);
-            throw new Exception($msg);
-        } else {
-            curl_close($ch);
-            return $retval;
-        }
-    }
-    /*
-    $endpoint = "https://graph.facebook.com/?id=" . urlencode($uri);
-    $curlopts = [ CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4 ];
-    $retval = http_get_contents($endpoint, $curlopts);
-     */
-    function http_get_contents($url, $opts = []) {
-        $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, $url);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
-        curl_setopt($ch, CURLOPT_USERAGENT, "{$_SERVER['SERVER_NAME']}");
-    }
+
     // verifica un IP su diversi database di IP malevoli
     function checkDNSBL($ip) {
         $dnsbl_check = [
@@ -186,5 +122,4 @@ class Net {
 }
 if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
     require_once __DIR__ . '/Test.php';
-
 }
