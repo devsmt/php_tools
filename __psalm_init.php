@@ -5,7 +5,7 @@ require_once __DIR__ . '/lib/Test.php';
 require_once __DIR__ . '/lib/DS/Array.php';
 require_once __DIR__ . '/lib/DS/H.php';
 require_once __DIR__ . '/lib/DS/RS.php';
-require_once __DIR__ . '/lib/DS/ListObject.php';
+// TODO require_once __DIR__ . '/lib/DS/ListObject.php';
 require_once __DIR__ . '/lib/DS/HShape.php';
 require_once __DIR__ . '/lib/DS/Stack.php';
 
@@ -48,6 +48,7 @@ require_once __DIR__ . '/lib/Plugin.php';
 require_once __DIR__ . '/lib/XML.php';
 require_once __DIR__ . '/lib/Mail.php';
 require_once __DIR__ . '/lib/Net.php';
+require_once __DIR__ . '/lib/CURL.php';
 require_once __DIR__ . '/lib/CLI.php';
 require_once __DIR__ . '/lib/Json.php';
 require_once __DIR__ . '/lib/Validate.php';

@@ -6,9 +6,10 @@ declare (strict_types = 1); //php7.0+, will throw a catchable exception if call 
 // e espone interfaccia uniforme ai paramatri di input e risultati di output
 //
 class CURL {
-    //
-    //
-    //
+    /**
+     * chiamata HTTP POST
+     * @return array{0: bool, 1: string, 2: int }
+    */
     public static function POST(string $url, array $data, array $opt = [], array $headers = []): array{
         $option = array_merge([
             'debug_info' => false,
@@ -37,7 +38,7 @@ class CURL {
         ]);
         // set headers
         if (!empty($headers)) {
-            // if(false) echo "using token " . self::$AUTH_RESULT['tokenValue'] . " \n";
+            // if(false) self::log("using token " . self::$AUTH_RESULT['tokenValue'] . " \n");
             $a_curl_h = [];
             // es. [ 'tokenValue: ' . self::$AUTH_RESULT['tokenValue'] ]
             foreach ($headers as $key => $val) {
@@ -53,9 +54,10 @@ class CURL {
         $r = ($http_code >= 200 && $http_code < 300);
         return [$r, $json, $http_code];
     }
-    //
-    //
-    //
+    /**
+     * chiamata HTTP GET
+     * @return array{0: bool, 1: string, 2: int }
+    */
     public static function GET($url, array $data, array $opt = [], array $headers = []): array{
         $option = array_merge([
             'debug_info' => false,
@@ -78,7 +80,7 @@ class CURL {
         ]);
         //  setting headers
         if (!empty($headers)) {
-            // if(false) echo "using token " . self::$AUTH_RESULT['tokenValue'] . " \n";
+            // if(false) self::log("using token " . self::$AUTH_RESULT['tokenValue'] . " \n");
             $a_curl_h = [];
             // es. [ 'tokenValue: ' . self::$AUTH_RESULT['tokenValue'] ]
             foreach ($headers as $key => $val) {
@@ -95,8 +97,24 @@ class CURL {
         $r = ($http_code >= 200 && $http_code < 300);
         return [$r, $json, $http_code];
     }
+    /**
+    * logger per ispezionare il funzionamento della classe
+    * @return void
+    */
+    public static function log(string $message) {
+        // where do you want to log?
+        $_log_e = function (string $message) {
+            echo $message;
+        };
+        $_log_f = function (string $message) {
+		// configure a file logger
+        };
+        $_log_e($message);
+    }
     // esegue la def con logging headers
-    protected static function logged_exec(&$ch, bool $debug_response_headers, bool $debug_request_headers, bool $debug_info): string {
+    protected static function logged_exec(&$ch, bool $debug_response_headers, bool $debug_request_headers, bool $debug_info) : string{
+        // where do you want to log?
+        $_log = function (string $message) {self::log($message);};
         //----------------------------------------------
         // capture response headers:
         // this function is called by curl for each header received
@@ -115,7 +133,7 @@ class CURL {
             });
         }
         $json = curl_exec($ch);
-        if (FALSE === $json) {
+        if (false === $json) {
             $err = curl_error($ch);
             $msg = sprintf('Errore CURL %s ', $err);
             throw new Exception($msg);
@@ -124,29 +142,29 @@ class CURL {
         if ($debug_request_headers) {
             $req_info = curl_getinfo($ch);
             if (isset($req_info['request_header'])) {
-                echo "---- begin  request_headers:\n";
-                echo trim($req_info['request_header']) . "\n";
-                echo "---- end  request_headers \n";
+                $_log("---- begin  request_headers:\n");
+                $_log(trim($req_info['request_header']) . "\n");
+                $_log("---- end  request_headers \n");
             } else {
-                echo "----  request_headers: empty \n";
+                $_log("----  request_headers: empty \n");
             }
         }
         if ($debug_response_headers) {
-            echo "---- begin response_headers:\n";
+            $_log("---- begin response_headers:\n");
             foreach ($response_headers as $key => $val) {
-                echo sprintf("    $key => %s\n", is_scalar($val) ? $val : json_encode($val));
+                $_log(sprintf("    $key => %s\n", is_scalar($val) ? $val : json_encode($val)));
             }
-            echo "---- end response_headers \n";
+            $_log("---- end response_headers \n");
         }
         //----------------------------------------------------------------------------
         if ($debug_info) {
             // parametri e info di funzionamento di curl
             $req_info = curl_getinfo($ch);
-            echo "---- begin debug info:\n";
+            $_log("---- begin debug info:\n");
             foreach ($req_info as $key => $val) {
-                echo sprintf("    $key => %s\n", is_scalar($val) ? $val : json_encode($val));
+                $_log(sprintf("    $key => %s\n", is_scalar($val) ? $val : json_encode($val)));
             }
-            echo "---- end \n";
+            $_log("---- end \n");
         }
         return $json;
     }

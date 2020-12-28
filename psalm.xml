@@ -37,7 +37,8 @@
         <MissingReturnType errorLevel="error" />
         <MissingPropertyType errorLevel="info" />
         <InvalidDocblock errorLevel="info" />
-        <MisplacedRequiredParam errorLevel="info" />
+        <!--
+        <MisplacedRequiredParam errorLevel="info" /> -->
 
         <PropertyNotSetInConstructor errorLevel="info" />
         <MissingConstructor errorLevel="info" />
