@@ -110,7 +110,7 @@ function ok_($res, $expected, string $label = ''): void {
 // function is($res, $label ) { return ok($res, $expected=true, $label ); }
 // @see test_suite_
 // test delle eccezioni
-function ok_excheption(callable $operation, string $label): void{
+function ok_exception(callable $operation, string $label): void{
     $is_e_rised = false;
     $e_msg = '';
     try {
