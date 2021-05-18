@@ -36,8 +36,12 @@ class Dec {
         return false;
     }
     //
+    public static function fmt(string $val): string {
+        return number_format($val, 2, '.', '');
+    }
+    //
     /** @psalm-suppress ArgumentTypeCoercion  */
-    public static function perc(string $v, string $perc, int $precision= BC_PRECISION): string{
+    public static function perc(string $v, string $perc, int $precision = BC_PRECISION): string{
         $v_dec = bcdiv($v, '100', BC_PRECISION);
         $v_perc = bcmul($v_dec, $perc, BC_PRECISION);
         return $v_perc;
@@ -49,6 +53,13 @@ class Dec {
         $v2 = bcsub($v, $vp, BC_PRECISION);
         return $v2;
     }
+    // dati due valori, ritorna la perc che rappresenta il secondo del primo
+    public static function perc_of(string $totale, string $parziale, int $precision = BC_PRECISION): string{
+        $x = bcdiv($totale, $parziale);
+        $x = bcdiv('100', $x);
+        return $x;
+    }
+
     // coalesce dec: scarta tutti i nn numeric
     // ritorna 0 se nessuno è valido
     public static function coalesce(): string{
@@ -84,7 +95,7 @@ class Dec {
         $sum = self::array_sum($a_num);
         $num = count($a_num);
         $avg = bcdiv($sum, (string) $num);
-        if( empty($avg) ){
+        if (empty($avg)) {
             return '';
         } else {
             return $avg;
@@ -106,7 +117,7 @@ class Dec {
         return bcmul(self::str_to_dec($a), self::str_to_dec($b));
     }
     /** @psalm-suppress ArgumentTypeCoercion  */
-    public static function div(string $a, string $b): string {
+    public static function div(string $a, string $b): string{
         $d = bcdiv(self::str_to_dec($a), self::str_to_dec($b));
         return empty($d) ? '' : $d;
     }
@@ -128,6 +139,9 @@ class Dec {
     public static function is_zero(string $a, int $p = BC_PRECISION): bool {
         return bccomp($a, DEC_ZERO, $p) === 0;
     }
+    public static function empty(string $num, int $p = BC_PRECISION): bool {
+        return empty($num) || self::is_zero($num);
+    }
     /** @psalm-suppress ArgumentTypeCoercion  */
     public static function is_greater(string $a, string $b, int $p = BC_PRECISION): bool {
         return bccomp($a, $b, $p) === 1;
@@ -142,26 +156,26 @@ class Dec {
 //  old interface
 //----------------------------------------------------------------------------
 // AS400 restituiesce stringhe valore '.3' o ',3' per indicare float 0.3
-function str_to_dec(string $val):string {
+function str_to_dec(string $val): string {
     return Dec::str_to_dec($val);
 }
-function str_is_dec(string $val):bool {
+function str_is_dec(string $val): bool {
     return Dec::str_is_dec($val);
 }
-function perc_bc(string $v, string $perc):string {
+function perc_bc(string $v, string $perc): string {
     return Dec::perc($v, $perc);
 }
 // applica uno sconto $perc %
-function perc_sub_bc(string $v, string $perc):string {
+function perc_sub_bc(string $v, string $perc): string {
     return Dec::perc_sub($v, $perc);
 }
 // coalesce dec: scarta tutti i nn numeric
 // ritorna 0 se nessuno è valido
-function coalesce_dec():string {
+function coalesce_dec(): string {
     return (string) call_user_func_array([$class_name = 'Dec', $method_name = 'coalesce'], $args = func_get_args());
 }
 // somma un array di numeri formato bc
-function array_sum_dec(array $a_num):string {
+function array_sum_dec(array $a_num): string {
     return Dec::array_sum($a_num);
 }
 

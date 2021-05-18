@@ -10,9 +10,24 @@ namespace DB {
         public static function connect() {
             $path = self::getPath();
             self::$conn = new \SQLite3($path);
+            /** @psalm-suppress TypeDoesNotContainType  */
             if (!self::$conn) {
                 $msg = sprintf('Errore %s ', self::$conn->lastErrorMsg());
-                throw new \Exception($msg);  
+                throw new \Exception($msg);
+            } else {
+                // wait a few seconds for the lock to clear when you execute queries
+                self::$conn->busyTimeout(5000);
+                // WAL mode has better control over concurrency.
+                // Source: https://www.sqlite.org/wal.html
+                //  (it is defaulting to 'delete', as stated here: https://www.sqlite.org/wal.html (see Activating And Configuring WAL Mode)
+                // self::$conn->exec('PRAGMA journal_mode = wal;');// Write-Ahead Logging
+                //
+                // // init db if needed
+                // try {
+                //     self::qry('select time from PORTFOLIO where ID=1');
+                // } catch (\Exception $e) {
+                //     self::_db_init();
+                // }
             }
         }
         // app specific
@@ -61,7 +76,15 @@ namespace DB {
             }
             return $a_row;
         }
-
+        // // cached query
+        // public static function queryc($sql, $params=[], $ttl_secs = TTL_8H  ) {
+        //     $_clean = function ($s){ return preg_replace('/[^a-z0-9]/i', '_',$s); };
+        //     $key = sprintf('%s_%s_%s', $_clean(__METHOD__), md5($sql), md5(json_encode($params)) );
+        //     // @see cache_
+        //     return self::cache($key, function() use($sql, $params) {
+        //             return self::query($sql, $params);
+        //     }, $ttl_secs );
+        // }
         /*
         ALWAYS SET THE CORRECT TYPE OF VARS:
         For example:
@@ -109,19 +132,36 @@ namespace DB {
         //
         // esegue stmt diversi da select, es insert update delete
         //
-        public static function exec(string $sql, array $params = []): bool {
+        /** @return bool|array */
+        public static function exec(string $sql, array $params = []) {
             if (self::isSelect($sql)) {
                 $msg = sprintf('Errore %s ', 'exec() sql è un statement select, usare per insert');
                 throw new \Exception($msg);
             }
             // assicura che ci sia la connessione aperta
             self::ensureConnection();
-            try {
+            $ret = false;
+            if (empty($params)) {
+                echo "$sql \n";
                 $ret = self::$conn->exec($sql);
-            } catch (\Exception $e) {
-                $msg = sprintf('Exception: %s sql:%s', $e->getMessage(), $sql);
-                throw new \Exception($msg);
-                return false;
+                /* try {
+                    $ret = self::$conn->exec($sql);
+                } catch (\Exception $e) {
+                    $msg = sprintf('Exception: %s sql:%s', $e->getMessage(), $sql);
+                    throw new \Exception($msg);
+                    return false;
+                }*/
+                return $ret;
+            } else {
+                // 'SELECT bar FROM foo WHERE id=:id'
+                $stmt = self::$conn->prepare($sql);
+                foreach ($params as $key => $val) {
+                    // $key like ':id'
+                    $stmt->bindValue($key, $val, self::getArgType($val));
+                }
+                $ok = $stmt->execute();
+                $last_id = self::$conn->lastInsertRowID();
+                return [$ok, $last_id];
             }
             if (!$ret) {
                 $msg = sprintf('Errore %s %s', self::$conn->lastErrorMsg(), $sql);
@@ -131,7 +171,11 @@ namespace DB {
         }
         // determina se una string è un select stmt
         public static function isSelect(string $sql): bool {
-            return 'select' == $sql_begin = strtolower(substr($sql = trim($sql), 0, $l = strlen('select') ));
+            return 'select' == $sql_begin = strtolower(substr($sql = trim($sql), 0, $l = strlen('select')));
+        }
+        // db creation routine
+        public static function _run_test(): int {
+            return 0;
         }
     }
 }
@@ -219,10 +263,14 @@ namespace {
 
     // if colled directly, run the tests:
     if (isset($argv) && basename($argv[0]) == basename(__FILE__)) {
-        if( trim(`whoami`) != 'www-data' ) {
-             die("run under www-data user! \n");
+        /** @psalm-suppress ForbiddenCode  */
+        $user = `whoami`;
+        if (trim($user) != 'www-data') {
+            die("run under www-data user! \n");
         }
-        if( !defined('ROOT_PATH') ) define('ROOT_PATH', realpath(__DIR__.'/..'), false);
+        if (!defined('ROOT_PATH')) {
+            define('ROOT_PATH', realpath(__DIR__ . '/..'), false);
+        }
         \DB\Sqlite::_run_test();
         // db_create();
     }

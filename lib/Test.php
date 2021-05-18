@@ -291,6 +291,22 @@ function is_float_essentially_equal(float $a, float $b, float $epsilon): bool{
     $B = abs($b);
     return abs($A - $B) <= ($A > $B ? $B : $A) * $epsilon;
 }
+
+/** are 2 floats equal? */
+function is_eq_floats(float $f1, float $f2): bool {
+ 
+            $numerator = abs(2 * ((trim($before_value) + 0) - (trim($after_value) + 0)));
+            $denominator = abs(((trim($before_value) + 0) + (trim($after_value) + 0)));
+            // detect whether to use absolute or relative error. use absolute if denominator is zero to avoid division by zero
+            $error = ($denominator == 0) ? $numerator : $numerator / $denominator;
+            if ($error >= 0.0000000001) { // Smaller than 10E-10
+                return false;
+            }
+ 
+
+    return true;
+}
+
 //-----------------------------------------------------------------------------------
 //  moking
 //-----------------------------------------------------------------------------------
