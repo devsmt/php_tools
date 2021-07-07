@@ -293,17 +293,14 @@ function is_float_essentially_equal(float $a, float $b, float $epsilon): bool{
 }
 
 /** are 2 floats equal? */
-function is_eq_floats(float $f1, float $f2): bool {
- 
-            $numerator = abs(2 * ((trim($before_value) + 0) - (trim($after_value) + 0)));
-            $denominator = abs(((trim($before_value) + 0) + (trim($after_value) + 0)));
-            // detect whether to use absolute or relative error. use absolute if denominator is zero to avoid division by zero
-            $error = ($denominator == 0) ? $numerator : $numerator / $denominator;
-            if ($error >= 0.0000000001) { // Smaller than 10E-10
-                return false;
-            }
- 
-
+function is_eq_floats(float $f1, float $f2): bool{
+    $numerator = abs(2 * ($f1 - $f2));
+    $denominator = abs(($f1 + $f2));
+    // detect whether to use absolute or relative error. use absolute if denominator is zero to avoid division by zero
+    $error = ($denominator == 0) ? $numerator : ($numerator / $denominator);
+    if ($error >= 0.0000000001) { // Smaller than 10E-10
+        return false;
+    }
     return true;
 }
 
@@ -365,7 +362,8 @@ class TestSuite {
         switch ($class) {
         case 'all':
             // fa girare tutte le classi di test in sequenza
-            foreach ($a = get_declared_classes() as $class_name) {
+            $a = get_declared_classes();
+            foreach ($a as $i => $class_name) {
                 if (substr($class_name, -4) == 'Test') {
                     echo ("running $class_name"); // or $logger->info()
                     $t = new $class_name();
@@ -400,14 +398,16 @@ class TestSuite {
         $dir_path = dirname(__FILE__ . DIRECTORY_SEPARATOR . 'tests');
         $dir = dir($dir_path);
         echo "<h3>tests:</h3>\n";
-        while ($d = $dir->read()) {
-            $d_path = "$dir_path/$d";
-            if (is_dir($d_path)) {
-                if ($d != '.' && $d != '..') {
+        if (!empty($dir)) {
+            while ($d = $dir->read()) {
+                $d_path = "$dir_path/$d";
+                if (is_dir($d_path)) {
+                    if ($d != '.' && $d != '..') {
+                        echo "<a href='$d'>$d</a><br>";
+                    }
+                } else {
                     echo "<a href='$d'>$d</a><br>";
                 }
-            } else {
-                echo "<a href='$d'>$d</a><br>";
             }
         }
     }
@@ -537,7 +537,7 @@ class APIClient {
             echo sprintf('## time:%s mem:%s data_len:%s' . PHP_EOL,
                 $_($data, 'exec_time'),
                 $_($data, 'memory'),
-                (string)(is_array($data) ? count($_($data, 'data')) : 0)
+                (string) (is_array($data) ? count($_($data, 'data')) : 0)
             );
         }
         return $data;

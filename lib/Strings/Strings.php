@@ -859,7 +859,8 @@ function get_by_tag_att(string $attr, string $value, string $xml, string $tag = 
     $value = preg_quote($value);
     $tag_regex = "/<(" . $tag . ")[^>]*$attr\\s*=\\s*" . "(['" . '"' . "])$value\\\\2[^>]*>(.*?)<\\/\\\\1>/";
     preg_match_all($tag_regex, $xml, $matches, PREG_PATTERN_ORDER);
-    return $matches[3];
+    $tag = (string) h_get($matches, 3, '');
+    return $tag;
 }
 
 // Rotate each string characters by n positions in ASCII table

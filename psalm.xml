@@ -46,9 +46,11 @@
         <MissingParamType errorLevel="error" />
 
         <RedundantCondition errorLevel="info" />
+        <RedundantCastGivenDocblockType errorLevel="info" />
+        <RedundantConditionGivenDocblockType errorLevel="info" />
+        <RedundantCast errorLevel="info" />
 
         <DocblockTypeContradiction errorLevel="info" />
-        <RedundantConditionGivenDocblockType errorLevel="info" />
 
         <UnresolvableInclude errorLevel="info" />
 
