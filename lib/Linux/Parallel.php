@@ -101,7 +101,7 @@ class P {
     }
     // esegui sequenzialmente il codice per testare che funzioni correttamente prima di parallelizzare
     public static function execute_sequential(): array{
-        $__out= [] ;
+        $__out = [];
         foreach (self::$a_closures as $name => $t) {
             list($c, $__in) = $t;
             try {
@@ -172,7 +172,7 @@ __END__;
             /**
              * @param mixed $e
              */
-            function __Exception_send( $e):void {
+            function __Exception_send($e): void{
                 __send(__envelope(false, [
                     'Exception' => $e->getMessage(),
                     'file' => $e->getFile(),
@@ -192,7 +192,7 @@ __END__;
                 ];
             }
             // send the result to a json file
-            function __send(array $result):void {
+            function __send(array $result): void{
                 $json = json_encode($result,
                     JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_NUMERIC_CHECK | JSON_PARTIAL_OUTPUT_ON_ERROR | JSON_PRETTY_PRINT
                 );
@@ -201,9 +201,9 @@ __END__;
         };
         // the main funcytion of the script
         /**
-        * @psalm-suppress UndefinedConstant
-        * @psalm-suppress UndefinedFunction
-        */
+         * @psalm-suppress UndefinedConstant
+         * @psalm-suppress UndefinedFunction
+         */
         $__main = function () {
             //-------- main
             try {

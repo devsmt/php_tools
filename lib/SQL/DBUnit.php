@@ -8,5 +8,9 @@
 //   assert() un campo sia stato eliminato
 //   assert() una select abbia restituito un numero corretto di record
 class DBUnit {
-    
+
+}
+//
+if( isset($argv[0]) && basename($argv[0]) == basename(__FILE__) ) {
+    require_once __DIR__ . '/../Test.php';
 }

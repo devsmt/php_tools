@@ -605,6 +605,9 @@ class StatsTest {
 }
 // if colled directly in CLI, run the tests:
 if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
+
+    require_once __DIR__ . '/../Test.php';
+
     ok(0, 0, 'ok for same value'); // should pass
     ok(0, null, 'type warning'); //should pass with type warning
     ok(['b' => 2, 'a' => 1], ['a' => 1, 'b' => '2']);

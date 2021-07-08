@@ -76,5 +76,8 @@ class DataDictionary {
 
 // gerare un file in cui sono specificati i dettagli di ogni tabella
 class DataDictionaryGenerator {}
-
+//
+if( isset($argv[0]) && basename($argv[0]) == basename(__FILE__) ) {
+    require_once __DIR__ . '/../Test.php';
+}
 */

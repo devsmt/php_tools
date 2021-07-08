@@ -17,7 +17,7 @@ class Stack {
     /**
      * @param mixed $item
      */
-    public function add($item):Stack {
+    public function add($item): Stack{
         $this->stack[] = $item;
         return $this;
     }
@@ -25,14 +25,14 @@ class Stack {
     public function next() {
         return array_pop($this->stack);
     }
-    public function count():int {
+    public function count(): int{
         $c = count($this->stack);
         return ($c >= 1) ? $c : 0;
     }
     /**
      * @param mixed $item
      */
-    public function contains($item, bool $strict = false):bool {
+    public function contains($item, bool $strict = false): bool {
         return in_array($item, $this->stack, $strict) ? true : false;
     }
 }

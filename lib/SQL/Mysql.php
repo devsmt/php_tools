@@ -193,3 +193,8 @@ class DBAdapterMysql extends DBAdapter {
         }
     }
 }
+//
+if( isset($argv[0]) && basename($argv[0]) == basename(__FILE__) ) {
+    require_once __DIR__ . '/../Test.php';
+}
+*/

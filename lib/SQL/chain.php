@@ -97,6 +97,7 @@ function chain_f(string $table, string $sql_where, \Closure $f_mapper = null, ar
 }
 // if colled directly in CLI, run the tests:
 if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
+    require_once __DIR__ . '/../Test.php';
     //
     // data una tabella, matcha per la key e processa con il mapper
     //
