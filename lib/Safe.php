@@ -2,23 +2,22 @@
 // processa i parametri in input prima delle query
 class Safe {
     // toglie caratteri pericolosi da un input che debba essere processato con SQL
-    // Safe::str($s);
-    public static function sanitize($s, $len = 0, $regexp = '/[^a-z0-9\-\_]/i') {
+    public static function sanitize(string $s, int $len = 0, string $regexp = '/[^a-z0-9\-\_]/i'): string{
         $s = preg_replace($regexp, '', $s);
         $s = self::chop($s, $len);
         return $s;
     }
     // definire una lunghezza massima della stringa
-    public static function chop($str, $len = 256) {
+    public static function chop(string $str, int $len = 256): string {
         // opzionalmente applica troncamento per lunghezza
         if (!empty($len)) {
-            if (class_exists('Bootstrap', $autoload = false)) {
-                if (!Bootstrap::EnvIsProd()) {
-                    $c_len = mb_strlen($str);
-                    if ($c_len > $len) {
-                        $msg = sprintf('Errore: lunghezza parametro eccede la configurazione in %s, %s>%s str="%s"  ', __METHOD__, $c_len, $len, $str);
-                        throw new \InvalidArgumentException($msg);
-                    }
+            $debug = true;
+            /** @psalm-suppress   RedundantCondition */
+            if ($debug) {
+                $c_len = mb_strlen($str);
+                if ($c_len > $len) {
+                    $msg = sprintf('Errore: lunghezza parametro eccede la configurazione in %s, %s>%s str="%s"  ', __METHOD__, $c_len, $len, $str);
+                    throw new \InvalidArgumentException($msg);
                 }
             }
             return mb_substr($str, 0, $len);
@@ -27,59 +26,57 @@ class Safe {
         }
     }
     //------------------------------------------------------------------------------
-    //
-    public static function quote($s) {
+    // TODO: verificare quote()
+    public static function quote(string $s): string{
         // ENT_QUOTES => entrambe ' e " convertiti
         $s = htmlspecialchars($s, ENT_QUOTES | ENT_HTML401, $encoding = 'UTF-8');
         return $s;
     }
+    // le stringhe vannno espresse con singolo apice: campo = 'stringa',
+    // gli apici sono escaped con '' es. campo='bar''s'
+    // $s = addslashes($s); non è sufficiente
+    protected static function quote2(string $s): string {
+        return str_replace("'", "''", $s);
+    }
+    //
+    //----------------------------------------------------------------------------
     // da HTML quoted( &#039; &quot; ) a straight text
-    public static function unquote($str) {
+    public static function unquote(string $str): string{
         // nel db ho scritto le html entities
         $str = htmlspecialchars_decode($str, ENT_QUOTES | ENT_HTML401);
         return $str;
     }
     // rimuovi caratteri non compatibili con AS400 encoding
-    /* prod:
-    DSPSYSVAL QCCSID
-    Identificativo serie
-    caratteri codificati :   280        1-65535
-    DSPFD LA_DAT.ZNTCT00F
-    CCSID (Coded character set identifier). . . : CCSID 280
-     */
-    public static function utf8_to_CCSID280($str) {
-        /*
-        $c_map = [
-        '€' => 'EUR',
-        'À' => 'A',
-        'Á' => 'A',
-        'Â' => 'A',
-        'Ã' => 'A',
-        'Ä' => 'A',
-        'Å' => 'A',
-        'È' => 'E',
-        'É' => 'E',
-        'Ê' => 'E',
-        'Ë' => 'E',
-        'Ì' => 'I',
-        'Í' => 'I',
-        'Î' => 'I',
-        'Ï' => 'I',
-        'Ò' => 'O',
-        'Ó' => 'O',
-        'Ô' => 'O',
-        'Õ' => 'O',
-        'Ö' => 'O',
-        'Ù' => 'U',
-        'Ú' => 'U',
-        'Û' => 'U',
-        'Ü' => 'U',
-        ];
-        $str = str_replace( array_keys($c_map), array_values($c_map), $str);
-        // remove highers and uppers
-        $str = preg_replace('/[\x00-\x1F\x7F\xA0]/u', '?', $str);
-        return $str;
-         */
+    public static function utf8_to_ASCII(string $str): string {
+        // $c_map = [
+        // '€' => 'EUR',
+        // 'À' => 'A',
+        // 'Á' => 'A',
+        // 'Â' => 'A',
+        // 'Ã' => 'A',
+        // 'Ä' => 'A',
+        // 'Å' => 'A',
+        // 'È' => 'E',
+        // 'É' => 'E',
+        // 'Ê' => 'E',
+        // 'Ë' => 'E',
+        // 'Ì' => 'I',
+        // 'Í' => 'I',
+        // 'Î' => 'I',
+        // 'Ï' => 'I',
+        // 'Ò' => 'O',
+        // 'Ó' => 'O',
+        // 'Ô' => 'O',
+        // 'Õ' => 'O',
+        // 'Ö' => 'O',
+        // 'Ù' => 'U',
+        // 'Ú' => 'U',
+        // 'Û' => 'U',
+        // 'Ü' => 'U',
+        // ];
+        // $str = str_replace( array_keys($c_map), array_values($c_map), $str);
+        // // remove highers and uppers
+        // $str = preg_replace('/[\x00-\x1F\x7F\xA0]/u', '?', $str);
         if (!function_exists('iconv')) {
             die('installare iconv');
         }
@@ -87,14 +84,14 @@ class Safe {
         return $str;
     }
     //----------------------------------------------------------------------------
-    //  strings
+    //  sanitization
     //----------------------------------------------------------------------------
     // stringhe estese
-    public static function str($str, $len = 20, $regexp = '/[^a-z0-9\_\-\+\.\/,\s]/i') {
+    public static function str(string $str, int $len = 20, string $regexp = '/[^a-z0-9\_\-\+\.\/,\s]/i'): string {
         return self::sanitize($str, $len, $regexp);
     }
     // only alpha and numeric
-    public static function alphanum($str, $len = 20, $regexp = '/[^a-z0-9\-\_]/i') {
+    public static function alphanum(string $str, int $len = 20, string $regexp = '/[^a-z0-9\-\_]/i'): string {
         return self::sanitize($str, $len, $regexp);
     }
     // richiesta: Aggiungere &euro;, apostrofo, caratteri accentati
@@ -106,7 +103,7 @@ class Safe {
     // perché però qualità più mercoledì
     // &euro;
     //
-    public static function text($s, $len = 256, $s_additional = '', $s_replace = ' ') {
+    public static function text(string $s, int $len = 256, string $s_additional = '', string $s_replace = ' '): string {
         // opzionalmente applica troncamento per lunghezza
         // questo prima di trasformare le entity, che hanno lunghezza maggiore di 1 del char originale
         if ($len > 1) {
@@ -130,17 +127,28 @@ class Safe {
         return $s;
     }
     // specifica per il tipo flag
-    public static function flag($s, $len = 3) {
+    public static function flag(string $s, int $len = 3): string{
         $s = strtoupper($s);
         $s = self::chop($s, $len);
         $s = preg_replace('/[^a-z0-9_]/i', '_', $s);
         return $s;
     }
     //----------------------------------------------------------------------------
+    // GUID
+    //----------------------------------------------------------------------------
+    // preg_match("/\w{8}-\w{4}-\w{4}-\w{4}-\w{12}/i", $guid)
+    public static function GUID(string $s): string{
+        $s = self::chop($s, $len = 32);
+        $s = preg_replace('/[^a-z0-9\-]/i', '?', $s);
+        return $s;
+    }
+    //----------------------------------------------------------------------------
     //  numerics
     //----------------------------------------------------------------------------
     // gestisce numeri espressi come float as400, ',' viene convertito a '.'
-    public static function num($s, $int_len = 12, $dec_len = 2, $def = '0.0') {
+    /** @param string|int|float $s */
+    public static function num($s, int $int_len = 12, int $dec_len = 2, string $def = '0.0'): string{
+        $s = strval($s);
         $s = trim($s);
         $len = $int_len + 1 + $dec_len; // lunghezza stringa totale, 1 per il '.'
         $s = str_replace(',', '.', $s);
@@ -148,50 +156,48 @@ class Safe {
         // elimina input eccessivo
         $s = self::chop($s, $len);
         $s = coalesce($s, $def);
+        $s = strval($s);
         return $s;
     }
-    public static function int($s, $default = 0) {
+    public static function int(string $s, int $default = 0): int{
         $len = 15;
         $s = preg_replace('/[^0-9]/i', '', $s);
         // elimina input eccessivo
         $s = self::chop($s, $len);
-        $s = intval($s);
-        return is_numeric($s) ? $s : $default;
+        if (is_numeric($s)) {
+            $i = intval($s);
+            return $i;
+        } else {
+            return $default;
+        }
     }
     // int left zero padded
     // es. 000001
     // non fare cast a int
-    public static function int_lzp($str, $len = 6) {
+    public static function int_lzp(string $str, int $len = 6): string{
         // correct form: 000001
-        $_zpl = function ($i) use ($len) {
-            return str_pad($i, $len, '0', STR_PAD_LEFT);
+        $_zpl = function (int $i) use ($len): string {
+            return str_pad(strval($i), $len, '0', STR_PAD_LEFT);
         };
-        $str = self::int($str, 0); // get just the numeric part
-        $str = $_zpl($str);
-        return $str;
+        $i = self::int($str, 0); // get just the numeric part
+        $str_p = $_zpl($i);
+        return $str_p;
     }
     //
-    public static function dec($num, $default = 0) {
+    public static function dec(string $num, string $default = '0'): string{
         $num1 = preg_replace('/[^0-9\,\.]/i', '', $num);
         $num2 = str_replace($sub = ',', $re = '.', $num);
         $num3 = empty($num2) ? $default : $num2;
         return $num3;
     }
-    // TODO: spostare in Validate
-    // warning se parametro errato
-    public static function intW($s, $name = '', $len = 20) {
-        $s = self::chop($s, $len);
-        $s = filter_var($s, FILTER_SANITIZE_NUMBER_INT);
-        if (false === $s) {
-            $msg = "validation param $name";
-            throw new \Exception($msg);
-        }
-        return $s;
-    }
     // ripulisce email address
+    public static function email(string $email): string{
+        $email = trim(Safe::text($email));
+        return filter_var($email, FILTER_SANITIZE_EMAIL);
+    }
     // email multiple nello stesso campo
-    public static function email($email) {
-        $_clean_mail = function ($email) {
+    public static function email_multi(string $email): string{
+        $_clean_mail = function (string $email): string{
             $email = trim(Safe::text($email));
             return filter_var($email, FILTER_SANITIZE_EMAIL);
         };
@@ -213,17 +219,24 @@ class Safe {
         }
     }
     // ripulisce tel address
-    public static function tel($tel, $len = 17) {
-        $tel = preg_replace('/[^0-9\+\s]/i', '', $tel);
+    public static function tel(string $tel): string{
+        $tel = preg_replace('/[^0-9\+\s]/', '', $tel);
         $tel = str_replace($sub = '  ', $re = ' ', $tel); // replace duble ' '
         $tel = trim($tel);
-        $tel = self::chop($tel, $len);
+        $tel = self::chop($tel, $len = 17);
         return $tel;
     }
     // upper alphanumeric plus '-'
-    public static function key($s, $default = '', $len = 50) {
+    public static function key(string $s, string $default = '', int $len = 50): string{
         $s = preg_replace('/[^A-Z0-9\-\_]/', '', $s);
         // elimina input eccessivo
+        $s = self::chop($s, $len);
+        return $s ? $s : $default;
+    }
+    // ensure string is safe IP
+    public static function IP(string $s, string $default = ''): string{
+        $len = 15;
+        $s = preg_replace('/[^0-9\.]/', '', $s);
         $s = self::chop($s, $len);
         return $s ? $s : $default;
     }
@@ -242,7 +255,12 @@ class Safe {
     throw new \Exception($msg);
     }
      */
-    public static function whitelist($str, array $a_wl, $def = null) {
+    /**
+     * @param string|int|float|bool $def
+     * @return scalar
+     * return string|int|float
+     */
+    public static function whitelist(string $str, array $a_wl, $def = null) {
         // se def non è specificato è il primo valore della lista di valori validi
         if (is_null($def)) {
             $def = $a_wl[0];
@@ -265,7 +283,12 @@ class Safe {
     //   ],
     //   $a_data = Safe::hash( $a_data, $a_fields_val );
     // TODO: dare una funzione di default per i campi non validati
-    public static function hash(array $a_data, array $a_fields_val) {
+    /**
+     * @param array<string, mixed> $a_data
+     * @param array<string, callable> $a_fields_val
+     * @return array<string, scalar>
+     */
+    public static function hash(array $a_data, array $a_fields_val): array{
         $a_data_f = [];
         foreach ($a_fields_val as $k => $_filter) {
             if (isset($a_data[$k])) {
@@ -279,19 +302,114 @@ class Safe {
     }
     // filtra un array per un filtro
     // array e list sono parole riservete in php5.6
-    public static function _list(array $a_data, $_filter = null) {
-        $_filter = $_filter ? $_filter : function ($v) {
-            return filter_var($v, FILTER_SANITIZE_NUMBER_INT);
+    /**
+     * @psalm-suppress MissingClosureReturnType
+     * @psalm-suppress MissingClosureParamType
+     */
+    public static function _list(array $a_data, callable $_filter = null): array{
+        /** @param mixed $v */
+        $_f_d = function ($v): string{
+            $s = filter_var($v, FILTER_SANITIZE_NUMBER_INT);
+            $s = strval($s);
+            return $s;
         };
-        $a_data_f = array_map(function ($val) use ($_filter) {
-            return $_filter($var);
-        }, $a_data);
+        $_filter = $_filter ? $_filter : $_f_d;
+        /**
+         * @param mixed $val
+         * @return mixed
+         */
+        $_f = function ($val) use ($_filter) {
+            return $_filter($val);
+        };
+        $a_data_f = array_map($_f, $a_data);
         return $a_data_f;
     }
     //----------------------------------------------------------------------------
-    //  app specific
+    //  uploads
+    //  @see https://owasp.org/www-community/vulnerabilities/Unrestricted_File_Upload
     //----------------------------------------------------------------------------
-    // ...
+    // riscrive il nome del file per assicurare che non contenga alcuna estensione eseguibile .php .phtml .phar .php3
+    // un file eseguibile caricato dall'utente non deve _mai_ poter essere richiamato da apache
+    // ok('aa.jpg')
+    // ok('aa.php', false)
+    // ok('aa.phtml', false)
+    // ok('aa.phar', false)
+    // test cases
+    // ok('aa.Php', false)
+    // ok('aa.pHtml', false)
+    // ok('aa.phAr', false)
+    // test raw replacement of '.php' do not produce dengerous file name
+    // ok('aa.phpphp', false)
+    public static function file_name(string $file_name): string{
+        // strip dangerous extensions, case insensitive
+        $apache_regex = ".+\.ph(ar|p|tml)$";
+        $file_name = strtolower($file_name);
+        $file_name = Safe::alphanum($file_name);
+        $is_exe = str_match($file_name, $apache_regex);
+        if ($is_exe) {
+            // dangerous file name detected
+            return '';
+        }
+        $a_badext = ['php', 'php3', 'php4', 'php5', 'pl', 'cgi', 'py', 'asp', 'cfm', 'js', 'vbs', 'html', 'htm', 'phtml', 'phar'];
+        $ext = pathinfo($file_path, PATHINFO_EXTENSION);
+        $ext = strtolower($ext);
+        if (in_array($ext, $a_badext)) {
+            return '';
+        }
+        return $file_name;
+    }
+    // test if file copntains any trace of php
+    public static function file_get_contents(string $path): string {
+        // se ci sono errori elimina il file
+    }
+    // assicura che il path sia una immagine e non un file eseguibile .php o .js
+    public static function image(string $path): string{
+        // TODO: processa con GD e riscrive l'immagine
+        // se ci sono errori il file tmp deve essere eliminato
+        // imagesize può essere scavalcata da contenuto ad hoc che contenga php eseguibile
+        $a_img_size = getimagesize($path);
+        $image_type = $a_img_size[2];
+        // non gestisco IMAGETYPE_BMP
+        if (in_array($image_type, [IMAGETYPE_GIF, IMAGETYPE_JPEG, IMAGETYPE_PNG])) {
+            $a_ext = [
+                IMAGETYPE_GIF => 'gif',
+                IMAGETYPE_JPEG => 'jpg',
+                IMAGETYPE_PNG => 'png',
+            ];
+            $new_ext = $a_ext[$image_type];
+            // rinomina il file in modo sicuro
+            $new_path = dirname($path) . DS . self::alphanum(basename($path)) . $new_ext;
+            // Get new sizes
+            list($width, $height) = $a_img_size;
+            $newwidth = $width - 1;
+            $newheight = $height - 1;
+            // Load
+            $thumb = imagecreatetruecolor($newwidth, $newheight);
+            $source = imagecreatefromjpeg($path);
+            // Resize, after resizing the binary cant contain any php
+            imagecopyresized($thumb, $source, 0, 0, 0, 0, $newwidth, $newheight, $width, $height);
+            switch ($image_type) {
+            case IMAGETYPE_JPEG:
+                imagejpeg($thumb, $new_path);
+                break;
+            case IMAGETYPE_PNG:
+                imagepng($thumb, $new_path);
+                break;
+            default:
+                // TODO
+                die(implode('/', [__FUNCTION__, __METHOD__, __LINE__]) . ' > ok...');
+                break;
+            }
+        }
+
+        return $new_path;
+    }
+    // assicura che il path sia un documento .pdf .xls .doc e non un file eseguibile .php o .js
+    // il file potrebbe contenere macro o virus
+    public static function document($path) {
+        // se il file è pericoloso elimina il file unlink($path)
+
+    }
 }
 // Never Trust User Input
 // wrapper over filter_var(FILTER_SANITIZE_*)
@@ -468,17 +586,45 @@ class PT {
 //----------------------------------------------------------------------------
 // if colled directly in CLI, run the tests:
 if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
-    require_once __DIR__ . '/../../lib/DMS/functions.php';
-    echo ok(Safe::str(''), $exp = '', '');
-    echo ok(Safe::alphanum(''), $exp = '', '');
-    echo ok(Safe::flag(''), $exp = '', '');
-    echo ok(Safe::num(''), $exp = '', '');
-    echo ok(Safe::int('1'), $exp = 1, 'int');
-    echo ok(Safe::dec('1'), $exp = '1', 'dec');
-    echo ok(Safe::email(''), $exp = '', 'email');
-    echo ok(Safe::tel(''), $exp = '', 'tel');
-    echo ok(Safe::whitelist('a', ['a'], 0), $exp = 'a', 'whitelist');
-    echo ok(Safe::hash(['a' => 1], ['a' => function ($x) {return $x;}]), ['a' => 1], 'hash');
+    /**
+     * @psalm-suppress InvalidScalarArgument
+     * @psalm-suppress NullArgument
+     * @psalm-suppress DuplicateClass
+     */
+    require_once __DIR__ . '/../../lib/functions.php';
+    ok(Safe::str(''), $exp = '', '');
+    ok(Safe::alphanum(''), $exp = '', '');
+    ok(Safe::flag(''), $exp = '', '');
+    ok(Safe::num(''), $exp = '', '');
+    ok(Safe::int('1'), $exp = 1, 'int');
+    ok(Safe::dec('1'), $exp = '1', 'dec');
+    ok(Safe::email(''), $exp = '', 'email');
+    ok(Safe::tel(''), $exp = '', 'tel');
+    ok(Safe::whitelist('a', ['a'], 0), $exp = 'a', 'whitelist');
+    ok(Safe::hash(['a' => 1], ['a' => function ($x) {return $x;}]), ['a' => 1], 'hash');
+    //
+    ok(Safe::email(''), $exp = '', 'email');
+    ok(Safe::email("test'@test.com"), $exp = 'test@test.com', 'email 0');
+    ok(Safe::email('test@test.com'), $exp = 'test@test.com', 'email 1');
+    ok(Safe::email('test^@@test.com'), $exp = 'test@test.com', 'email 1b');
+    ok(Safe::email('test"@test.com'), $exp = 'test@test.com', 'email 1c');
+    //----------------------------------------------------------------------------
+    //  multi mail
+    //----------------------------------------------------------------------------
+    ok(Safe::email(''), $exp = '', 'm email null');
+    ok(Safe::email('jeff£@gmail.com'), $exp = 'jeff@gmail.com', 'm email + garbage');
+    ok(Safe::email_multi('aa@bb.com ; cc@ggg.com'), $exp = 'aa@bb.com;cc@ggg.com', 'm email 2');
+    ok(Safe::email_multi('aa@bb.com ; garbage'), $exp = 'aa@bb.com', 'm email 2+garbage');
+    ok(Safe::email_multi('aa@bb.com ; ?????'), $exp = 'aa@bb.com', 'm email 3+garbage');
+    ok(Safe::email_multi('aa@bb.com ; cc@ggg.com ; cc@ggg.com '), $exp = 'aa@bb.com;cc@ggg.com', 'm email non unique');
+    //
+    ok(Safe::GUID('AA-BB-44-55-JJ'), $exp = 'AA-BB-44-55-JJ', 'GUID 1');
+    //
+    //ok(Safe::tel(''), $exp = '', 'tel');
+    ok(Safe::tel(''), $exp = '', 'tel');
+    /** @psalm-suppress InvalidArgument  */
+    ok(Safe::whitelist('a', ['a'], 0), $exp = 'a', 'whitelist');
+    ok(Safe::hash(['a' => 1], ['a' => function ($x) {return $x;}]), ['a' => 1], 'hash');
     // test str:  lunedì,;.?! 10%=2€ l'altra volta
     // test str:  !.,?:;@+-%=_# <> sconto 50% perché però qualità più mercoledì l'altra volta
     // altri caratteri bastardi:  '"^~`
@@ -513,10 +659,10 @@ if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
     ];
     foreach ($a_in as $str => $str_res) {
         $str_res = $str_res == null ? $str : $str_res;
-        echo ok(Safe::text($str, $l = 999, $addit = '', $re = '?'), $str_res, 'safe_text:' . Safe::chop($str, 30000));
+        ok(Safe::text($str, $l = 999, $addit = '', $re = '?'), $str_res, 'safe_text:' . Safe::chop($str, 30000));
     }
     $str = "To start counting y'our letters"; // 36>35 str="To start counting y&#039;our letters"
-    echo ok(Safe::text($str, $l = 35, $addit = '', $re = '?'), $str_res, 'text len');
+    ok(Safe::text($str, $l = 35, $addit = '', $re = '?'), $str_res, 'text len');
     // test unquote
     $a_in = [
         // html in => txt out
@@ -548,37 +694,21 @@ if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
     //----------------------------------------------------------------------------
     //  num treatment
     //----------------------------------------------------------------------------
-    echo ok(Safe::num(''), $exp = '0.0', 'num ""');
-    echo ok(Safe::num(0), $exp = '0.0', 'num 0');
-    echo ok(Safe::num(null), $exp = '0.0', 'num NULL');
-    echo ok(Safe::num(' 1.0'), $exp = '1.0', 'num trim');
-    echo ok(Safe::num('1'), $exp = '1', 'num str');
-    echo ok(Safe::num('aaa'), $exp = '0.0', 'num str invalid');
-    echo ok(Safe::num('1'), $exp = '1', 'num str');
-    //----------------------------------------------------------------------------
-    // cod dest
-    //----------------------------------------------------------------------------
-    echo ok(Safe::cod_dest('1'), $exp = '1', 'num cod_dest 1');
-    echo ok(Safe::cod_dest(1), $exp = '1', 'num cod_dest 1s');
-    echo ok(Safe::cod_dest(0), $exp = '0', 'num cod_dest');
-    echo ok(Safe::cod_dest(null), $exp = '', 'num cod_dest null');
-    echo ok(Safe::cod_dest(false), $exp = '', 'num cod_dest false');
-    echo ok(Safe::cod_dest('a'), $exp = '0', 'num cod_dest a');
-    //
-    echo ok(Safe::cod_dest('1', true), $exp = '000001', 'pad cod_dest 1s');
-    echo ok(Safe::cod_dest('0', true), $exp = '000000', 'pad cod_dest 0s');
-    echo ok(Safe::cod_dest(0, true), $exp = '000000', 'pad cod_dest 0i');
-    echo ok(Safe::cod_dest(1, true), $exp = '000001', 'pad cod_dest 1i');
-    echo ok(Safe::cod_dest(null, true), $exp = '000000', 'pad cod_dest null');
-    echo ok(Safe::cod_dest(false, true), $exp = '000000', 'pad cod_dest false');
-    echo ok(Safe::cod_dest('a', true), $exp = '000000', 'pad cod_dest');
+    ok(Safe::num(''), $exp = '0.0', 'num ""');
+    ok(Safe::num(0), $exp = '0.0', 'num 0');
+    ok(Safe::num(null), $exp = '0.0', 'num NULL');
+    ok(Safe::num(' 1.0'), $exp = '1.0', 'num trim');
+    ok(Safe::num('1'), $exp = '1', 'num str');
+    ok(Safe::num('aaa'), $exp = '0.0', 'num str invalid');
+    ok(Safe::num('1'), $exp = '1', 'num str');
+
     //----------------------------------------------------------------------------
     //  multi mail
     //----------------------------------------------------------------------------
-    echo ok(Safe::email(''), $exp = '', 'm email null');
-    echo ok(Safe::email('jeff£@gmail.com'), $exp = 'jeff@gmail.com', 'm email + garbage');
-    echo ok(Safe::email('aa@bb.com ; cc@ggg.com'), $exp = 'aa@bb.com;cc@ggg.com', 'm email 2');
-    echo ok(Safe::email('aa@bb.com ; garbage'), $exp = 'aa@bb.com', 'm email 2+garbage');
-    echo ok(Safe::email('aa@bb.com ; ?????'), $exp = 'aa@bb.com', 'm email 3+garbage');
-    echo ok(Safe::email('aa@bb.com ; cc@ggg.com ; cc@ggg.com '), $exp = 'aa@bb.com;cc@ggg.com', 'm email non unique');
+    ok(Safe::email(''), $exp = '', 'm email null');
+    ok(Safe::email('jeff£@gmail.com'), $exp = 'jeff@gmail.com', 'm email + garbage');
+    ok(Safe::email('aa@bb.com ; cc@ggg.com'), $exp = 'aa@bb.com;cc@ggg.com', 'm email 2');
+    ok(Safe::email('aa@bb.com ; garbage'), $exp = 'aa@bb.com', 'm email 2+garbage');
+    ok(Safe::email('aa@bb.com ; ?????'), $exp = 'aa@bb.com', 'm email 3+garbage');
+    ok(Safe::email('aa@bb.com ; cc@ggg.com ; cc@ggg.com '), $exp = 'aa@bb.com;cc@ggg.com', 'm email non unique');
 }

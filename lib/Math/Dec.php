@@ -1,6 +1,5 @@
 <?php
 declare (strict_types = 1);
-
 //----------------------------------------------------------------------------
 //  Decimal
 //----------------------------------------------------------------------------
@@ -12,54 +11,136 @@ if (!defined('DEC_ZERO')) {
 }
 bcscale(BC_PRECISION); // setta il default scale, va settato prima delle chiamate
 //
-/** @psalm-suppress ArgumentTypeCoercion  */
+/** @psalm-suppress ArgumentTypeCoercion
+ * sia 0,10 che 0.10 sono decimal perchè facilemnte castabili a bc str, cioè 0.10
+ */
 class Dec {
-    // AS400 restituiesce stringhe valore '.3' o ',3' per indicare float 0.3
+    /**
+     * @param float|double|int|string  $val
+     * dec::val($any) tenta di convertire in dec
+     * str_to_dec con interfaccia più generica
+     */
+    public static function val($val): string {
+        switch (gettype($val)) {
+        case 'string':
+            return self::str_to_dec($val);
+            break;
+        default:
+            // boolean
+            // integer
+            // double
+            // array
+            // object
+            // NULL
+            // resource
+            return strval($val);
+            break;
+        }
+    }
+    /*
+     * AS400 restituiesce stringhe valore '.3' o ',3' per indicare float 0.3
+     * es. -2.000,00 => 2000.00
+     */
     public static function str_to_dec(string $val): string{
-        $val = (string) $val;
+        $val = trim($val);
         $first_c = substr($val, 0, 1);
         if (in_array($first_c, [',', '.'])) {
             $val = '0' . $val;
         }
+        // se è nell aforma +1.000,00
+        if ('+' === $first_c) {
+            $val = str_replace($sub = '+', $re = '', $val);
+        }
+        if (self::str_is_bc($val)) {
+            return $val;
+        }
+        $val = str_replace($sub = '.', $re = '', $val);
         $val = str_replace($sub = ',', $re = '.', $val); // da , a . per conversione float
         return $val;
     }
+    /**
+     * @param int|string|float|double $val
+     * str_is_dec con interfaccia più generica
+     */
+    public static function is_dec($val): bool {
+        switch (gettype($val)) {
+        case 'string':
+            return self::str_is_dec($val);
+            break;
+        case 'integer':
+        case 'double':
+            return true;
+            break;
+        default:
+            return false;
+            break;
+        }
+    }
+    // dec fmt è qualunque formato stringa facilmente castabile a decimal
     public static function str_is_dec(string $val): bool{
         $val = trim($val);
-        if (empty($val)) {
+        if ('' == $val) {
             return false;
         }
-        if (1 == preg_match('/^([0-9\.\,]*)$/i', $val)) {
-            // digits and . or ,
+        // digits and . or , +-, spazi
+        $is_reg = 1 == preg_match('/^([\-\+]?)([0-9\.\,\s]*)$/i', $val);
+        if ($is_reg) {
             return true;
+        } elseif ($is_reg === false) {
+            // regex is bad
+            if (preg_last_error() !== PREG_NO_ERROR) {echo preg_last_error_msg();}
+        } else {
+            return false;
         }
         return false;
     }
-    //
-    public static function fmt(string $val): string {
-        return number_format($val, 2, '.', '');
+    // bc format è esattamente solo il formato bc 0.10, no "," no ' '
+    public static function str_is_bc(string $val): bool{
+        $val = trim($val);
+        // digits and . or ,
+        $is_reg = 1 == preg_match('/^(\-?)([0-9\.]*)$/i', $val);
+        if ($is_reg) {
+            return true;
+        } elseif ($is_reg === false) {
+            // regex is bad
+            if (preg_last_error() !== PREG_NO_ERROR) {echo preg_last_error_msg();}
+        } else {
+            return false;
+        }
+        return false;
     }
-    //
-    /** @psalm-suppress ArgumentTypeCoercion  */
+    /** @param string|float|double|int $val */
+    public static function fmt($val): string{
+        $f_val = floatval($val);
+        return number_format($f_val, 2, '.', '');
+    }
+    /**
+    calcola $perc % di $v
+    @psalm-suppress ArgumentTypeCoercion
+     */
     public static function perc(string $v, string $perc, int $precision = BC_PRECISION): string{
         $v_dec = bcdiv($v, '100', BC_PRECISION);
         $v_perc = bcmul($v_dec, $perc, BC_PRECISION);
         return $v_perc;
     }
-    // applica uno sconto $perc %
-    /** @psalm-suppress ArgumentTypeCoercion  */
+    /** @psalm-suppress ArgumentTypeCoercion
+     * applica uno sconto $perc %
+     */
     public static function perc_sub(string $v, string $perc): string{
         $vp = self::perc($v, $perc, BC_PRECISION);
         $v2 = bcsub($v, $vp, BC_PRECISION);
         return $v2;
     }
-    // dati due valori, ritorna la perc che rappresenta il secondo del primo
+    /* dati due valori, ritorna la perc che rappresenta il secondo del primo
+     */
     public static function perc_of(string $totale, string $parziale, int $precision = BC_PRECISION): string{
         $x = bcdiv($totale, $parziale);
+        if (self::empty($x)) {
+            return DEC_ZERO;
+        }
         $x = bcdiv('100', $x);
         return $x;
     }
-
     // coalesce dec: scarta tutti i nn numeric
     // ritorna 0 se nessuno è valido
     public static function coalesce(): string{
@@ -68,17 +149,19 @@ class Dec {
             if (empty($arg)) {
                 continue;
             }
-            $arg = '' . $arg;
-            if (str_is_dec($arg) && !self::is_zero($arg)) {
+            $arg = strval($arg);
+            if (self::str_is_dec($arg) && !self::is_zero($arg)) {
                 return str_to_dec($arg);
             }
         }
         return DEC_ZERO;
     }
-    // somma un array di numeri formato bc
-    /** @psalm-suppress ArgumentTypeCoercion  */
+    /**
+     * @psalm-suppress ArgumentTypeCoercion
+     * somma un array di numeri formato bc
+     */
     public static function array_sum(array $a_num): string{
-        $final_v = array_reduce($a_num, function ($carry_v, $cur_v) {
+        $final_v = array_reduce($a_num, function (string $carry_v, string $cur_v): string {
             if (self::str_is_dec($cur_v)) {
                 $carry_v = bcadd($carry_v, $cur_v);
             } else {
@@ -89,7 +172,6 @@ class Dec {
         }, $initial_v = '0.00');
         return $final_v;
     }
-    //
     /** @psalm-suppress ArgumentTypeCoercion  */
     public static function array_avg(array $a_num): string{
         $sum = self::array_sum($a_num);
@@ -122,7 +204,6 @@ class Dec {
         return empty($d) ? '' : $d;
     }
     // TODO: bcmod bcpow bcsqrt
-
     //----------------------------------------------------------------------------
     // comparing
     //----------------------------------------------------------------------------
@@ -136,11 +217,36 @@ class Dec {
         return bccomp($a, $b) === 0;
     }
     /** @psalm-suppress ArgumentTypeCoercion  */
-    public static function is_zero(string $a, int $p = BC_PRECISION): bool {
-        return bccomp($a, DEC_ZERO, $p) === 0;
+    public static function is_zero(string $num, int $p = BC_PRECISION): bool {
+        if (self::is_dec($num)) {
+            if (!self::str_is_bc($num)) {
+                $num = self::val($num);
+            }
+            return bccomp($num, DEC_ZERO, $p) === 0;
+        } else {
+            // not parsable
+            return true;
+        }
     }
-    public static function empty(string $num, int $p = BC_PRECISION): bool {
-        return empty($num) || self::is_zero($num);
+    /** @param string|int|float|double  $num */
+    public static function empty($num, int $p = BC_PRECISION): bool {
+        switch (gettype($num)) {
+        case 'string':
+            return empty($num) || self::is_zero($num);
+            break;
+        case 'integer':
+        case 'double':
+            return $num == 0;
+            break;
+        default:
+            // boolean
+            // array
+            // object
+            // NULL
+            // resource
+            return true; // like it is_a not processable
+            break;
+        }
     }
     /** @psalm-suppress ArgumentTypeCoercion  */
     public static function is_greater(string $a, string $b, int $p = BC_PRECISION): bool {
@@ -151,7 +257,6 @@ class Dec {
         return bccomp($a, $b, $p) === -1;
     }
 }
-
 //----------------------------------------------------------------------------
 //  old interface
 //----------------------------------------------------------------------------
@@ -178,15 +283,58 @@ function coalesce_dec(): string {
 function array_sum_dec(array $a_num): string {
     return Dec::array_sum($a_num);
 }
-
-/*
-function s2f(string $input): float {
-return floatval(preg_replace("/[^-0-9\.]/", '', $input));
+//
+function s2f(string $input): float{
+    $s_clean = preg_replace('/[^-0-9\.]/', '', $input);
+    return floatval($s_clean);
 }
- */
+// from hex number to float
+function hex2f(string $hex): string {
+    return (unpack("f", pack('H*', $hex))[1]);
+}
+/** @param int|string|float|double $val */
+function is_bc($val): bool {
+    return Dec::is_dec($val);
+}
+// -2.000,00 => 2000.00
+function str2bc(string $val): string {
+    return Dec::str_to_dec($val);
+}
 // merge back:
 // meld  /data/bin_priv/lib/Dec.php  /home/taz/Dropbox/projects/gh_php_tools/lib/Math/Dec.php
 if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
-    ok(Dec::str_is_dec($val = ''), false, 'empty');
+    require_once __DIR__ . '/Common.php';
+    //
+    ok(Dec::str_is_bc($val = '0.00'), true, 'str_is_bc ' . $val);
+    ok(Dec::str_is_bc($val = '0'), true, 'str_is_bc ' . $val);
+    ok(Dec::str_is_bc($val = '2.000,00'), false, 'str_is_bc ' . $val); // non è esattamente in fmt bc
+    //--------
+    ok(Dec::str_is_dec($val = ''), false, 'str_is_dec ' . $val);
+    ok(Dec::str_is_dec($val = '0.00'), true, 'str_is_dec ' . $val);
+    ok(Dec::str_is_dec($val = '0'), true, 'str_is_dec ' . $val);
+    //
+    ok(Dec::str_is_dec($val = '0.10'), true, 'str_is_dec ' . $val);
+    ok(Dec::str_is_dec($val = '0,10'), true, 'str_is_dec ' . $val);
+    ok(Dec::str_is_dec($val = '+2.000,10'), true, 'str_is_dec ' . $val);
+    //--------
+    ok(Dec::str_to_dec($val = '0,10'), '0.10', 'str_2_dec ' . $val);
+    ok(Dec::str_to_dec($val = '.10'), '0.10', 'str_2_dec ' . $val);
+    ok(Dec::str_to_dec($val = '-1,10'), '-1.10', 'str_2_dec ' . $val);
+    ok(Dec::str_to_dec($val = '-2.000,00'), '-2000.00', 'str_2_dec ' . $val);
+    ok(Dec::str_to_dec($val = '+2.000,00'), '2000.00', 'str_2_dec ' . $val);
+    //--------
+    ok(Dec::is_zero($val = '0,00'), true, 'is_zero ' . $val);
+    ok(Dec::is_zero($val = '1.000,00'), false, 'is_zero ' . $val);
+    //--------
+    ok(Dec::empty($val = ''), true, 'empty ' . $val . ' ' . gettype($val));
+    ok(Dec::empty($val = null), true, 'empty ' . $val . ' ' . gettype($val));
+    ok(Dec::empty($val = 0), true, 'empty ' . $val . ' ' . gettype($val));
+    ok(Dec::empty($val = 0.0), true, 'empty ' . $val . ' ' . gettype($val));
+    ok(Dec::empty($val = '0.00'), true, 'empty ' . $val . ' ' . gettype($val));
+    ok(Dec::empty($val = '1.000,00'), false, 'empty ' . $val . ' ' . gettype($val));
+    ok(Dec::empty($val = 1), false, 'empty ' . $val . ' ' . gettype($val));
+    ok(Dec::empty($val = '-1'), false, 'empty ' . $val . ' ' . gettype($val));
+
+    //--------
     ok(Dec::coalesce('', 0, 0.0, '0.00', 1), '1', 'coalesce_dec()');
 }
