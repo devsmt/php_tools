@@ -4,6 +4,12 @@
 class Text {
 
     // helper che permette di formattare un array di dati come "tabella" testuale
+    // data layout: Array<Array<string> >
+    //     $a_data = [
+    //         ['a','b','c'], // prima riga contiene le headers
+    //         [1,2,3],
+    //         [1,2,3],
+    //     ];
     public static function table(array $data) {
         // calc len:
         // cicla righe con header
@@ -34,6 +40,21 @@ class Text {
             $s_tbl .= implode('  ', $a_r) . "\n";
         }
         return $s_tbl;
+    }
+    //
+    // converte un layout RS Aray< Hash > to Array<Array<string> >
+    // da usare con Text::table() se il formato non è quello opportuno
+    public static function rs_to_csv(array $rs): array{
+        $a_csv = [];
+        $a_csv[0] = array_keys($rs[0]);
+        foreach ($rs as $i => $rec) {
+            $a_v = array_values($rec);
+            $a_v = array_map(function($val) {
+                return trim(strval($val));
+            }, $a_v );
+            $a_csv[1 + $i] =$a_v;
+        }
+        return $a_csv;
     }
     // evidenzia una parola del testo
     function word_select($text, array $matches, $replace = 'b') {

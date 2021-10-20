@@ -325,9 +325,91 @@ class Safe {
         return $a_data_f;
     }
     //----------------------------------------------------------------------------
-    //  app specific
+    //  uploads
+    //  @see https://owasp.org/www-community/vulnerabilities/Unrestricted_File_Upload
     //----------------------------------------------------------------------------
-    // ...
+    // riscrive il nome del file per assicurare che non contenga alcuna estensione eseguibile .php .phtml .phar .php3
+    // un file eseguibile caricato dall'utente non deve _mai_ poter essere richiamato da apache
+    // ok('aa.jpg')
+    // ok('aa.php', false)
+    // ok('aa.phtml', false)
+    // ok('aa.phar', false)
+    // test cases
+    // ok('aa.Php', false)
+    // ok('aa.pHtml', false)
+    // ok('aa.phAr', false)
+    // test raw replacement of '.php' do not produce dengerous file name
+    // ok('aa.phpphp', false)
+    public static function file_name(string $file_name): string{
+        // strip dangerous extensions, case insensitive
+        $apache_regex = ".+\.ph(ar|p|tml)$";
+        $file_name = strtolower($file_name);
+        $file_name = Safe::alphanum($file_name);
+        $is_exe = str_match($file_name, $apache_regex);
+        if ($is_exe) {
+            // dangerous file name detected
+            return '';
+        }
+        $a_badext = ['php', 'php3', 'php4', 'php5', 'pl', 'cgi', 'py', 'asp', 'cfm', 'js', 'vbs', 'html', 'htm', 'phtml', 'phar'];
+        $ext = pathinfo($file_path, PATHINFO_EXTENSION);
+        $ext = strtolower($ext);
+        if (in_array($ext, $a_badext)) {
+            return '';
+        }
+        return $file_name;
+    }
+    // test if file copntains any trace of php
+    public static function file_get_contents(string $path): string {
+        // se ci sono errori elimina il file
+    }
+    // assicura che il path sia una immagine e non un file eseguibile .php o .js
+    public static function image(string $path): string{
+        // TODO: processa con GD e riscrive l'immagine
+        // se ci sono errori il file tmp deve essere eliminato
+        // imagesize può essere scavalcata da contenuto ad hoc che contenga php eseguibile
+        $a_img_size = getimagesize($path);
+        $image_type = $a_img_size[2];
+        // non gestisco IMAGETYPE_BMP
+        if (in_array($image_type, [IMAGETYPE_GIF, IMAGETYPE_JPEG, IMAGETYPE_PNG])) {
+            $a_ext = [
+                IMAGETYPE_GIF => 'gif',
+                IMAGETYPE_JPEG => 'jpg',
+                IMAGETYPE_PNG => 'png',
+            ];
+            $new_ext = $a_ext[$image_type];
+            // rinomina il file in modo sicuro
+            $new_path = dirname($path) . DS . self::alphanum(basename($path)) . $new_ext;
+            // Get new sizes
+            list($width, $height) = $a_img_size;
+            $newwidth = $width - 1;
+            $newheight = $height - 1;
+            // Load
+            $thumb = imagecreatetruecolor($newwidth, $newheight);
+            $source = imagecreatefromjpeg($path);
+            // Resize, after resizing the binary cant contain any php
+            imagecopyresized($thumb, $source, 0, 0, 0, 0, $newwidth, $newheight, $width, $height);
+            switch ($image_type) {
+            case IMAGETYPE_JPEG:
+                imagejpeg($thumb, $new_path);
+                break;
+            case IMAGETYPE_PNG:
+                imagepng($thumb, $new_path);
+                break;
+            default:
+                // TODO
+                die(implode('/', [__FUNCTION__, __METHOD__, __LINE__]) . ' > ok...');
+                break;
+            }
+        }
+
+        return $new_path;
+    }
+    // assicura che il path sia un documento .pdf .xls .doc e non un file eseguibile .php o .js
+    // il file potrebbe contenere macro o virus
+    public static function document($path) {
+        // se il file è pericoloso elimina il file unlink($path)
+
+    }
 }
 // Never Trust User Input
 // wrapper over filter_var(FILTER_SANITIZE_*)
@@ -510,16 +592,16 @@ if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
      * @psalm-suppress DuplicateClass
      */
     require_once __DIR__ . '/../../lib/functions.php';
-      ok(Safe::str(''), $exp = '', '');
-      ok(Safe::alphanum(''), $exp = '', '');
-      ok(Safe::flag(''), $exp = '', '');
-      ok(Safe::num(''), $exp = '', '');
-      ok(Safe::int('1'), $exp = 1, 'int');
-      ok(Safe::dec('1'), $exp = '1', 'dec');
-      ok(Safe::email(''), $exp = '', 'email');
-      ok(Safe::tel(''), $exp = '', 'tel');
-      ok(Safe::whitelist('a', ['a'], 0), $exp = 'a', 'whitelist');
-      ok(Safe::hash(['a' => 1], ['a' => function ($x) {return $x;}]), ['a' => 1], 'hash');
+    ok(Safe::str(''), $exp = '', '');
+    ok(Safe::alphanum(''), $exp = '', '');
+    ok(Safe::flag(''), $exp = '', '');
+    ok(Safe::num(''), $exp = '', '');
+    ok(Safe::int('1'), $exp = 1, 'int');
+    ok(Safe::dec('1'), $exp = '1', 'dec');
+    ok(Safe::email(''), $exp = '', 'email');
+    ok(Safe::tel(''), $exp = '', 'tel');
+    ok(Safe::whitelist('a', ['a'], 0), $exp = 'a', 'whitelist');
+    ok(Safe::hash(['a' => 1], ['a' => function ($x) {return $x;}]), ['a' => 1], 'hash');
     //
     ok(Safe::email(''), $exp = '', 'email');
     ok(Safe::email("test'@test.com"), $exp = 'test@test.com', 'email 0');
@@ -536,7 +618,7 @@ if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
     ok(Safe::email_multi('aa@bb.com ; ?????'), $exp = 'aa@bb.com', 'm email 3+garbage');
     ok(Safe::email_multi('aa@bb.com ; cc@ggg.com ; cc@ggg.com '), $exp = 'aa@bb.com;cc@ggg.com', 'm email non unique');
     //
-    ok( Safe::GUID('AA-BB-44-55-JJ'), $exp = 'AA-BB-44-55-JJ', 'GUID 1');
+    ok(Safe::GUID('AA-BB-44-55-JJ'), $exp = 'AA-BB-44-55-JJ', 'GUID 1');
     //
     //ok(Safe::tel(''), $exp = '', 'tel');
     ok(Safe::tel(''), $exp = '', 'tel');
@@ -577,10 +659,10 @@ if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
     ];
     foreach ($a_in as $str => $str_res) {
         $str_res = $str_res == null ? $str : $str_res;
-          ok(Safe::text($str, $l = 999, $addit = '', $re = '?'), $str_res, 'safe_text:' . Safe::chop($str, 30000));
+        ok(Safe::text($str, $l = 999, $addit = '', $re = '?'), $str_res, 'safe_text:' . Safe::chop($str, 30000));
     }
     $str = "To start counting y'our letters"; // 36>35 str="To start counting y&#039;our letters"
-      ok(Safe::text($str, $l = 35, $addit = '', $re = '?'), $str_res, 'text len');
+    ok(Safe::text($str, $l = 35, $addit = '', $re = '?'), $str_res, 'text len');
     // test unquote
     $a_in = [
         // html in => txt out
@@ -612,21 +694,21 @@ if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
     //----------------------------------------------------------------------------
     //  num treatment
     //----------------------------------------------------------------------------
-      ok(Safe::num(''), $exp = '0.0', 'num ""');
-      ok(Safe::num(0), $exp = '0.0', 'num 0');
-      ok(Safe::num(null), $exp = '0.0', 'num NULL');
-      ok(Safe::num(' 1.0'), $exp = '1.0', 'num trim');
-      ok(Safe::num('1'), $exp = '1', 'num str');
-      ok(Safe::num('aaa'), $exp = '0.0', 'num str invalid');
-      ok(Safe::num('1'), $exp = '1', 'num str');
+    ok(Safe::num(''), $exp = '0.0', 'num ""');
+    ok(Safe::num(0), $exp = '0.0', 'num 0');
+    ok(Safe::num(null), $exp = '0.0', 'num NULL');
+    ok(Safe::num(' 1.0'), $exp = '1.0', 'num trim');
+    ok(Safe::num('1'), $exp = '1', 'num str');
+    ok(Safe::num('aaa'), $exp = '0.0', 'num str invalid');
+    ok(Safe::num('1'), $exp = '1', 'num str');
 
     //----------------------------------------------------------------------------
     //  multi mail
     //----------------------------------------------------------------------------
-      ok(Safe::email(''), $exp = '', 'm email null');
-      ok(Safe::email('jeff£@gmail.com'), $exp = 'jeff@gmail.com', 'm email + garbage');
-      ok(Safe::email('aa@bb.com ; cc@ggg.com'), $exp = 'aa@bb.com;cc@ggg.com', 'm email 2');
-      ok(Safe::email('aa@bb.com ; garbage'), $exp = 'aa@bb.com', 'm email 2+garbage');
-      ok(Safe::email('aa@bb.com ; ?????'), $exp = 'aa@bb.com', 'm email 3+garbage');
-      ok(Safe::email('aa@bb.com ; cc@ggg.com ; cc@ggg.com '), $exp = 'aa@bb.com;cc@ggg.com', 'm email non unique');
+    ok(Safe::email(''), $exp = '', 'm email null');
+    ok(Safe::email('jeff£@gmail.com'), $exp = 'jeff@gmail.com', 'm email + garbage');
+    ok(Safe::email('aa@bb.com ; cc@ggg.com'), $exp = 'aa@bb.com;cc@ggg.com', 'm email 2');
+    ok(Safe::email('aa@bb.com ; garbage'), $exp = 'aa@bb.com', 'm email 2+garbage');
+    ok(Safe::email('aa@bb.com ; ?????'), $exp = 'aa@bb.com', 'm email 3+garbage');
+    ok(Safe::email('aa@bb.com ; cc@ggg.com ; cc@ggg.com '), $exp = 'aa@bb.com;cc@ggg.com', 'm email non unique');
 }
