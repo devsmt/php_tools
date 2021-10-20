@@ -591,7 +591,19 @@ if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
      * @psalm-suppress NullArgument
      * @psalm-suppress DuplicateClass
      */
-    require_once __DIR__ . '/../../lib/functions.php';
+    require_once __DIR__ . '/Test.php';
+    require_once __DIR__ . '/Strings/Strings.php';
+    // require_once __DIR__ . '/DS/Array.php';
+    /** @return mixed */
+    function coalesce() {
+        $args = func_get_args();
+        foreach ($args as $arg) {
+            if (!empty($arg)) {
+                return $arg;
+            }
+        }
+        return null;
+    }
     ok(Safe::str(''), $exp = '', '');
     ok(Safe::alphanum(''), $exp = '', '');
     ok(Safe::flag(''), $exp = '', '');
@@ -688,8 +700,8 @@ if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
         ',.-@?!%()°;:' => ',.-@?!%()?;:',
     ];
     foreach ($a_in as $s_in => $s_out) {
-        $s_res = Safe::utf8_to_CCSID280($s_in);
-        ok($s_res, $exp = $s_out, 'utf8_to_CCSID280:' . $s_in);
+        $s_res = Safe::utf8_to_ASCII($s_in);
+        ok($s_res, $exp = $s_out, 'utf8_to_ASCII:' . $s_in);
     }
     //----------------------------------------------------------------------------
     //  num treatment

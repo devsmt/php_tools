@@ -135,77 +135,7 @@ class Stats {
         return self::max($values) - self::min($values);
     }
 }
-/**
- * @param mixed $res
- * @param mixed $expected
- * @return void
- */
-// full version
-function ok($res, $expected, string $label = '') {
-    @$GLOBALS['test_count']++;
-    $is_regexp = is_string($expected) && substr($expected, 0, 1) == '/'; // se la stringa inizia con '/' è interpretata come regexp @try preg_match("/^\/.+\/[a-z0-1]*$/i",$expected)
-    $colored = function ($str, $foreground_color = '') {
-        static $a_fg = ['red' => '0;31', 'green' => '0;32', 'brown' => '0;33'];
-        $s = '';
-        if (isset($a_fg[$foreground_color])) {
-            $s .= sprintf("\e[%sm", $a_fg[$foreground_color]);
-        }
-        $s .= $str . "\033[0m";
-        return $s;
-    };
-    $is_hash = function (array $array) {
-        return count(array_filter(array_keys($array), 'is_string')) > 0;
-    };
-    // basic comparison (using $a == $b or $a === $b fails) works for associative arrays but will not work as expected with indexed arrays
-    // which elements are in different order, for example:
-    // (array("x","y") == array("y","x")) === false;
-    $array_equal = function ($a, $b) {
-        return (is_array($a) && is_array($b) &&
-            count($a) == count($b) &&
-            array_diff($a, $b) === array_diff($b, $a));
-    };
-    // comparazione di array associativi
-    $hash_equal = function ($a, $b) {
-        return json_encode(ksort($a, SORT_STRING)) === json_encode(ksort($b, SORT_STRING));
-    };
-    $dmp = function ($v) {return var_export($v, true);};
-    if ($res === $expected) {
-        echo $colored("OK $label \n", 'green');
-    } elseif (!is_array($expected) && $res == $expected) {
-        $s = sprintf("OK (but type differ) %s %s<>%s \n", $label, $dmp($res), $dmp($expected));
-        echo $colored($s, 'brown');
-    } elseif (is_array($expected)) {
-        if (!$is_hash($expected)) {
-            if ($array_equal($res, $expected)) {
-                $s = sprintf("OK array  %s %s %s \n", $label, $dmp($res), $dmp($expected));
-                echo $colored($s, 'green');
-            } else {
-                $s = sprintf("ERROR array  %s %s %s \n", $label, $dmp($res), $dmp($expected));
-                echo $colored($s, 'red');
-            }
-        } elseif ($is_hash($expected)) {
-            if ($hash_equal($res, $expected)) {
-                $s = sprintf("OK hash  %s %s %s \n", $label, $dmp($res), $dmp($expected));
-                echo $colored($s, 'green');
-            } else {
-                $s = sprintf("ERROR hash  %s %s %s \n", $label, $dmp($res), $dmp($expected));
-                echo $colored($s, 'red');
-            }
-        }
-    } elseif ($is_regexp) {
-        $m = preg_match($reg = $expected, $str = $res);
-        if (1 === $m) {
-            $s = sprintf("OK regexp %s %s %s %s \n", $label, $dmp($res), $dmp($expected), $dmp($m));
-            echo $colored($s, 'green');
-        } else {
-            $s = sprintf("ERROR regexp %s %s %s %s \n", $label, $dmp($res), $dmp($expected), $dmp($m));
-            echo $colored($s, 'red');
-        }
-    } else {
-        $s = sprintf("ERROR(%s)  GOT %s <> %s EXP  \n", $label, $dmp($res), $dmp($expected));
-        echo $colored($s, 'red');
-    }
-}
+require_once __DIR__.'/../Test.php';
 class StatsTest {
     /**
      * Tests `sum`.
