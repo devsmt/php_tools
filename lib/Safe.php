@@ -196,8 +196,8 @@ class Safe {
         return filter_var($email, FILTER_SANITIZE_EMAIL);
     }
     // email multiple nello stesso campo
-    public static function email_multi(string $email):string {
-        $_clean_mail = function (string $email):string {
+    public static function email_multi(string $email): string{
+        $_clean_mail = function (string $email): string{
             $email = trim(Safe::text($email));
             return filter_var($email, FILTER_SANITIZE_EMAIL);
         };
@@ -260,7 +260,7 @@ class Safe {
      * @return scalar
      * return string|int|float
      */
-    public static function whitelist(string $str, array $a_wl, $def=null) {
+    public static function whitelist(string $str, array $a_wl, $def = null) {
         // se def non è specificato è il primo valore della lista di valori validi
         if (is_null($def)) {
             $def = $a_wl[0];
@@ -401,14 +401,12 @@ class Safe {
                 break;
             }
         }
-
         return $new_path;
     }
     // assicura che il path sia un documento .pdf .xls .doc e non un file eseguibile .php o .js
     // il file potrebbe contenere macro o virus
     public static function document($path) {
         // se il file è pericoloso elimina il file unlink($path)
-
     }
 }
 // Never Trust User Input
@@ -448,8 +446,8 @@ class Filter {
     public static function int($int, $max = PHP_INT_MAX, $min = 0) {
         return (int) filter_var($int, FILTER_SANITIZE_NUMBER_INT, ["min_range" => $min, "max_range" => $max]);
     }
-    // convertono a true: 1 "1" "yes" "true" "on" TRUE
-    // convertono a false: 0 "0" "no" "false" "off" "" NULL FALSE
+    // convertono a true: 1 '1' 'yes' 'true' 'on' TRUE
+    // convertono a false: 0 '0' 'no' 'false' 'off' '' NULL FALSE
     public static function bool($bool, $d = false) {
         $is = filter_var($bool, FILTER_VALIDATE_BOOLEAN);
         return $is ? (boolean) $bool : $d;
@@ -582,6 +580,56 @@ class PT {
     }
 }
 //----------------------------------------------------------------------------
+// functional equivalent
+//----------------------------------------------------------------------------
+//
+function safe(string $string, string $type): string {
+    switch ($type) {
+    case 'int':
+        return (filter_var($string, FILTER_SANITIZE_NUMBER_INT));
+    case 'string':
+        return filter_var($string, FILTER_SANITIZE_STRING);
+    case 'sql':
+        return mysqli_real_escape_string($string);
+        break;
+    case 'email':
+        return (filter_var($string, FILTER_SANITIZE_EMAIL));
+        break;
+    case 'url':
+        return (filter_var($string, FILTER_SANITIZE_URL));
+        break;
+    case 'ip':
+        return (filter_var($string, FILTER_SANITIZE_IP));
+        break;
+    default:
+        die('unsupported type ' . $type);
+        break;
+    }
+}
+//
+function is_valid(string $string, string $type): bool {
+    switch ($type) {
+    case 'int':
+        return filter_var($string, FILTER_VALIDATE_INT);
+        break;
+    case 'email':
+        return filter_var($string, FILTER_VALIDATE_EMAIL);
+        break;
+    case 'url':
+        return filter_var($string, FILTER_VALIDATE_URL);
+        break;
+    case 'ip':
+        return filter_var($string, FILTER_VALIDATE_IP);
+        break;
+    case 'date':
+        // TODO
+        break;
+    default:
+        die('unsupported type');
+        break;
+    }
+}
+//----------------------------------------------------------------------------
 // tests
 //----------------------------------------------------------------------------
 // if colled directly in CLI, run the tests:
@@ -650,8 +698,8 @@ if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
         '10 €' => null, //euro
         // test " e '
         "come ordine dell'altra volta" => "come ordine dell&#039;altra volta",
-        // "'\"" => '', //quotations not allowed
-        '"citazione"' => '&quot;citazione&quot;', //
+        // "'\'' => '', //quotations not allowed
+        ''citazione'' => '&quot;citazione&quot;', //
         //
         "multi\nline" => null,
         "\\" => '?',
@@ -679,7 +727,7 @@ if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
     $a_in = [
         // html in => txt out
         "come ordine dell&#039;altra volta" => "come ordine dell'altra volta",
-        '&quot;citazione&quot;' => '"citazione"',
+        '&quot;citazione&quot;' => ''citazione'',
         '10 € e poi' => '10 € e poi',
         'perché però qualità più mercoledì' => 'perché però qualità più mercoledì',
         '&amp; &quot; &#039; &lt; &gt;' => '& " \' < >',
@@ -706,14 +754,13 @@ if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
     //----------------------------------------------------------------------------
     //  num treatment
     //----------------------------------------------------------------------------
-    ok(Safe::num(''), $exp = '0.0', 'num ""');
+    ok(Safe::num(''), $exp = '0.0', 'num ''');
     ok(Safe::num(0), $exp = '0.0', 'num 0');
     ok(Safe::num(null), $exp = '0.0', 'num NULL');
     ok(Safe::num(' 1.0'), $exp = '1.0', 'num trim');
     ok(Safe::num('1'), $exp = '1', 'num str');
     ok(Safe::num('aaa'), $exp = '0.0', 'num str invalid');
     ok(Safe::num('1'), $exp = '1', 'num str');
-
     //----------------------------------------------------------------------------
     //  multi mail
     //----------------------------------------------------------------------------

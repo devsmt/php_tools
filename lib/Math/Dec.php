@@ -110,9 +110,13 @@ class Dec {
         return false;
     }
     /** @param string|float|double|int $val */
-    public static function fmt($val): string{
+    public static function fmt($val, int $d=2): string{
         $f_val = floatval($val);
-        return number_format($f_val, 2, '.', '');
+        return number_format($f_val, $d, '.', '');
+    }
+    // alias
+    public static function round($val, int $d=2): string{
+       return self::fmt($val,  $d );
     }
     /**
     calcola $perc % di $v
@@ -137,9 +141,12 @@ class Dec {
         $x = bcdiv($totale, $parziale);
         if (self::empty($x)) {
             return DEC_ZERO;
+        } else {
+            $x = strval($x);
+            $x = bcdiv('100', (string)$x);
+            $x = strval($x);
+            return $x;
         }
-        $x = bcdiv('100', $x);
-        return $x;
     }
     // coalesce dec: scarta tutti i nn numeric
     // ritorna 0 se nessuno è valido
@@ -228,7 +235,7 @@ class Dec {
             return true;
         }
     }
-    /** @param string|int|float|double  $num */
+    /** @param string|int|float|double|null  $num */
     public static function empty($num, int $p = BC_PRECISION): bool {
         switch (gettype($num)) {
         case 'string':

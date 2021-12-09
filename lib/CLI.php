@@ -1,9 +1,10 @@
 <?php
-ini_set('register_argc_argv', true);
-ini_set('max_execution_time', 0);
-ini_set('html_errors', false);
-ini_set('implicit_flush', false);
-ini_set('apc.enable_cli', 1);
+declare (strict_types = 1); 
+ini_set('register_argc_argv', '1');
+ini_set('max_execution_time', '0');
+ini_set('html_errors', '0');
+ini_set('implicit_flush', '0');
+ini_set('apc.enable_cli', '1');
 // functions for building console programs
 class CLI {
 
@@ -260,7 +261,10 @@ class CLI {
     //  colored output / CliUI
     //------------------------------------------------------------------------------
     // stampa stringa colorata
-    public static function colored($str, $foreground_color = '', $background_color = '') {
+    public static function colored(string $str, string $foreground_color = '', string $background_color = '') {
+        if (php_sapi_name() != "cli") {
+            return $str;
+        }
         // ForeGround
         static $a_fg = [
             'black' => '0;30',
@@ -292,13 +296,12 @@ class CLI {
             'cyan' => '46',
             'light_gray' => '47',
         ];
-        $str_result = '';
-        // FG color
-        if (isset($a_fg[$foreground_color])) {
-            $str_result .= sprintf("\e[%sm", $a_fg[$foreground_color]);
+        $str_result = "";
+        if (array_key_exists($foreground_color, $a_fg)) {
+            // or "\e[%sm"
+            $str_result .= sprintf("\033[%sm", $a_fg[$foreground_color]);
         }
-        // BG color
-        if (isset($a_bg[$background_color])) {
+        if (array_key_exists($background_color, $a_bg)) {
             $str_result .= sprintf("\033[%sm", $a_bg[$background_color]);
         }
         $str_result .= $str . "\033[0m";
@@ -494,17 +497,7 @@ function ini_bool($ini) {
 //     }
 // }
 //
-// if (!function_exists('is')) {
-//     function is($val, $expected_val, $description = '') {
-//         $pass = ($val == $expected_val);
-//         CLITest::ok($pass, $description);
-//         if (!$pass) {
-//             CLITest::diag("         got: '$val'");
-//             CLITest::diag("    expected: '$expected_val'");
-//         }
-//         return $pass;
-//     }
-// }
+
 if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
     require_once __DIR__ . '/Test.php';
     // testing

@@ -5,9 +5,11 @@ declare(strict_types=1);
 //  str_find
 //----------------------------------------------------------------------------
 // semplifica l'individuazione di almeno una occorrenza di una sottostringa
-function str_contains(string $str, string $sub_str, bool $ignore_case = true): bool{
-    $result = $ignore_case ? mb_strpos($str, $sub_str) : mb_stripos($str, $sub_str);
-    return ($result !== false) ? true : false;
+if( !function_exists('str_contains') ){
+    function str_contains(string $str, string $sub_str, bool $ignore_case = true): bool{
+        $result = $ignore_case ? mb_strpos($str, $sub_str) : mb_stripos($str, $sub_str);
+            return ($result !== false) ? true : false;
+    }
 }
 //
 function str_contains_any(string $str, array $arr): bool {
@@ -664,6 +666,39 @@ function str_template(string $str_template, array $a_binds, string $default_sub 
     $buffer = $_clean_unused_vars($buffer);
     return $buffer;
 }
+
+// tmpl('{{aa}}', get_defined_vars() );
+/**
+ * @psalm-suppress TypeDoesNotContainType
+ * @psalm-suppress MissingClosureParamType
+ * @psalm-suppress MissingClosureReturnType
+ */
+function tmpl(string $tmpl, array $get_defined_vars = []): string {
+    if (!is_string($tmpl)) {
+        $msg = sprintf('Errore %s ', 'invalid template');
+        throw new \Exception($msg);
+    }
+    $_stringable = function ($v, $k): bool {
+        // false will be skipped
+        return is_string($k) && (is_scalar($v) || (is_object($v) && method_exists($v, '__toString')));
+    };
+    $get_defined_vars = array_filter($get_defined_vars, $_stringable, ARRAY_FILTER_USE_BOTH); // php5.6+
+    $_f = function ($k): string {
+        // Scalar are float, string or boolean.  array, object and resource are not
+        if (is_scalar($k)) {
+            $k = is_bool($k) ? ($k ? 'Y' : 'N') : $k;
+            return sprintf('{{%s}}', $k);
+        } else {
+            return '';
+        }
+    };
+    $vars = array_map_keys($get_defined_vars, $_f);
+    return strtr($tmpl, $vars);
+}
+
+
+
+//
 // aggiunge la codifica dei caratteri per output HTML
 function html_template(string $str_template, array $a_binds, string $default_sub = '__'): string{
     // xss mitigation functions

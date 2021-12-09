@@ -153,7 +153,7 @@ __END__;
             ini_set('log_errors', '1');
             ini_set('error_log', __FILE__ . '.phplog');
             // report whatever as exception
-            set_error_handler(function ($errno, $errstr, $errfile, $errline, array $errcontext) {
+            set_error_handler(function (int $errno, string $errstr, string $errfile, int $errline, array $errcontext): bool {
                 throw new ErrorException($errstr, 0, $errno, $errfile, $errline);
                 return false;
             },

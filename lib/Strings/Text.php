@@ -2,6 +2,77 @@
 
 // text helpers/formatters
 class Text {
+    public static function table(array $RS, array $option = []): string{
+        $result = '';
+        $head = '';
+        $_opt = [];
+        // delegates
+        $_opt['delegates'] = [];
+        // a_labels
+        $option = array_merge($_opt, $option);
+        extract($option);
+        if (empty($RS)) {
+            return '';
+        }
+        $_pad = function (string $s, int $col_max_len): string {
+            if (strlen($s) <= $col_max_len) {
+                $sp = str_pad($s, $col_max_len, ' ', STR_PAD_RIGHT);
+            } else {
+                $sp = substr($s, 0, (int) $col_max_len);
+            }
+            return sprintf('%s | ', $sp);
+        };
+        $_trim_data = function (array $a): array{
+            $a2 = [];
+            foreach ($a as $i => $rec) {
+                // intestazione
+                foreach ($a[$i] as $k => $v) {
+                    $k = trim($k);
+                    $a2[$i][$k] = trim(strval($a[$i][$k]));
+                }
+            }
+            return $a2;
+        };
+        // trim data lenght
+        $a2 = $_trim_data($RS);
+        //
+        // calc max lenght
+        $first_key = array_key_first($a2);
+        $first_rec = null !== $first_key ? $a2[$first_key] : [];
+        $a_keys = array_keys( $first_rec );
+        $a_max_len = [];
+        $max_len_avl = (int) ceil(330 / count($a_keys));
+        // cerca la max len
+        foreach ($a_keys as $k) {
+            $a_max_len[$k] = strlen($k);
+            foreach ($a2 as $i => $cur_val) {
+                $cur_val = $a2[$i][$k];
+                $cur_len = strlen($cur_val);
+                $max_len = max([$a_max_len[$k], $cur_len]);
+                // non superare una soglia data dalla larghezza del terminale
+                $a_max_len[$k] = (int) min($max_len, $max_len_avl);
+            }
+        }
+        // stampa righe
+        foreach ($a2 as $i => $cur_val) {
+            // intestazione
+            if ($i == $first_key) {
+                foreach ($a2[$i] as $k => $v) {
+                    $col_name = isset($a_labels[$k]) ? $a_labels[$k] : $k;
+                    $col_name = $col_name;
+                    $head .= $_pad($col_name, (int)$a_max_len[$col_name]);
+                }
+                $head = $head . "\n";
+            }
+            $tds = '';
+            foreach ($a2[$i] as $k => $v) {
+                $tds .= $_pad($v, $a_max_len[$k]);
+            }
+            $result .= $tds . "\n";
+        }
+        $result = $head . $result;
+        return $result;
+    }
 
     // helper che permette di formattare un array di dati come "tabella" testuale
     // data layout: Array<Array<string> >
@@ -10,7 +81,8 @@ class Text {
     //         [1,2,3],
     //         [1,2,3],
     //     ];
-    public static function table(array $data) {
+    // // echo Text::table_csv(Text::rs_to_csv($a_data));
+    public static function table_csv(array $data):string {
         // calc len:
         // cicla righe con header
         // cicla colonne e aggiorna il conteggio se si trova un max
@@ -43,7 +115,7 @@ class Text {
     }
     //
     // converte un layout RS Aray< Hash > to Array<Array<string> >
-    // da usare con Text::table() se il formato non è quello opportuno
+    // da usare con Text::table_cvs() se il formato non è quello opportuno
     public static function rs_to_csv(array $rs): array{
         $a_csv = [];
         $a_csv[0] = array_keys($rs[0]);

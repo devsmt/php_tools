@@ -6,13 +6,21 @@ namespace DB {
     // wrapper su db
     // uso: Sqlite::qry($sql)   Sqlite::exec($sql)
     class Sqlite {
+        /** @var SQLite3|null $conn */
         protected static $conn = null;
-        public static function connect() {
+        public static function connect(): void {
+            if (!empty(self::$conn)) {
+                return;
+            }
             $path = self::getPath();
             self::$conn = new \SQLite3($path);
-            /** @psalm-suppress TypeDoesNotContainType  */
-            if (!self::$conn) {
-                $msg = sprintf('Errore %s ', self::$conn->lastErrorMsg());
+            /**
+             * @psalm-suppress TypeDoesNotContainType
+             * @psalm-suppress MixedMethodCall
+             */
+            if (empty(self::$conn)) {
+                $msg = self::$conn ? (string) self::$conn->lastErrorMsg() : '';
+                $msg = sprintf('Errore %s ', $msg);
                 throw new \Exception($msg);
             } else {
                 // wait a few seconds for the lock to clear when you execute queries
@@ -32,7 +40,7 @@ namespace DB {
         }
         // app specific
         public static function getPath() {
-            $path = sprintf('%s/data/DB/%s.db', ROOT_PATH, 'cantini');
+            $path = sprintf('%s/data/DB/%s.db', ROOT_PATH, 'project');
             //
             $dir = dirname($path);
             if( !file_exists( $dir ) ) {
@@ -41,40 +49,65 @@ namespace DB {
             }
             return $path;
         }
-        public static function disconnect() {
+        public static function disconnect(): void {
             // echo "SL disconnect \n";
-            self::$conn->close();
-            self::$conn = null;
+            if (self::$conn) {
+                self::$conn->close();
+                self::$conn = null;
+            }
         }
         // assicura che la connessione sia aperta
-        public static function ensureConnection() {
+        public static function ensureConnection(): void {
             if (empty(self::$conn)) {
                 self::connect();
             }
         }
+
+        // memo func param
+        public static function qry(string $SQL, array $params = []): array{
+            static $__cached_data = [];
+            if (!empty($params)) {
+                ksort($params);
+                $SQL .= json_encode($params);
+            }
+            if (!array_key_exists($SQL, $__cached_data)) {
+                $__cached_data[$SQL] = self::_qry($SQL);
+            }
+            return $__cached_data[$SQL];
+        }
+
         // param escaping
         // timing
         // logging
         // Sqlite::qry('SELECT bar FROM foo WHERE id=:id',[':id' => (int)$id ])
-        public static function qry(string $sql, array $params = []): array{
+        static $_sql_log = [];
+        /**
+         * @param array<array-key, string> $params
+         * @return list< array<array-key, mixed> >
+         */
+        public static function _qry(string $sql, array $params = []): array{
             // assicura che ci sia la connessione aperta
             self::ensureConnection();
-            if (empty($params)) {
-                $ret = self::$conn->query($sql);
-            } else {
-                // 'SELECT bar FROM foo WHERE id=:id'
-                $stmt = self::$conn->prepare($sql);
-                foreach ($params as $key => $val) {
-                    // $key like ':id'
-                    $stmt->bindValue($key, $val, self::getArgType($val));
+            if (self::$conn) {
+                if (empty($params)) {
+                    $ret = self::$conn->query($sql);
+                } else {
+                    // 'SELECT bar FROM foo WHERE id=:id'
+                    $stmt = self::$conn->prepare($sql);
+                    foreach ($params as $key => $val) {
+                        // $key like ':id'
+                        $stmt->bindValue($key, $val, self::getArgType($val));
+                    }
+                    $ret = $stmt->execute();
                 }
-                $ret = $stmt->execute();
+                $rs = [];
+                while ($row = $ret->fetchArray(SQLITE3_ASSOC)) {
+                    $rs[] = $row;
+                }
+                return $rs;
+            } else {
+                return [];
             }
-            $a_row = [];
-            while ($row = $ret->fetchArray(SQLITE3_ASSOC)) {
-                $a_row[] = $row;
-            }
-            return $a_row;
         }
         // // cached query
         // public static function queryc($sql, $params=[], $ttl_secs = TTL_8H  ) {
@@ -85,25 +118,25 @@ namespace DB {
         //             return self::query($sql, $params);
         //     }, $ttl_secs );
         // }
-        /*
-        ALWAYS SET THE CORRECT TYPE OF VARS:
-        For example:
-        $st = $db->prepare('SELECT * FROM test WHERE (a+1) = ?');
-        $st->bindValue(1, 2);
-        Will never return any result as it is treated by SQLite as if the query was
-        'SELECT * FROM test WHERE (a+1) = "2"'.
-
-        Instead you have to set the type manually:
-        $st = $db->prepare('SELECT * FROM test WHERE (a+1) = ?');
-        $st->bindValue(1, 2, \SQLITE3_INTEGER);
-        will work.
-        */
+        //
+        // ALWAYS SET THE CORRECT TYPE OF VARS:
+        // For example:
+        // $st = $db->prepare('SELECT * FROM test WHERE (a+1) = ?');
+        // $st->bindValue(1, 2);
+        // Will never return any result as it is treated by SQLite as if the query was
+        // 'SELECT * FROM test WHERE (a+1) = "2"'.
+        //
+        // Instead you have to set the type manually:
+        // $st = $db->prepare('SELECT * FROM test WHERE (a+1) = ?');
+        // $st->bindValue(1, 2, \SQLITE3_INTEGER);
+        // will work.
+        //
         // SQLITE3_INTEGER: The value is a signed integer, stored in 1, 2, 3, 4, 6, or 8 bytes depending on the magnitude of the value.
         // SQLITE3_FLOAT: The value is a floating point value, stored as an 8-byte IEEE floating point number.
         // SQLITE3_TEXT: The value is a text string, stored using the database encoding (UTF-8, UTF-16BE or UTF-16-LE).
         // SQLITE3_BLOB: The value is a blob of data, stored exactly as it was input.
         // SQLITE3_NULL: The value is a NULL value.
-        public static function getArgType($arg) {
+        public static function getArgType(string $arg): int {
             switch (gettype($arg)) {
             case 'double':return SQLITE3_FLOAT;
             case 'integer':return SQLITE3_INTEGER;
@@ -132,7 +165,10 @@ namespace DB {
         //
         // esegue stmt diversi da select, es insert update delete
         //
-        /** @return bool|array */
+        /**
+         * @param array<array-key, string> $params
+         * @return array{0?: SQLite3Result|bool, 1?: int}
+         */
         public static function exec(string $sql, array $params = []) {
             if (self::isSelect($sql)) {
                 $msg = sprintf('Errore %s ', 'exec() sql è un statement select, usare per insert');
@@ -140,43 +176,37 @@ namespace DB {
             }
             // assicura che ci sia la connessione aperta
             self::ensureConnection();
-            $ret = false;
-            if (empty($params)) {
-                echo "$sql \n";
-                $ret = self::$conn->exec($sql);
-                /* try {
-                    $ret = self::$conn->exec($sql);
-                } catch (\Exception $e) {
-                    $msg = sprintf('Exception: %s sql:%s', $e->getMessage(), $sql);
-                    throw new \Exception($msg);
-                    return false;
-                }*/
-                return $ret;
-            } else {
-                // 'SELECT bar FROM foo WHERE id=:id'
-                $stmt = self::$conn->prepare($sql);
-                foreach ($params as $key => $val) {
-                    // $key like ':id'
-                    $stmt->bindValue($key, $val, self::getArgType($val));
+            if (self::$conn) {
+                if (empty($params)) {
+                    $ok = self::$conn->exec($sql);
+                    // if insert or update
+                    $ret2 = self::$conn->lastInsertRowID();
+                    return [$ok,$ret2];
+                } else {
+                    // 'SELECT bar FROM foo WHERE id=:id'
+                    $stmt = self::$conn->prepare($sql);
+                    foreach ($params as $key => $val) {
+                        // $key like ':id'
+                        $stmt->bindValue($key, $val, self::getArgType($val));
+                    }
+                    $ok = $stmt->execute();
+                    $last_id = self::$conn->lastInsertRowID();
+                    return [$ok, $last_id];
                 }
-                $ok = $stmt->execute();
-                $last_id = self::$conn->lastInsertRowID();
-                return [$ok, $last_id];
+            } else {
+                return [false, 0];
             }
-            if (!$ret) {
-                $msg = sprintf('Errore %s %s', self::$conn->lastErrorMsg(), $sql);
-                throw new \Exception($msg);
-            }
-            return $ret;
         }
         // determina se una string è un select stmt
         public static function isSelect(string $sql): bool {
             return 'select' == $sql_begin = strtolower(substr($sql = trim($sql), 0, $l = strlen('select')));
         }
+        /*
         // db creation routine
         public static function _run_test(): int {
             return 0;
         }
+        */
     }
 }
 namespace {

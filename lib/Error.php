@@ -319,7 +319,7 @@ class exception_trace {
      * @return mixed */
     public static function _v_mapper($val) {
         if (is_array($val)) {
-            $a_h = H::map_keys($val, function (string $k) :string {
+            $a_h = h_map_keys($val, function (string $k) :string {
                 return $k;
             }, 'self::_v_mapper');
             return $a_h;

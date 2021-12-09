@@ -2,7 +2,7 @@
 declare (strict_types = 1);
 //
 require_once __DIR__ . '/lib/Test.php';
-require_once __DIR__ . '/lib/DS/Array.php';
+require_once __DIR__ . '/lib/DS/array_utils.php';
 require_once __DIR__ . '/lib/DS/H.php';
 require_once __DIR__ . '/lib/DS/RS.php';
 // TODO require_once __DIR__ . '/lib/DS/ListObject.php';
