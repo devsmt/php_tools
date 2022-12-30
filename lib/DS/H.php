@@ -179,15 +179,23 @@ function h_query(array $h, array $a_query, $default) {
         return $default;
     }
 }
-// primo elemento di un hash
-/** @return mixed */
-function h_first(array $h) {
+/**
+ * primi elementi di un hash, ritorna le chiavi, cosa che non fa array_first()
+ * @return array
+ */
+function h_first(array $h, int $n = 1): array{
     if (empty($h)) {
         return [];
     }
-    // works only if array has alements
-    $first_k = array_keys($h)[0];
-    return $h[$first_k];
+    $h2 = [];
+    foreach ($h as $key => $val) {
+        if (count($h2) < $n) {
+            $h2[$key] = $val;
+        } else {
+            break;
+        }
+    }
+    return $h2;
 }
 // array_merge fa casino con le chiavi, se numeriche,ad esempio i codici articolo o altro risultato da query
 function h_merge(): array{
@@ -214,6 +222,19 @@ function h_select_keys(array $h, array $a_keys) {
         $a2[$key] = h_get($h, $key, null);
     }
     return $a2;
+}
+// rewrite the keys of the hash
+// h_rewrite_keys($h,['a'=>'b']);// will rewrite key 'a' to 'b'
+function h_rewrite_keys(array $h, array $h_key_to_key) {
+    $h2 = $h;
+    foreach ($h_key_to_key as $key_old => $key_new) {
+        if (isset($h2[$key_old])) {
+            $val = $h2[$key_old];
+            unset($h2[$key_old]);
+            $h2[$key_new] = $val;
+        }
+    }
+    return $h2;
 }
 // Get a value from the array, and remove it.
 /**
@@ -313,14 +334,49 @@ function h_pluck(array $a_RS, string $key, array $opt = []): array{
     }
     return [];
 }
+
+// $h_sorted = h_sort_by( $rs, function( $rec ) { return $rec['score']; });
+// come array_sort_by ma mantiene l'associatività delle chiavi
+function h_sort_by(array $rs, callable $_fn, string $ord = 'ASC'): array{
+    $ord = strtolower($ord);
+    $s_rs = $rs;
+    uasort($s_rs, function (array $a, array $b) use ($_fn, $ord): int {
+        if ($_fn($a) == $_fn($b)) {
+            return 0;
+        }
+        if ($ord === 'asc') {
+            return ($_fn($a) < $_fn($b)) ? -1 : 1; //ASC
+        } elseif ($ord === 'desc') {
+            return ($_fn($a) < $_fn($b)) ? 1 : -1; //DESC
+        } else {
+            die(implode('/', [__FUNCTION__, __METHOD__, __LINE__]) . ' > error ' . $ord);
+        }
+    });
+    return $s_rs;
+}
+
+/** ricerca tra le key con "*"
+ * @return array{0: bool, 2: array<mixed>}
+ */
+function h_key_like(array $db, string $_2): array{
+    $ok = false;
+    $a_keys_like = [];
+    foreach ($db as $key => $val) {
+        if (str_like($_2, $key)) {
+            $a_keys_like[$key] = $val;
+        }
+    }
+    return [$ok = (count($a_keys_like) > 0), $a_keys_like];
+}
+
 // polifill 7.3
 if (!function_exists('array_key_first')) {
     function array_key_first(array $array) {foreach ($array as $key => $value) {return $key;}}
 }
 if (!function_exists('array_key_last')) {
-    function array_key_last(array $array):string {
+    function array_key_last(array $array): string{
         $key = '';
-        foreach ($array as $key => $value){
+        foreach ($array as $key => $value) {
         }
         return $key;
     }

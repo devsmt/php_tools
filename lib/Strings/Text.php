@@ -1,79 +1,91 @@
 <?php
-
 // text helpers/formatters
 class Text {
     public static function table(array $RS, array $option = []): string{
-        $result = '';
-        $head = '';
-        $_opt = [];
-        // delegates
-        $_opt['delegates'] = [];
-        // a_labels
-        $option = array_merge($_opt, $option);
+        $option = array_merge($_opt_def = [
+            'delegates' => [],
+        ], $option);
         extract($option);
         if (empty($RS)) {
             return '';
         }
-        $_pad = function (string $s, int $col_max_len): string {
-            if (strlen($s) <= $col_max_len) {
-                $sp = str_pad($s, $col_max_len, ' ', STR_PAD_RIGHT);
-            } else {
-                $sp = substr($s, 0, (int) $col_max_len);
-            }
-            return sprintf('%s | ', $sp);
+        // conta solo i char, non i caratteri di controllo usati per generare la colazione
+        $_strlen_u = function (string $s): int{
+            $s_in = CLI::uncolor($s);
+            return strlen($s_in);
         };
+        $_padr_u = function (string $s, int $len) use ($_strlen_u): string {
+            $cur_len = $_strlen_u($s);
+            if ($cur_len >= $len) {
+                return $s;
+            }
+            $pad_len = $len - $cur_len;
+            $s2 = $s . str_repeat(' ', $pad_len);
+            return $s2;
+        };
+        $_pad = function (string $s, int $col_max_len) use ($_strlen_u, $_padr_u): string {
+            $sp = $s;
+            if ($_strlen_u($s) <= $col_max_len) {
+                $sp = $_padr_u($s, $col_max_len);
+            }
+            return $sp;
+        };
+        $_implode = function (array $a): string {return implode(' | ', $a);};
         $_trim_data = function (array $a): array{
             $a2 = [];
             foreach ($a as $i => $rec) {
-                // intestazione
                 foreach ($a[$i] as $k => $v) {
-                    $k = trim($k);
-                    $a2[$i][$k] = trim(strval($a[$i][$k]));
+                    $a2[$i][trim($k)] = trim(strval($v)); // $a[$i][$k]
                 }
             }
             return $a2;
         };
-        // trim data lenght
-        $a2 = $_trim_data($RS);
-        //
-        // calc max lenght
-        $first_key = array_key_first($a2);
-        $first_rec = null !== $first_key ? $a2[$first_key] : [];
-        $a_keys = array_keys( $first_rec );
-        $a_max_len = [];
-        $max_len_avl = (int) ceil(330 / count($a_keys));
-        // cerca la max len
-        foreach ($a_keys as $k) {
-            $a_max_len[$k] = strlen($k);
-            foreach ($a2 as $i => $cur_val) {
-                $cur_val = $a2[$i][$k];
-                $cur_len = strlen($cur_val);
-                $max_len = max([$a_max_len[$k], $cur_len]);
-                // non superare una soglia data dalla larghezza del terminale
-                $a_max_len[$k] = (int) min($max_len, $max_len_avl);
-            }
-        }
-        // stampa righe
-        foreach ($a2 as $i => $cur_val) {
-            // intestazione
-            if ($i == $first_key) {
-                foreach ($a2[$i] as $k => $v) {
-                    $col_name = isset($a_labels[$k]) ? $a_labels[$k] : $k;
-                    $col_name = $col_name;
-                    $head .= $_pad($col_name, (int)$a_max_len[$col_name]);
+        // calc max lenght for each key
+        $_calc_max_len = function (array $rs) use ($_strlen_u): array{
+            $first_key = array_key_first($rs);
+            $first_rec = false !== $first_key ? $rs[$first_key] : [];
+            $a_keys = array_keys($first_rec);
+            //
+            $a_max_len = [];
+            // $max_len_avl = (int) ceil(330 / count($a_keys));
+            // cerca la max len
+            foreach ($a_keys as $k) {
+                $a_max_len[$k] = $_strlen_u($k);
+                foreach ($rs as $i => $cur_val) {
+                    $cur_val = $rs[$i][$k];
+                    $cur_len = $_strlen_u($cur_val);
+                    $max_len = max([$a_max_len[$k], $cur_len]);
+                    // non superare una soglia data dalla larghezza del terminale
+                    $a_max_len[$k] = (int) $max_len; // min($max_len, $max_len_avl);
                 }
-                $head = $head . "\n";
             }
-            $tds = '';
-            foreach ($a2[$i] as $k => $v) {
-                $tds .= $_pad($v, $a_max_len[$k]);
-            }
-            $result .= $tds . "\n";
+            return $a_max_len;
+        };
+        // main -------------------
+        $rs2 = $_trim_data($RS);
+        $first_key = array_key_first($rs2);
+        $a_max_len = $_calc_max_len($rs2);
+        // stampa intestazione
+        $head = '';
+        $a_head = [];
+        foreach ($rs2[$first_key] as $k => $v) {
+            $col_name = isset($a_labels[$k]) ? $a_labels[$k] : $k;
+            $a_head[] = $_pad($col_name, (int) $a_max_len[$col_name]);
         }
-        $result = $head . $result;
-        return $result;
+        $head = $_implode($a_head) . "\n";
+        // stampa righe
+        $trs = '';
+        foreach ($rs2 as $i => $cur_val) {
+            $tds = '';
+            $a_tds = [];
+            foreach ($rs2[$i] as $k => $v) {
+                $a_tds[] = $_pad($v, $a_max_len[$k]);
+            }
+            $tds = $_implode($a_tds);
+            $trs .= $tds . "\n";
+        }
+        return $head . $trs;
     }
-
     // helper che permette di formattare un array di dati come "tabella" testuale
     // data layout: Array<Array<string> >
     //     $a_data = [
@@ -81,8 +93,7 @@ class Text {
     //         [1,2,3],
     //         [1,2,3],
     //     ];
-    // // echo Text::table_csv(Text::rs_to_csv($a_data));
-    public static function table_csv(array $data):string {
+    public static function table_csv(array $data): string{
         // calc len:
         // cicla righe con header
         // cicla colonne e aggiorna il conteggio se si trova un max
@@ -100,7 +111,6 @@ class Text {
                 }
             }
         }
-
         // format data
         $s_tbl = '';
         for ($i = 0; $i < count($data); $i++) {
@@ -121,10 +131,10 @@ class Text {
         $a_csv[0] = array_keys($rs[0]);
         foreach ($rs as $i => $rec) {
             $a_v = array_values($rec);
-            $a_v = array_map(function($val) {
+            $a_v = array_map(function ($val):string {
                 return trim(strval($val));
-            }, $a_v );
-            $a_csv[1 + $i] =$a_v;
+            }, $a_v);
+            $a_csv[1 + $i] = $a_v;
         }
         return $a_csv;
     }
@@ -220,7 +230,6 @@ class Text {
             return $res;
         }
     }
-
     // mostra solo n char di un testo lungo, evitando di spezzare le parole
     // brutalmente, ma non fa nulla di particolare per funzionare con html
     function str_reminder($str, $maxlen = 50, $suffisso = ' [...] ') {
@@ -346,7 +355,6 @@ class Text {
         }
         return $truncate;
     }
-
     /**
      * Search for links inside html attributes
      *

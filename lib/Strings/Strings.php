@@ -2,13 +2,13 @@
 declare(strict_types=1);
 
 //----------------------------------------------------------------------------
-//  str_find
+// string functions
 //----------------------------------------------------------------------------
 // semplifica l'individuazione di almeno una occorrenza di una sottostringa
-if( !function_exists('str_contains') ){
+if (!function_exists('str_contains')) {
     function str_contains(string $str, string $sub_str, bool $ignore_case = true): bool{
         $result = $ignore_case ? mb_strpos($str, $sub_str) : mb_stripos($str, $sub_str);
-            return ($result !== false) ? true : false;
+        return ($result !== false) ? true : false;
     }
 }
 //
@@ -46,7 +46,15 @@ function str_mb_ends(string $str, string $end): bool{
     $sub = mb_substr($str, (-1 * $len));
     return (mb_strtolower($sub) === mb_strtolower($end));
 }
-
+function str_mb_begins($str, $s_begin) {
+    $len = mb_strlen($s_begin);
+    $sub = mb_substr($str, 0, $len);
+    return mb_strtolower($sub) === mb_strtolower($s_begin);
+}
+// dato un valore massimo e uno minimo, ritorna un valore compreso trai limiti
+function clamp($current, $min = 0, $max = 999) {
+    return max($min, min($max, $current));
+}
 // mette testo su singola linea per migliorare il logging
 function str_inline(string $txt): string{
     $txt = preg_replace($regex = '/(\s{2,}|\\n)/ui', ' ', $txt);
@@ -225,446 +233,13 @@ function str_map(string $str, callable $f): string{
 }
 
 //----------------------------------------------------------------------------
-// random strings
-//----------------------------------------------------------------------------
-class RandStr {
-    const ALPHA = 'bdghjmnpqrstvz';
-    const NUM = '123456789';
-    const SIGN = '.,?;:!%_=-+*@';
-    // data una stringa di base, genera password di uguale lunghezza
-    // e assicura che almeno un carattere sia numerico e punteggiatura
-    public static function mkPassword(int $len = 10, int $min_num_len = 1, int $len_sign = 1): string{
-        $str = '';
-        $str .= self::generate($len, self::ALPHA);
-        $str .= self::generate($min_num_len, self::NUM); // aggiunge caratteri di punteggiatura
-        $str .= self::generate($len_sign, self::SIGN); // aggiunge caratteri di punteggiatura
-        return $str;
-    }
-    // random, human readable string, good for password, captcha and other codes
-    // $readable esclude i caratteri che potrebbero essere confusi, come i,l,1,I,0,o,O
-    function mkPasswordReadable(int $len = 10, string $flg_strength = 'nVA!', bool $readable = true): string{
-        // esclusi i caratteri che potrebbero essere confusi, come i,l,1,I oppure 0 e o/O
-        $str_dict = 'bdghjmnpqrstvz';
-        $vowels = 'aeuy';
-        if (!$readable) {
-            $str_dict .= 'lo';
-            $vowels .= 'io';
-        }
-        if (str_match($flg_strength, 'V')) {
-            $vowels .= 'AEUY';
-        }
-        if (str_match($flg_strength, 'n')) {
-            $str_dict .= '23456789';
-        }
-        if (str_match($flg_strength, 'A')) {
-            $str_dict .= 'BDGHJLMNPQRSTVWXZ';
-        }
-        if (str_match($flg_strength, '!')) {
-            $str_dict .= '!@#$%';
-        }
-        $password = '';
-        // alterna una vocale e una consonante
-        // TODO far in modo che i caratteri numero e simbolo siano stamapti assieme per
-        // facilitare la digitazione dalla tastiera
-        $alt = time() % 2;
-        for ($j = 0; $j < $len; $j++) {
-            if ($alt == 1) {
-                $i = (rand() % mb_strlen($str_dict));
-                $password .= $str_dict[$i];
-                $alt = 0;
-            } else {
-                $i = (rand() % mb_strlen($vowels));
-                $password .= $vowels[$i];
-                $alt = 1;
-            }
-        }
-        return $password;
-    }
-    // generara una stringa rand della lunghezza specifica
-    // il dict di default non contiene la lettera "O" perchè facile confonderla con numero 0
-    public static function generate(int $len, string $dict = 'ABCDEFGHIJKLMNPQRSTUVWXYZ0123456789'): string{
-        $dict_len = mb_strlen($dict);
-        $str = '';
-        for ($i = 0; $i < $len; $i++) {
-            $pos = rand(0, $dict_len - 1);
-            $str .= $dict{$pos};
-        }
-        return $str;
-    }
-    // random pad
-    public static function pad(string $str, int $len): string {
-        if (mb_strlen($str) >= $len) {
-            return $str;
-        } else {
-            $delta = $len - mb_strlen($str);
-            $suffix = self::generate($delta);
-            return $str . $suffix;
-        }
-    }
-    // Generate random char sequence
-    // genera una stringa random della lunghezza specificata sfruttando il valore ASCII di un carattere
-    // $chars <= 9 digits <= 35 lowercase, <= 61 uppercase
-    // ord('0') = 48   z=a+25
-    // ord('A') = 65   Z=A+25
-    // ord('a') = 97
-    // function string_random($l, $flag = 'naA') {
-    //     $s = '';
-    //     for ($i = 0; $i < $l; ++$i) {
-    //         if ( $flag == 'n' ) {
-    //             $r = mt_rand(0, 10 );
-    //             $c = chr(ord('0') + $r);//numeric
-    //         } elseif ( $flag == 'a' )  {
-    //             $r = mt_rand(0, 26 );
-    //             $c = chr(ord('a') + $r  );//alpha
-    //         } elseif ( $flag == 'A' )   {
-    //             $r = mt_rand(0, 36 );
-    //             // alpha uppecase r=range(0,25)
-    //             $c = chr(ord('A') + $r );//upper alpha
-    //         }
-    //         $s .= $c;
-    //     }
-    //     return $s;
-    // }
-    function mb_str_split(string $string, string $en = 'UTF-8'): array{
-        $l = mb_strlen($string, $en);
-        $ret = [];
-        for ($i = 0; $i < $l; $i++) {
-            $ret[] = mb_substr($string, $i, 1, $en);
-        }
-        return $ret;
-    }
-    function mb_strrev(string $str): string {
-        return implode(array_reverse(mb_str_split($str)));
-    }
-    /*
-    if ($err = password_check($_REQUEST['username'],$_REQUEST['password'])) {
-    print "Bad password: $err";
-    // Make the user pick another password
-    }
-    Basics
-    Use at least eight characters, the more characters the better really, but most people will find anything more than about 15 characters difficult to remember.
-    Use a random mixture of characters, upper and lower case, numbers, punctuation, spaces and symbols.
-    Don't use a word found in a dictionary, English or foreign.
-    Never use the same password twice.
-    Things to avoid
-    Don't just add a single digit or symbol before or after a word. e.g. "apple1"
-    Don't double up a single word. e.g. "appleapple"
-    Don't simply reverse a word. e.g. "elppa"
-    Don't just remove the vowels. e.g. "ppl"
-    Key sequences that can easily be repeated. e.g. "qwerty","asdf" etc.
-    Don't just garble letters, e.g. converting e to 3, L or i to 1, o to 0. as in "z3r0-10v3"
-     */
-    /**
-     * @return array{0: bool, 1: string }
-     */
-    function password_check(string $user, string $pass): array{
-        $lc_pass = mb_strtolower($pass);
-        // also check password with numbers or punctuation subbed for letters
-        $denum_pass = mb_strtr($lc_pass, '5301!', 'seoll');
-        $lc_user = mb_strtolower($user);
-        // the password must be at least six characters
-        if (mb_strlen($pass) < 6) {
-            return [false, 'The password is too short.'];
-        }
-        // the password can't be the username (or reversed username)
-        if (($lc_pass == $lc_user) || ($lc_pass == mb_strrev($lc_user)) ||
-            ($denum_pass == $lc_user) || ($denum_pass == mb_strrev($lc_user))) {
-            return [false, 'The password is based on the username.'];
-        }
-        // count how many lowercase, uppercase, and digits are in the password
-        $uc = 0;
-        $lc = 0;
-        $num = 0;
-        $other = 0;
-        for ($i = 0, $j = mb_strlen($pass); $i < $j; $i++) {
-            $c = mb_substr($pass, $i, 1);
-            if (preg_match('/^[[:upper:]]$/', $c)) {
-                $uc++;
-            } elseif (preg_match('/^[[:lower:]]$/', $c)) {
-                $lc++;
-            } elseif (preg_match('/^[[:digit:]]$/', $c)) {
-                $num++;
-            } else {
-                $other++;
-            }
-        }
-        // the password must have more than two characters of at least
-        // two different kinds
-        $max = $j - 2;
-        if ($uc > $max) {
-            return [false, "The password has too many upper case characters."];
-        }
-        if ($lc > $max) {
-            return [false, "The password has too many lower case characters."];
-        }
-        if ($num > $max) {
-            return [false, "The password has too many numeral characters."];
-        }
-        if ($other > $max) {
-            return [false, "The password has too many special characters."];
-        }
-        // the password must not contain a dictionary word
-        $word_file = '/usr/share/dict/words';
-        if (is_readable($word_file)) {
-            if ($fh = fopen($word_file, 'r')) {
-                $found = false;
-                while (!($found || feof($fh))) {
-                    $word = preg_quote(trim(mb_strtolower(fgets($fh, 1024))), '/');
-                    if (preg_match("/$word/", $lc_pass) ||
-                        preg_match("/$word/", $denum_pass)) {
-                        $found = true;
-                    }
-                }
-                fclose($fh);
-                if ($found) {
-                    return [false, 'The password is based on a dictionary word.'];
-                }
-                return [true, ''];
-            }
-        }
-        return [false, ''];
-    }
-}
-// genera lista caratteri da a-z
-function get_all_chars(): array{
-    $a_characters = array_merge(range('a', 'z'), range('A', 'Z'));
-    return $a_characters;
-}
-//----------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------
-function str_rm_diacritics(string $str): string{
-    // hash "lettera latina" => regexp char group da sostituire
-    $DIACRITICS = [
-        'a' => '[aÀÁÂÃÄÅàáâãäåĀā]',
-        'c' => '[cÇçćĆčČ]',
-        'd' => '[dđĐďĎ]',
-        'e' => '[eÈÉÊËèéêëěĚĒē]',
-        'i' => '[iÌÍÎÏìíîïĪī]',
-        'n' => '[nÑñňŇ]',
-        'o' => '[oÒÓÔÕÕÖØòóôõöøŌō]',
-        'r' => '[rřŘ]',
-        's' => '[sŠš]',
-        't' => '[tťŤ]',
-        'u' => '[uÙÚÛÜùúûüůŮŪū]',
-        'y' => '[yŸÿýÝ]',
-        'z' => '[zŽž]',
-    ];
-    $str_result = trim($str);
-    foreach ($DIACRITICS as $letter => $dia_regex) {
-        $str = mb_ereg_replace('/' . $dia_regex . '/', $letter, $str);
-    }
-    return $str_result;
-}
-//----------------------------------------------------------------------------
-// transliteration
-//----------------------------------------------------------------------------
-function str_transliterate(string $str): string {
-    if (function_exists('iconv')) {
-        $text = iconv('utf-8', 'us-ascii//TRANSLIT', $str);
-    } else {
-        $text = str_rm_diacritics($str);
-    }
-    return $text;
-}
-// transliterate from utf-8 a ascii
-function str_to_ascii(string $s): string {
-    return str_transliterate($s);
-}
-/*------------------------------------------------------------------------------
-@see utf8 lib
-require_once('libs/utf8/utf8.php');
-require_once('libs/utf8/utils/bad.php');
-require_once('libs/utf8/utils/validation.php');
-require_once('libs/utf8_to_ascii/utf8_to_ascii.php');
-if(!utf8_is_valid($str)){
-$str=utf8_bad_strip($str);
-}
-$str = utf8_to_ascii($str, '' );
-------------------------------------------------------------------------------*/
-function str_rm_nonascii(string $str): string{
-    $res = mb_ereg_replace('/[^\x20-\x7E]/', '', $str);
-    // remove non ascii characters
-    // $res =  mb_ereg_replace('/[\x00-\x1F\x80-\xFF]/', '', $str);
-    return $res;
-}
-function str_is_utf8(string $str): bool {
-    return (bool) \preg_match('//u', $str);
-}
-//
-//  Restituisce TRUE se la stringa sembra codificata in UTF8, FALSE altrimenti.
-//
-function UTF8_is(string $str): bool{
-    $length = mb_strlen($str);
-    for ($i = 0; $i < $length; $i++) {
-        if (ord($str[$i]) < 0x80) {
-            continue;
-        } elseif ((ord($str[$i]) & 0xE0) == 0xC0) {
-            $n = 1;
-        } elseif ((ord($str[$i]) & 0xF0) == 0xE0) {
-            $n = 2;
-        } elseif ((ord($str[$i]) & 0xF8) == 0xF0) {
-            $n = 3;
-        } elseif ((ord($str[$i]) & 0xFC) == 0xF8) {
-            $n = 4;
-        } elseif ((ord($str[$i]) & 0xFE) == 0xFC) {
-            $n = 5;
-        } else {
-            return FALSE;
-        }
-        for ($j = 0; $j < $n; $j++) {
-            if ((++$i == $length) || ((ord($str[$i]) & 0xC0) != 0x80)) {
-                return FALSE;
-            }
-        }
-    }
-    return TRUE;
-}
-// in ASCII str remove uncommon printable chars, depending on font may not appear in terminals
-function str_asci_simplify(string $str): string{
-    $str = mb_str_replace(chr(130), ',', $str); // baseline single quote
-    $str = mb_str_replace(chr(131), 'NLG', $str); // florin
-    $str = mb_str_replace(chr(132), '"', $str); // baseline double quote
-    $str = mb_str_replace(chr(133), '...', $str); // ellipsis
-    $str = mb_str_replace(chr(134), '**', $str); // dagger (a second footnote)
-    $str = mb_str_replace(chr(135), '***', $str); // double dagger (a third footnote)
-    $str = mb_str_replace(chr(136), '^', $str); // circumflex accent
-    $str = mb_str_replace(chr(137), 'o/oo', $str); // permile
-    $str = mb_str_replace(chr(138), 'Sh', $str); // S Hacek
-    $str = mb_str_replace(chr(139), '<', $str); // left single guillemet
-    $str = mb_str_replace(chr(140), 'OE', $str); // OE ligature
-    $str = mb_str_replace(chr(145), "'", $str); // left single quote
-    $str = mb_str_replace(chr(146), "'", $str); // right single quote
-    $str = mb_str_replace(chr(147), '"', $str); // left double quote
-    $str = mb_str_replace(chr(148), '"', $str); // right double quote
-    $str = mb_str_replace(chr(149), '-', $str); // bullet
-    $str = mb_str_replace(chr(150), '-', $str); // endash
-    $str = mb_str_replace(chr(151), '--', $str); // emdash
-    $str = mb_str_replace(chr(152), '~', $str); // tilde accent
-    $str = mb_str_replace(chr(153), '(TM)', $str); // trademark ligature
-    $str = mb_str_replace(chr(154), 'sh', $str); // s Hacek
-    $str = mb_str_replace(chr(155), '>', $str); // right single guillemet
-    $str = mb_str_replace(chr(156), 'oe', $str); // oe ligature
-    $str = mb_str_replace(chr(159), 'Y', $str); // Y Dieresis
-    return $str;
-}
-//----------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------
-// Encodes HTML safely for UTF-8. Use instead of htmlentities.
-//
-// The htmlentities() function doesn't work automatically with multibyte strings. To save time, you'll want to create a wrapper function and use this instead
-// htmlentities: is identical to htmlspecialchars() in all ways, except with htmlentities(), all characters which have HTML character entity equivalents are translated into these entities
-// htmlspecialchars: Certain characters have special significance in HTML, and should be represented by HTML entities if they are to preserve their meanings.
-//
-function str_to_html(string $var): string {
-    return htmlentities($var, ENT_QUOTES, 'UTF-8');
-}
-//
-// assicura che gli utenti non possano iniettare HTML(e quindi js) dalle variabili
-// passate in GET/POST
-//
-function str_escape(string $input): string {
-    return htmlspecialchars($input, ENT_QUOTES, 'UTF-8');
-}
-function e(string $string): string {
-    return str_replace("\0", "&#0;", htmlspecialchars($string, ENT_QUOTES, 'utf-8'));
-}
-//----------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------
-// code derived from http://php.vrana.cz/vytvoreni-pratelskeho-url.php
-function str_slugify(string $text, string $word_delimiter = '-'): string{
-    // replace non letter or digits by dash -
-    $text = mb_ereg_replace('~[^\\pL\d]+~u', $word_delimiter, $text);
-    // trim
-    $text = trim($text, $word_delimiter);
-    // transliterate
-    $text = str_transliterate($text);
-    // remove consecutive multiple dividers
-    $slug = preg_replace("/[\/_|\+\-\s]+/", $word_delimiter, $text);
-    // lowercase
-    $text = mb_strtolower($text);
-    // remove unwanted characters
-    $text = mb_ereg_replace('~[^-\w]+~', '', $text);
-    if (empty($text)) {
-        return 'n-a'; // error
-    }
-    return $text;
-}
-//
-// Camelizes a string.
-//
-function str_camelize(string $str): string {
-    return strtr(
-        ucwords(
-            strtr(
-                $str,
-                ['_' => ' ', '.' => '_', '\\' => '_']
-            )
-        ),
-        [' ' => '']
-    );
-}
-// Interpolates context values into the message placeholders.
-// usage:
-//   $message = "User {{username}} created";
-//   $context = ['username' => 'bolivar'];
-//   echo str_interpolate($message, $context);
-function str_interpolate(string $tmpl, array $a_binds = []): string{
-    // build a replacement array with braces around the context keys
-    $a_repl = [];
-    foreach ($a_binds as $key => $val) {
-        // check that the value can be casted to string
-        if (str_is_repr($val)) {
-            $a_repl["{{$key}}"] = $val;
-        } elseif (is_object($val)) {
-            $obj = (object) $val;
-            $a_repl["{{$key}}"] = sprintf('[object class %s]', get_class($obj));
-        }
-    }
-    return mb_strtr($tmpl, $a_repl);
-}
-// check input can be converted to str
-function str_is_repr(string $val): bool {
-    return !is_array($val) && (!is_object($val) || method_exists($val, '__toString'));
-}
-//----------------------------------------------------------------------------
-// templates
+// str template
 //----------------------------------------------------------------------------
 // data una stringa interpola i valori passati in this->binds nei segnaposto
 // espressi con la sintassi {{nome_var}}
-function str_template(string $str_template, array $a_binds, string $default_sub = '__'): string{
-    $_substitute = function (string $buffer, string $name, string $val): string{
-        $reg = sprintf('{{%s}}', $name);
-        $reg = preg_quote($reg, '/');
-        return mb_ereg_replace('/' . $reg . '/i', $val, $buffer);
-    };
-    $_clean_unused_vars = function (string $buffer) use ($default_sub): string {
-        return mb_ereg_replace('/\{\{[a-zA-Z0-9_]*\}\}/i', $default_sub, $buffer);
-    };
-    $buffer = $str_template;
-    // sort keys by +lenght first
-    uksort($a_binds, function (string $a, string $b): int{
-        $al = mb_strlen($a);
-        $bl = mb_strlen($b);
-        if ($al == $bl) {
-            return 0;
-        }
-        return ($al < $bl) ? -1 : 1;
-    });
-    foreach ($a_binds as $name => $val) {
-        // check that the value can be casted to string
-        if (str_is_repr($val)) {
-            $buffer = $_substitute($buffer, $name, $val);
-        } elseif (is_obj($val)) {
-            $obj = (object) $val;
-            $val = sprintf('[object class %s]', get_class($obj));
-            $buffer = $_substitute($buffer, $name, $val);
-        }
-    }
-    $buffer = $_clean_unused_vars($buffer);
-    return $buffer;
+// wrappwer
+function str_template($str_template, $a_binds) {
+    return tmpl($str_template, $a_binds);
 }
 
 // tmpl('{{aa}}', get_defined_vars() );
@@ -678,16 +253,25 @@ function tmpl(string $tmpl, array $get_defined_vars = []): string {
         $msg = sprintf('Errore %s ', 'invalid template');
         throw new \Exception($msg);
     }
-    $_stringable = function ($v, $k): bool {
+    $_filter = function ($v, $k) {
         // false will be skipped
         return is_string($k) && (is_scalar($v) || (is_object($v) && method_exists($v, '__toString')));
     };
-    $get_defined_vars = array_filter($get_defined_vars, $_stringable, ARRAY_FILTER_USE_BOTH); // php5.6+
-    $_f = function ($k): string {
+    if (PHP_VERSION_ID >= 50600) {
+        $get_defined_vars = array_filter($get_defined_vars, $_filter, ARRAY_FILTER_USE_BOTH); // php5.6+
+    } else {
+        // compatibility code
+        $get_defined_vars = h_filter($get_defined_vars, function ($v, $k) use ($_filter) {
+            return $_filter($k, $v);
+        });
+    }
+    /** @param float|int|string $k */
+    $_f = function ($k) {
         // Scalar are float, string or boolean.  array, object and resource are not
         if (is_scalar($k)) {
-            $k = is_bool($k) ? ($k ? 'Y' : 'N') : $k;
-            return sprintf('{{%s}}', $k);
+            return sprintf('{{%s}}', (string) $k);
+        } elseif (is_bool($k)) {
+            return sprintf('{{%s}}', (string) $k);
         } else {
             return '';
         }
@@ -910,7 +494,7 @@ function str_rotate(string $str, int $n): string{
     $length = mb_strlen($str);
     $result = '';
     for ($i = 0; $i < $length; $i++) {
-        $ascii = ord($str{$i});
+        $ascii = ord($str[$i]);
         $rotated = $ascii;
         if ($ascii > 64 && $ascii < 91) {
             $rotated += $n;
@@ -1028,6 +612,43 @@ function str_plural(string $str_template, array $h_counts): string{
     return $line;
 }
 
+
+// testa l'aderenza di una stringa $str al pattern POSIX/SQL specificato, case insensitive
+function str_like(string $s_pattern, string $str): bool{
+    $_str_replace_all = function ($s_sub, $s_re, $str) {
+        do {
+            $str = str_replace($s_sub, $s_re, $str, $c);
+        } while ($c > 0);
+        return $str;
+    };
+    // to convert your patterns to regex, place a ^ at the beginning, and a $ at the end, then replace * with .* and escape .s.
+    // 'goo*',       =>  preg_match('#^goo.*$#','google.com')
+    // '*gl*',       =>  preg_match('#^.*gl.*$#', 'google.com');
+    // 'google.com', =>  preg_match('#^google\.com$#', 'google.com')
+    $_pattern_2_regex = function ($s_pattern) use ($_str_replace_all) {
+        // => '#^goo.*$#'
+        $regex = preg_quote($s_pattern);
+        // caratteri che vengono escaped:   . \ + * ? ^ $ [ ] ( ) { } < > = ! | :
+        $regex = "/^$regex$/i"; // case insensitive
+        $regex = $_str_replace_all($sub = '\*', $re = '(.*)', $regex);
+        $regex = $_str_replace_all($sub = '%', $re = '(.*)', $regex);
+        return $regex;
+    };
+    $regex = $_pattern_2_regex($s_pattern);
+    $r = preg_match($regex, $str, $a_matches);
+    // if (true) {
+    //     unset($a_matches[0]);
+    //     echo "$regex $r =>" . json_encode(array_values($a_matches)) . "\n";
+    // }
+    return $r == 1;
+}
+
+function str_unCamel_Case(string $input, string $sep = ' '):string {
+    $output = preg_replace( ['/(?<=[^A-Z])([A-Z])/', '/(?<=[^0-9])([0-9])/'], $sep.'$0', $input);
+    return ucwords($output);
+}
+
+
 //----------------------------------------------------------------------------
 // main tests
 //----------------------------------------------------------------------------
@@ -1054,5 +675,22 @@ if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
     // multiline
     ok(str_plural('[[singular|plural]] [[singular2|plural2]]', ['singular' => 2, 'singular2' => 22]), 'plural plural2', 'tmpl 3');
     ok(str_plural('[[singular|plural]] [[singular|plural]]!!', ['singular' => 2]), 'plural plural!!', 'tmpl multi');
+
+    function test_str_like() {
+        ok(str_like('google.com', 'google.com'), true, 'equal');
+        ok(str_like('g*gle.com', 'google.com'), true, 'parts');
+        ok(str_like('*oo*le.com', 'google.com'), true, 'parts');
+        ok(str_like('goo*', 'google.com'), true, '1');
+        ok(str_like('*gl*', 'google.com'), true, '2');
+        ok(str_like('google.com', 'google.com'), true, '3');
+        ok(str_like('zzz', 'google.com'), false, '4');
+        // sql like
+        ok(str_like('goo%', 'google.com'), true, 'sql_like 1');
+        ok(str_like('g%.com', 'google.com'), true, 'sql_like 3');
+        ok(str_like('%gl%', 'google.com'), true, 'sql_like 2');
+        //
+        ok(str_like('G%.COM', 'google.com'), true, 'case insensitive');
+    }
+    test_str_like();
 
 }

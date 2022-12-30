@@ -319,6 +319,83 @@ class File {
             return $cb_on_missing($path);
         }
     }
+    // ajdusted for Daylight saving time!
+    public static function file_Daylight_MTime(string $filePath): int{
+        $time = filemtime($filePath);
+        $isDST = (date('I', $time) == 1);
+        $systemDST = (date('I') == 1);
+        $adjustment = 0;
+        $one_h = 60 * 60;
+        if ($isDST == false && $systemDST == true) {
+            $adjustment = $one_h;
+        } elseif ($isDST == true && $systemDST == false) {
+            $adjustment = -1 * $one_h;
+        } else {
+            $adjustment = 0;
+        }
+        return ($time + $adjustment);
+    }
+    /**
+     * This is an atomic version of file_put_contents, attempts to circumvent the shortcomings of file_put_contents
+     * by creating a temporary unique file and then doing an atomic rename operation.
+     *
+     * @param string $filename - String value of the file to create
+     * @param mixed $data - The data to be written to the file
+     * @param string $mode String value of the parameter to specify the type of access you require to the file stream
+     *
+     * @return bool - Returns true if $filename was created, false otherwise.
+     */
+    //
+    public static function
+    put_contents_atomic(string $filename, string $data, string $mode = 'wb'): bool{
+        $dir = dirname($filename);
+        $temp = tempnam($dir, 'temp');
+        if (!($f = @fopen($temp, $mode))) {
+            $temp = $dir . DIRECTORY_SEPARATOR . uniqid('temp');
+            if (!($f = @fopen($temp, $mode))) {
+                trigger_error(__METHOD__ . ": error writing temporary file '$temp'", E_USER_WARNING);
+                return false;
+            }
+        }
+        fwrite($f, $data);
+        fclose($f);
+        if (!@rename($temp, $filename)) {
+            @unlink($filename);
+            if (!@rename($temp, $filename)) {
+                // cleaning up temp file to avoid filling up temp dir
+                @unlink($temp);
+                trigger_error(
+                    __METHOD__ .
+                    ": fatal rename failure '$temp' -> '$filename'",
+                    E_USER_WARNING
+                );
+            }
+        }
+        if (file_exists($filename)) {
+            return self::chmod($filename, 0755);
+        }
+        return false;
+    }
+    /**
+     * Attempts to change the permission of the specified filename to the mode value specified
+     *
+     * @param  string $filename - Path to the file
+     * @param int $mode The integer value of the permissions mode to set the created directory to
+     *
+     * @return bool Returns TRUE on success or FALSE on failure.
+     */
+    public static function chmod(string $filename, $mode = 0755): bool {
+        if (!is_int($mode)) {
+            $mode = (int) $mode;
+        }
+        if (!is_windows()) {
+            if (isset($mode) && $mode > 0) {
+                return @chmod($filename, $mode);
+            }
+            return false;
+        }
+        return true;
+    }
 }
 class Dir {
     /**
@@ -353,11 +430,11 @@ class Dir {
      * @return array The list of paths that match the pattern.
      * @api
      */
-    public static function globr($sDir, $sPattern, $nFlags = null) {
-        if (($aFiles = \_glob("$sDir/$sPattern", $nFlags)) == false) {
+    public static function globr(string $sDir, string $sPattern,  ? int $nFlags = null) {
+        if (($aFiles = \glob("$sDir/$sPattern", $nFlags)) == false) {
             $aFiles = [];
         }
-        if (($aDirs = \_glob("$sDir/*", GLOB_ONLYDIR)) != false) {
+        if (($aDirs = \glob("$sDir/*", GLOB_ONLYDIR)) != false) {
             foreach ($aDirs as $sSubDir) {
                 if (is_link($sSubDir)) {
                     continue;

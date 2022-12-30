@@ -1,5 +1,5 @@
 <?php
-declare (strict_types = 1); 
+declare (strict_types = 1);
 ini_set('register_argc_argv', '1');
 ini_set('max_execution_time', '0');
 ini_set('html_errors', '0');
@@ -224,7 +224,7 @@ class CLI {
     }
     //----- input() function
     // read from the command line
-    function prompt($prompt, $_is_valid = null, $_on_invalid = null) {
+    public static function prompt($prompt, $_is_valid = null, $_on_invalid = null) {
         // default lascia passare tutto
         $_is_valid = $_is_valid ?? function ($v) {return true;};
         $_on_invalid = $_on_invalid ?? function ($v) {die("invalid input $v \n");};
@@ -249,6 +249,54 @@ class CLI {
     $action = cli_input("chose an action (1,2,3): ");
     echo "action: $action \n";
      */
+    public static function input($prompt, $_is_valid = null, $_on_invalid = null) {
+        self::prompt($prompt, $_is_valid, $_on_invalid);
+    }
+
+/*
+
+//----- input() function
+// read from the command line
+function cli_input($prompt, $_is_valid = null, $_on_invalid = null) {
+// default lascia passare tutto
+$_is_valid = $_is_valid ?? function ($v) {return true;};
+$_on_invalid = $_on_invalid ?? function ($v) {die("invalid input $v \n");};
+//
+echo $prompt . PHP_EOL;
+$input = null;
+while (empty($input) && $input !== 0) {
+$input = fgets(STDIN, 128); // read max 128 char
+$input = rtrim($input);
+}
+if ($_is_valid($input)) {
+return $input;
+} else {
+return $_on_invalid($input);
+}
+}
+$action = cli_input("chose an action (1,2,3): ");
+echo "action: $action \n";
+
+// Define STDIN for compatibility
+if(!defined("STDIN")) {
+define("STDIN", fopen('php://stdin','rb'));//"b" Here for Binary-Safe
+}
+function input($msg) {
+echo "$msg\n";
+$str = fread(STDIN, 80); // Read up to 80 characters or a newline
+return $str;
+}
+function input_bool($msg) {
+$str = input($msg);
+$str = strtolower( $str );
+return $str == 'yes' || $str == 'y';
+}
+function input_int($msg){
+$str = input($msg);
+return parseInt( $str );
+}
+
+ */
 
     //----------------------------------------------------------------------------
     //  output
@@ -258,7 +306,7 @@ class CLI {
         fputs(STDERR, $msg);
     }
     //------------------------------------------------------------------------------
-    //  colored output / CliUI
+    //  ANSI colored output
     //------------------------------------------------------------------------------
     // stampa stringa colorata
     public static function colored(string $str, string $foreground_color = '', string $background_color = '') {
@@ -307,6 +355,87 @@ class CLI {
         $str_result .= $str . "\033[0m";
         return $str_result;
     }
+
+    // toglie formattazione colore da una stringa
+    // conta solo i char, non i caratteri di controllo usati per generare la colazione
+    public static function uncolor(string $s): string{
+        // in for 434,324.79
+        // [1;37m[42m434,324.79[0m
+        // "[1;37m[41m434,324.79[0m"
+        // $_n_match = sscanf($s, '[1;37m[42m'.'%s'.'[0m', $num);
+        $num = str_replace($sub = ['[1;37m', '[42m', '[41m', '[0m'], $re = '', $s);
+        // ispeziona una str per trovare caratteri che diano problemi in output
+        $_only_printable = function ($str) {
+            $r = '';
+            $a_in = str_split($str);
+            foreach ($a_in as $c) {
+                // ascii alpha to int
+                $i = ord($c);
+                // 0-32 128-254 non stampabili
+                // 33-127 stampabili
+                if (10 == $i || ($i >= 32 && $i <= 127)) {
+                    $r .= $c; // solo caratteri visibili e innocui
+                } else {
+                    // $r .= sprintf('@%s@', $i);// char che possono dare problemi
+                }
+            }
+            return $r;
+        };
+        return $_only_printable($num);
+    }
+
+// @see https://en.wikipedia.org/wiki/ANSI_escape_code
+    function ansi(string $code, string $text): string {
+        static $h_ansi = [];
+        if (empty($h_ansi)) {
+            $h_ansi = [
+                'reset' => "\33[0m", // toglie la formattazione corrente
+                //
+                'bold' => "\33[1m",
+                'no bold' => "\33[22m",
+                //
+                'underline' => "\33[4m",
+                'no underline' => "\33[24m",
+                //
+                'negative' => "\33[7m",
+                'positive' => "\33[27m",
+                //
+                'black' => "\33[30m",
+                'red' => "\33[31m",
+                'green' => "\33[32m",
+                'yellow' => "\33[33m",
+                'blue' => "\33[34m",
+                'magenta' => "\33[35m",
+                'cyan' => "\33[36m",
+                'gray' => "\33[37m",
+                // light colors
+                'gray2' => "\33[90m",
+                'red2' => "\33[91m",
+                'green2' => "\33[92m",
+                'yellow2' => "\33[93m",
+                'blue2' => "\33[94m",
+                'magenta2' => "\33[95m",
+                'cyan2' => "\33[96m",
+                // from 40 to 47 are BG colors, from 100 to 107 are BG colors
+                'white' => "\33[97m",
+                'default' => "\33[39m",
+            ];
+        }
+        switch ($code) {
+        case 'bold':
+            return $h_ansi[$code] . $text . $h_ansi['no bold'];
+        case 'underline':
+            return $h_ansi[$code] . $text . $h_ansi['no underline'];
+        case 'negative':
+            return $h_ansi[$code] . $text . $h_ansi['positive'];
+        }
+        return $h_ansi[$code] . $text . $h_ansi['reset'];
+    }
+
+    //----------------------------------------------------------------------------
+    //
+    //----------------------------------------------------------------------------
+
     // UI reporting automatico sull'esecuzione dello script
     // uso:
     // for($x=1;$x<=100;$x++){
@@ -467,36 +596,112 @@ class CLIMonitor {
         });
     }
 }
+
 // Get INI boolean value
-function ini_bool($ini) {
+function ini_bool(string $ini): bool{
     $val = ini_get($ini);
-    return (preg_match('~^(on|true|yes)$~i', $val) || (int) $val); // boolean values set by php_value are strings
+    return (preg_match('/^(on|true|yes)$/i', $val) || (int) $val); // boolean values set by php_value are strings
 }
-// @see Test::ok()
-// class CLITest {
-//     static $errc = 0;
-//     // @see lib/Test.php
-//     public static function ok($test, $label, $data = null) {
-//         if ($test == false) {
-//             echo CLI::sprintc("ERROR $label: $test", 'red') . "\n\n";
-//             if (!empty($data)) {
-//                 echo var_export($data, 1);
-//             }
-//             self::$errc++;
-//         } else {
-//             echo CLI::sprintc("OK $label", 'green') . "\n\n";
-//         }
-//     }
-//     public static function diag($l, $data = '') {
-//         if (!empty($data)) {
-//             echo CLI::sprintc($l);
-//         } else {
-//             echo CLI::sprintc($l . ':' . var_export($data, 1));
-//         }
-//         echo "\n\n";
-//     }
-// }
-//
+function stderr(string $text): void{
+    fwrite(STDERR, $text . PHP_EOL);
+}
+/**
+ * Check if we aren't running jobs too frequently
+ * @return bool OK to run?
+
+$t = new job_throttle();
+$t->mk_lock_file(__DIR__, 'my_op');
+$c=100;
+for( $i=0; $i < $c; $i++) {
+if( $t->check() ){
+// do aperation and exit cycle if done
+} else {
+sleep(1);// int seconds
+}
+}
+ */
+class job_throttle {
+    public $lockfile = '';
+    public $min_interval = 30; //secondi
+    // assigna a name for this lock file
+    public function mk_lock_file(string $dir, string $job_name) {
+        $this->lockfile = "$dir/.$job_name.lockfile";
+        // create_cache_directory($dir);// check dir is ok
+    }
+    /**
+     * Check if we aren't running jobs too frequently
+     * @return bool OK to run?
+     */
+    public function check(): bool {
+        if ($this->min_interval == 0) {
+            return true;
+        }
+        if (!file_exists($this->lockfile)) {
+            $this->markLastRun();
+            return true;
+        }
+        $ts = file_get_contents($this->lockfile);
+        $this->markLastRun();
+        $now = time();
+        if ($now - $ts < $this->min_interval) {
+            // run too frequently
+            return false;
+        }
+        return true;
+    }
+    /**
+     * Remember last time it was run
+     */
+    protected function markLastRun() {
+        $ok = file_put_contents($this->lockfile, time());
+        if (!$ok) {
+            die('Scheduler cannot write PID file.  Please check permissions on ' . $this->lockfile);
+        }
+    }
+}
+
+//----------------------------------------------------------------------------
+function colored($str, $foreground_color = "", $background_color = "") {
+    /* minimal impl
+    $_colored = function ($str, $foreground_color = 'green') {
+    static $a_fg = ['red' => '0;31', 'green' => '0;32', 'brown' => '0;33'];
+    return sprintf("\e[%sm", $a_fg[$foreground_color]) . $str . "\033[0m";
+    };*/
+    return CLI::colored($str, $foreground_color, $background_color);
+}
+function colored_ko($str) {
+    $foreground_color = "bwhite";
+    $background_color = "red";
+    return CLI::colored($str, $foreground_color, $background_color);
+}
+function colored_ok($str) {
+    $foreground_color = "bwhite";
+    $background_color = "green";
+    return CLI::colored($str, $foreground_color, $background_color);
+}
+
+// convience aliases
+function bold(string $text): string {
+    return CLI::ansi('bold', $text);
+}
+function warning(string $text): void {
+    //print(ansi('yellow', $text)."\n");
+    print(bold(CLI::ansi('yellow', $text)) . "\n");
+}
+function error(string $text): void {
+    print(bold(CLI::ansi('red', $text)) . "\n");
+}
+function info(string $text): void {
+    print(CLI::ansi('gray', $text)) . "\n";
+}
+
+//----------------------------------------------------------------------------
+function alert(string $msg): void {
+    global $do_print;
+    if ($do_print) {return;}
+    $cmd = sprintf('zenity --info --text="%s"', escapeshellarg($msg));
+    `$cmd`;
+}
 
 if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
     require_once __DIR__ . '/Test.php';
@@ -512,10 +717,18 @@ if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
         ];
         $a = CLI::getConsoleArgs($t_argv);
         echo print_r($a, true);
-        ok($a['user'], $expected = 'nobody', 1);
-        ok($a['password'], $expected = 'secret', 2);
-        ok($a['access'], $expected = "host=127.0.0.1 port=456", 3);
-        ok($a['p'], true, 4);
+        ok($a['user'], $expected = 'nobody', 'parse arg 1');
+        ok($a['password'], $expected = 'secret', 'parse arg 2');
+        ok($a['access'], $expected = "host=127.0.0.1 port=890", 'parse arg 3');
+        ok($a['p'], true, 'test 4');
     }
     test_args_parse();
+
+    // ANSI test
+    warning('warn');
+    error('err');
+    info('help text');
+    colored_ko('ko ko');
+    colored_ok('ok ok');
+
 }

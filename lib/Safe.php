@@ -138,7 +138,7 @@ class Safe {
     //----------------------------------------------------------------------------
     // preg_match("/\w{8}-\w{4}-\w{4}-\w{4}-\w{12}/i", $guid)
     public static function GUID(string $s): string{
-        $s = self::chop($s, $len = 32);
+        $s = self::chop($s, $len = 36);
         $s = preg_replace('/[^a-z0-9\-]/i', '?', $s);
         return $s;
     }
@@ -238,7 +238,7 @@ class Safe {
         $len = 15;
         $s = preg_replace('/[^0-9\.]/', '', $s);
         $s = self::chop($s, $len);
-        return $s ? $s : $default;
+        return (string) (!empty($s) ? $s : $default);
     }
     //----------------------------------------------------------------------------
     //  array
@@ -330,33 +330,61 @@ class Safe {
     //----------------------------------------------------------------------------
     // riscrive il nome del file per assicurare che non contenga alcuna estensione eseguibile .php .phtml .phar .php3
     // un file eseguibile caricato dall'utente non deve _mai_ poter essere richiamato da apache
-    // ok('aa.jpg')
-    // ok('aa.php', false)
-    // ok('aa.phtml', false)
-    // ok('aa.phar', false)
-    // test cases
-    // ok('aa.Php', false)
-    // ok('aa.pHtml', false)
-    // ok('aa.phAr', false)
-    // test raw replacement of '.php' do not produce dengerous file name
-    // ok('aa.phpphp', false)
-    public static function file_name(string $file_name): string{
-        // strip dangerous extensions, case insensitive
-        $apache_regex = ".+\.ph(ar|p|tml)$";
+    //
+    // ok(Safe::file_name('aa.jpg'), 'aa.jpg');
+    // ok(Safe::file_name('aa.php'), '');
+    // ok(Safe::file_name('aa.phtml'), '');
+    // ok(Safe::file_name('aa.phar'), '');
+    // ok(Safe::file_name('aa.Php'), '');
+    // ok(Safe::file_name('aa.pHtml'), '');
+    // ok(Safe::file_name('aa.phAr'), '');
+    // ok(Safe::file_name('aa.....jpg'), 'aa.jpg'); // non multiple ..
+    // // test raw replacement of '.php' do not produce dengerous file name
+    // ok(Safe::file_name('aa.phpphp'), 'aa.phpphp');
+    //
+    // prevent phar unserializing vulnerability:
+    //  https://github.com/php/php-src/commit/0c238ede019f6ffbe7c996ec1695a747f4bca966
+    public static function file_name(string $file_name): string {
+        if (strpos($file_name, 'phar://') !== false) {
+            die("filename $file_name not allowed");
+        }
+        // strip dangerous chars, case insensitive
+        // Remove anything which isn't a word, whitespace, number
+        // or any of the following caracters -_~,;[]().
+        //   to handle multi-byte characters
+        // $file = mb_ereg_replace("([^\w\s\d\-_~,;\[\]\(\).])", '', $file);
         $file_name = strtolower($file_name);
-        $file_name = Safe::alphanum($file_name);
-        $is_exe = str_match($file_name, $apache_regex);
+        $regexp = '/[^a-z0-9\-\_\.]/i';
+        $file_name = self::sanitize($file_name, $len = 256, $regexp);
+        // Remove any runs of periods
+        $file_name = mb_ereg_replace("([\.]{2,})", '.', $file_name);
+        // Replaces multiple hyphens with single one.
+        $file_name = preg_replace('/-+/', '-', $file_name);
+        //
+        $is_exe = str_match($file_name, $regex = "/^(.+)\.ph(ar|p|tml)$/i");
         if ($is_exe) {
             // dangerous file name detected
             return '';
         }
         $a_badext = ['php', 'php3', 'php4', 'php5', 'pl', 'cgi', 'py', 'asp', 'cfm', 'js', 'vbs', 'html', 'htm', 'phtml', 'phar'];
-        $ext = pathinfo($file_path, PATHINFO_EXTENSION);
+        $ext = pathinfo($file_name, PATHINFO_EXTENSION);
         $ext = strtolower($ext);
         if (in_array($ext, $a_badext)) {
             return '';
         }
         return $file_name;
+    }
+    // for the entire file path
+    public static function file_path(string $file_path): string {
+        if (strpos($file_path, 'phar://') !== false) {
+            return ''; //that was not safe
+        }
+        $file_path = self::file_name($file_path);
+        // maximise filename length to 255 bytes http://serverfault.com/a/9548/44086
+        $ext = pathinfo($name, PATHINFO_EXTENSION);
+        $file_name = pathinfo($name, PATHINFO_FILENAME);
+        $name = mb_strcut($file_name, 0, 255 - ($ext ? strlen($ext) + 1 : 0), mb_detect_encoding($name)) . ($ext ? '.' . $ext : '');
+        return $name;
     }
     // test if file copntains any trace of php
     public static function file_get_contents(string $path): string {
@@ -770,4 +798,21 @@ if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
     ok(Safe::email('aa@bb.com ; garbage'), $exp = 'aa@bb.com', 'm email 2+garbage');
     ok(Safe::email('aa@bb.com ; ?????'), $exp = 'aa@bb.com', 'm email 3+garbage');
     ok(Safe::email('aa@bb.com ; cc@ggg.com ; cc@ggg.com '), $exp = 'aa@bb.com;cc@ggg.com', 'm email non unique');
+
+
+    //----------------------------------------------------------------------------
+    //
+    //----------------------------------------------------------------------------
+    ok(Safe::file_name('aa.jpg'), 'aa.jpg');
+    ok(Safe::file_name('aa.php'), '');
+    ok(Safe::file_name('aa.phtml'), '');
+    ok(Safe::file_name('aa.phar'), '');
+    ok(Safe::file_name('aa.Php'), '');
+    ok(Safe::file_name('aa.pHtml'), '');
+    ok(Safe::file_name('aa.phAr'), '');
+    ok(Safe::file_name('aa.....jpg'), 'aa.jpg'); // non multiple ..
+    // test raw replacement of '.php' do not produce dengerous file name
+    ok(Safe::file_name('aa.phpphp'), 'aa.phpphp');
+
+
 }

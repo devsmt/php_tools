@@ -187,7 +187,16 @@ class UTF8 {
         ];
         return str_replace($from = array_keys($chars), $to = array_values($chars), $text);
     }
-
+    //
+    // sudo apt install php-intl
+    // works best with UTF chars
+    // like 'Êl síla erin lû e-govaned vîn.'
+    //
+    function rm_diacritics(string $str): string {
+        $transliterator = Transliterator::createFromRules(':: Any-Latin; :: Latin-ASCII; :: NFD; :: [:Nonspacing Mark:] Remove; :: NFC;', Transliterator::FORWARD);
+        $str = $transliterator->transliterate($str);
+        return $str;
+    }
     // remove
     // control characters
     //  chr(0) to chr(31),

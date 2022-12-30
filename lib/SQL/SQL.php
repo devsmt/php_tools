@@ -4,80 +4,129 @@ declare (strict_types = 1);
 // TODO: mai ritornare "&&" davanti le clausole where, qusto parametro dovrebbe essere gestito altrove
 //
 class SQL {
-    // -------------------------------------------------------------------------
-    // SQL GENERATION
-    // -------------------------------------------------------------------------
+    public static function template(string $t, array $vars): string{
+        $a = [];
+        foreach ($vars as $k => $v) {
+            $a[$k] = SQL::quote($v);
+        }
+        return Str::template($t, $a);
+    }
+    //  
+    public static function quote(string $s): string {
+        // $is_mysqli = $config_autoquoting = false;
+        // $is_pdo = true;
+        // if ($is_mysqli && $config_autoquoting) {
+        //     $es = mysqli_real_escape_string(DB::$db, $s);
+        //     return "'$es'";
+        // } elseif ($is_pdo) {
+        //     return DB::quote($s);
+        // } else {
+        //     return $s;
+        // }
+        return (string) DB::quote($s);
+    }
+    //
+    // previene sql iniection
+    //
+    public static function escape(string $s):string {
+          // return mysqli_real_escape_string($s);
+          return mysql_real_escape_string($s);
+    }
+    public static function escape(string $s): string {
+        return (string) self::quote($s);
+    }
     // quote adatto ai nomi di campo
-    public static function quote($f) {
+    public static function quote_field(string $f): string{
         $f = trim($f);
-        // se e' gie' quotato, e' ok
+        // se e' gia' quotato, e' ok
         if (substr($f, 0, 1) == '`' && substr($f, -1) == '`') {
             return $f;
         }
         return "`$f`";
     }
-    public static function quotev($v) {
-        if (!is_int($v)) {
-            // non quotare se sembra una funzione come ad esempio now() o sum()
-            // da aggiornare con l'uso di una reg exp?
-            // substr($v,-1) != ')' ||
-            if (strtolower($v) == 'null') { /* potrebbe non essere necessario campi null */
-                $v = 'NULL';
-            } elseif (!ereg('[a-z]+\(([a-z]*)\)', $v, $a_regs)) {
-                $v = "'" . SQL::escape($v) . "'";
-            }
+    /**
+     * quota e mette gli apici, come necessario in sintassi sql
+     * @param mixed $v
+
+    >>> $quotev(1)
+    => "1"
+    >>> $quotev(1.20)
+    => "1.2"
+    >>> $quotev("1.20")
+    => "1.20"
+    >>> $quotev("a")
+    => "'a'"
+    >>> $quotev("123")
+    => "123"
+    >>> $quotev("now()")
+    => "now()"
+    >>> $quotev("5d83813e-8428-fc54-2d18-604b46c7133d")
+    => "'5d83813e-8428-fc54-2d18-604b46c7133d'"
+    >>> $quotev(null)
+    => "NULL"
+    >>> $quotev('null')
+    => "NULL"
+    >>> $quotev(false)
+    => "''"
+    >>> $quotev(true)
+    => "'1'"
+    >>> $quotev(0)
+    => "0"
+    >>> $quotev('0')
+     */
+    public static function quotev($v): string {
+        if (is_numeric($v)) {
+            return (string) $v;
         }
+        // potrebbe non essere necessario campi null
+        if (is_null($v) || strtolower($v) == 'null') {
+            return 'NULL';
+        }
+        // non quotare se sembra una funzione come ad esempio now() o sum()
+        if (1 === preg_match('/^[a-z]+\(([a-z]*)\)$/i', $v, $a_regs)) {
+            return $v;
+        }
+        $v = "'" . SQL::quote($v) . "'";
         return $v;
-    }
-    //
-    // previene sql iniection
-    // al mmomento utilizza solo mysql
-    //
-    public static function escape($s) {
-        if (!isset($GLOBALS[W_DB_INSTANCE])) {
-            // evitiamo di aprire una connessione solo per fare l'escape di una stringa
-            return mysql_escape_string($s);
-        } else {
-            if (get_magic_quotes_gpc()) {
-                return mysql_real_escape_string(stripslashes($s));
-            } else {
-                return mysql_real_escape_string($s);
-            }
-        }
     }
     // ritorna una stringa nella forma a=1,b=2,...
     // da un array associativo nella forma 'a'=>1,'b'=>2
-    public static function sequence_val(array $val) {
+    public static function sequence_val(array $val): string {
+        /** @psalm-suppress TypeDoesNotContainType   */
         if (!is_array($val)) {
             return '';
         }
-        $a_regs = [];
         $field_sep = ',';
-        $a_str = [];
+        $str = [];
         foreach ($val as $k => $v) {
-            $a_str[] = SQL::quote($k) . "=" . SQL::quotev($v);
+            $str[] = SQL::quote_field($k) . "=" . SQL::quotev($v);
         }
-        return implode($field_sep, $a_str);
+        $sql = implode($field_sep, $str);
+        return $sql;
     }
-    // ritorna un parametro della clausola where
-    // code
-    // es. (a=1 || a=2 || a=3)
-    //          ^$c2      ^field
-    // /code
-    public static function where_range($field, $a_v, $c2 = '||') {
+    //! ritorna un parametro della clausola where
+    //! code
+    //! es. (a=1 || a=2 || a=3)
+    //!          ^$c2      ^field
+    //! /code
+    public static function where_range(string $field, array $a_v, string $c2 = '||'): string{
         $sql = '';
         if (count($a_v) > 0) {
             $a_s = [];
             foreach ($a_v as $i => $v) {
-                $v = (is_int($v) ? $v : "'" . $v . "'");
+                $v = (string) (is_int($v) ? "$v" : "'$v'");
                 //il valore va tra virgolette?
-                $a_s[] = sprintf('%s=%s', SQL::quote(SQL::escape($field)), SQL::escape($v));
+                $a_s[] = sprintf('%s=%s', SQL::quote_field($field), SQL::escape($v));
             }
             $sql = sprintf(' ( %s ) ', implode($c2, $a_s));
         }
         return $sql;
     }
-    public static function where_in($field, $a_v) {
+    public static function where_in(string $field, array $a_v): string{
+        // find SQl functions
+        $_is_function = function (string $v): bool {
+            return 1 == preg_match('/^[a-z]+\(([a-z]*)\)$/i', $v);
+        };
         $sql = '';
         // gestire tipi non interi, come le str che richiedono essere quotate
         if (!empty($a_v)) {
@@ -85,24 +134,25 @@ class SQL {
                 if (is_string($v)) {
                     if (strtolower($v) == 'null') { /* potrebbe non essere necessario campi null */
                         $v = 'NULL';
-                    } elseif (!ereg('[a-z]+\(([a-z]*)\)', $v, $a_regs)) {
+                    } elseif (!$_is_function($v)) { // non escape_string se function
                         $v = "'" . SQL::escape($v) . "'";
                     }
                 }
                 $a_v[$i] = $v;
             }
             $in = implode(',', $a_v);
-            $sql = SQL::quote($field) . " in ( $in )";
+            $sql = SQL::quote_field($field) . " in ( $in )";
         }
         return $sql;
     }
-    // ritorna un parametro della clausola where
-    // code
-    // es.
-    //!(a like "sa" || a LIKE "sb" || a="sc")
-    //             ^$c2              ^field
-    // /code
-    public static function where_range_like($field, $a_v = null) {
+    /**
+     * ritorna un parametro della clausola where
+     * es.
+     * (a like "sa" || a LIKE "sb" || a="sc")
+     *             ^$c2              ^field
+     * @param array|string $field
+     */
+    public static function where_range_like($field, array $a_v = []): string{
         $c2 = ' || ';
         $sql = '';
         if (!is_array($field)) {
@@ -111,7 +161,7 @@ class SQL {
                 foreach ($a_v as $i => $v) {
                     $v = SQL::escape($v);
                     $v = SQL::_ensure_like_char($v);
-                    $a_s[] = sprintf('%s LIKE "%s"', SQL::quote(SQL::escape($field)), $v);
+                    $a_s[] = sprintf('%s LIKE "%s"', SQL::quote_field($field), $v);
                 }
                 $sql = sprintf('( %s )', implode($c2, $a_s));
             }
@@ -120,14 +170,14 @@ class SQL {
             foreach ($field as $f => $v) {
                 $v = SQL::escape($v);
                 $v = SQL::_ensure_like_char($v);
-                $a_s[] = sprintf('%s LIKE "%s"', SQL::quote(SQL::escape($f)), $v);
+                $a_s[] = sprintf('%s LIKE "%s"', SQL::quote_field($f), $v);
             }
             $sql = sprintf('( %s )', implode($c2, $a_s));
         }
         return $sql;
     }
-    // assicura che il valore contenga il simbolo di espansione per la clausola LIKE
-    public static function _ensure_like_char($v) {
+    //! assicura che il valore contenga il simbolo di espansione per la clausola LIKE
+    public static function _ensure_like_char(string $v): string {
         if (strpos($v, '%') !== false) {
             return $v;
         } else {
@@ -136,14 +186,14 @@ class SQL {
     }
     // ritorna sql necessario a trovare i record corrispondenti ad un intervallo
     // su di un campo date
-    public static function where_range_date($field, $data_da = '', $data_a = '') {
-        $field = SQL::escape($field);
+    public static function where_range_date(string $field, string $data_da = '', string $data_a = ''): string{
+        $field = SQL::quote_field($field);
         $data_da = SQL::escape($data_da);
         $data_a = SQL::escape($data_a);
         $sql = "(UNIX_TIMESTAMP($field) > UNIX_TIMESTAMP('$data_da')) AND (UNIX_TIMESTAMP($field) < UNIX_TIMESTAMP('$data_a'))";
         return $sql;
     }
-    // costruisce la clausola sql ORDER BY
+    //! costruisce la clausola sql ORDER BY
     // la struttura in input deve essere
     //
     // [
@@ -153,7 +203,11 @@ class SQL {
     // [field, field ... ]
     //
     // field
-    public static function orderby($a = []) {
+    /**
+     * @psalm-suppress RedundantCondition
+     * @param array|string $a
+     */
+    public static function orderby($a = []): string{
         // assert("is_array($a)")
         // assert("is_array($a[0])")
         $sql = '';
@@ -174,36 +228,39 @@ class SQL {
             $o = ' ORDER BY ';
             for ($i = 0; $i < count($a); $i++) {
                 if ($a[$i][0] != '') {
-                    $o .= sprintf('%s %s,', SQL::quote(SQL::escape($a[$i][0])), SQL::escape(isset($a[$i][1]) ? $a[$i][1] : 'ASC'));
+                    $o .= sprintf('%s %s,',
+                        SQL::quote_field($a[$i][0]),
+                        SQL::escape(isset($a[$i][1]) ? $a[$i][1] : 'ASC')
+                    );
                 }
             }
             $sql = substr($o, 0, -1) . "\n";
         }
         return $sql;
     }
-    public static function limit($start = 0, $offset = null) {
+    public static function limit(int $start = 0, int $offset = 0): string {
         if (empty($start) && empty($offset)) {
             return '';
-        } elseif (is_null($offset)) {
+        } elseif (0 === $offset) {
             return " LIMIT $start";
         }
-        return sprintf(" LIMIT %s,%s", SQL::escape($start), SQL::escape($offset));
+        return sprintf(" LIMIT %s,%s", (int) $start, (int) $offset);
     }
-    public static function page_limit($page, $offset) {
+    public static function page_limit(int $page, int $offset): string{
         $start = $page * $offset;
         return SQL::limit($start, $offset);
     }
     // and( "field=1", "field2!=0", ... )
-    public static function _and_() {
+    public static function _and_(): string{
         $a = func_get_args();
         return '(' . implode(' && ', $a) . ')';
     }
     // or( "field=1", "field2!=0", ... )
-    public static function _or_() {
+    public static function _or_(): string{
         $a = func_get_args();
         return '(' . implode(' || ', $a) . ')';
     }
-    public static function ifs($condition, $sql) {
+    public static function ifs(bool $condition, string $sql): string {
         if ($condition) {
             return $sql;
         } else {
@@ -211,7 +268,7 @@ class SQL {
         }
     }
     // determina se è una query select
-    public static function isSelect($sql) {
+    public static function isSelect(string $sql): bool{
         $sql = trim($sql);
         $l = strlen('select');
         $sql_begin = strtolower(substr($sql, 0, $l));
@@ -244,7 +301,7 @@ class SQL {
                 return !empty($v);
             }));
         };
-        $prepend_and = function ($a_where) {
+        $prepend_and = function (array $a_where): array{
             // per ogni $where condition se non inizia con '&&' o '||' lo aggiunge automaticamente
             return array_map(function ($val) {
                 $val = trim($val);
@@ -313,7 +370,7 @@ class SQL {
     // 'b,a',
     // '0,5');
     // ritorna una str tipo: "left join table2 on a=z"
-    public static function join($t, $on, $join_type = 'left') {
+    public static function join(string $t, string $on, string $join_type = 'left'): string {
         return "\n $join_type join $t on $on";
     }
     // INSERT [LOW_PRIORITY | DELAYED] [IGNORE]
@@ -325,20 +382,25 @@ class SQL {
     // or  INSERT [LOW_PRIORITY | DELAYED] [IGNORE]
     // [INTO] tbl_name
     // SET col_name=expression, col_name=expression, ...
-    public static function insert($t, $val = [], $flags = null) {
-        return "INSERT INTO " . SQL::quote($t) . " SET " . SQL::sequence_val($val);
+    public static function insert(string $t, array $val = [], array $flags = []): string{
+        $sql = "INSERT INTO " . SQL::quote($t) . " SET " . SQL::sequence_val($val);
+
+        return $sql;
     }
     // UPDATE [LOW_PRIORITY] [IGNORE] tbl_name
     // SET col_name1=expr1, [col_name2=expr2, ...]
     // [WHERE where_definition]
     // [LIMIT #]
-    public static function update($t, $where, $val) {
+    /**
+     * @param mixed $val
+     */
+    public static function update(string $t, string $where, $val): string {
         return "UPDATE " . SQL::quote($t) . " SET " . SQL::sequence_val($val) . ' WHERE ' . $where;
     }
     // DELETE [LOW_PRIORITY] FROM tbl_name
     // [WHERE where_definition]
     // [LIMIT rows]
-    public static function delete($t, $where = '') {
+    public static function delete(string $t, string $where = ''): string {
         if (empty($where)) {
             $where = '1';
         }
@@ -359,20 +421,24 @@ class SQL {
     // REPLACE works exactly like INSERT, except that if an old row in the table has the
     // same value as a new row for a PRIMARY KEY or a UNIQUE index, the old row is deleted before the new row is inserted
     //
-    public static function replace($t, $val = [], $flags = null) {
+    public static function replace(string $t, array $val = [], array $flags = []): string {
         return "REPLACE INTO $t SET " . SQL::sequence_val($val);
     }
     //
+    public static function truncate(string $table): string {return '';}
+    //
     // crea un stmt insert bulk anx exec it
-    public static function bulk_insert($table, $labels = null, $data, $truncate = FALSE) {
+    public static function bulk_insert(string $table, array $labels = [], array $data, bool $truncate = FALSE): string {
         if (empty($labels)) {
             $labels = array_keys($data[0]);
         }
+        $s_labels = implode($sep = ',', $labels);
         $i = 0;
+        $sql = '';
         if ($truncate) {
-            self::truncate($table);
+            $sql .= self::truncate($table);
         }
-        $sql = "INSERT INTO $table ($labels) VALUES ";
+        $sql .= "INSERT INTO $table ($s_labels) VALUES ";
         foreach ($data as $key => $value) {
             $i++;
             $sql .= '(\'' . implode('\', \'', array_map('addslashes', array_values($value))) . '\')' .

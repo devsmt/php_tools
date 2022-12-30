@@ -8,11 +8,14 @@ namespace DB {
     class Sqlite {
         /** @var SQLite3|null $conn */
         protected static $conn = null;
-        public static function connect(): void {
+        // use:
+        // $path = sprintf('%s/%s.db', __DIR__,  $DB = 'XYZ'  );
+        // Sqlite::connect( $path );
+        public static function connect(string $path = ''):void {
             if (!empty(self::$conn)) {
                 return;
             }
-            $path = self::getPath();
+            if(empty($path)) {$path = self::getPath();}
             self::$conn = new \SQLite3($path);
             /**
              * @psalm-suppress TypeDoesNotContainType
@@ -38,16 +41,44 @@ namespace DB {
                 // }
             }
         }
+        /*
         // app specific
-        public static function getPath() {
-            $path = sprintf('%s/data/DB/%s.db', ROOT_PATH, 'project');
-            //
-            $dir = dirname($path);
-            if( !file_exists( $dir ) ) {
-                $msg = sprintf('Errore %s ', "$dir non valido");
-                throw new \Exception($msg);
-            }
-            return $path;
+        abstract public static function getPath() {
+        $path = sprintf('%s/data/DB/%s.db', ROOT_PATH, 'project');
+        //
+        $dir = dirname($path);
+        if( !file_exists( $dir ) ) {
+        $msg = sprintf('Errore %s ', "$dir non valido");
+        throw new \Exception($msg);
+        }
+        return $path;
+        }
+         */
+        // ritorna stringa adatta a insert
+        public static function escape(string $s): string {
+            return self::quote($s);
+        }
+        public static function quote(string $s): string{
+            // $i = ord($s);// ascii alpha to int
+            // ispeziona una str per trovare caratteri che diano problemi in output
+            $_str_sanitize = function ($str) {
+                $r = '';
+                $a_in = str_split($str);
+                foreach ($a_in as $c) {
+                    // ascii alpha to int
+                    $i = ord($c);
+                    // 0-32 128-254 non stampabili
+                    // 33-127 stampabili
+                    if (10 == $i || ($i >= 32 && $i <= 127)) {
+                        $r .= $c; // solo caratteri visibili e innocui
+                    } else {
+                        // $r .= sprintf('@%s@', $i);// char che possono dare problemi
+                    }
+                }
+                return $r;
+            };
+            $s2 = $_str_sanitize($s);
+            return \SQLite3::escapeString($s2);
         }
         public static function disconnect(): void {
             // echo "SL disconnect \n";
@@ -62,7 +93,6 @@ namespace DB {
                 self::connect();
             }
         }
-
         // memo func param
         public static function qry(string $SQL, array $params = []): array{
             static $__cached_data = [];
@@ -75,7 +105,6 @@ namespace DB {
             }
             return $__cached_data[$SQL];
         }
-
         // param escaping
         // timing
         // logging
@@ -136,32 +165,44 @@ namespace DB {
         // SQLITE3_TEXT: The value is a text string, stored using the database encoding (UTF-8, UTF-16BE or UTF-16-LE).
         // SQLITE3_BLOB: The value is a blob of data, stored exactly as it was input.
         // SQLITE3_NULL: The value is a NULL value.
-        public static function getArgType(string $arg): int {
+        /**
+         * @param mixed $arg
+         */
+        public static function getArgType($arg): int {
             switch (gettype($arg)) {
-            case 'double':return SQLITE3_FLOAT;
-            case 'integer':return SQLITE3_INTEGER;
-            case 'boolean':return SQLITE3_INTEGER;
-            case 'NULL':return SQLITE3_NULL;
-            case 'string':return SQLITE3_TEXT;
+            case 'double':
+                return SQLITE3_FLOAT;
+                break;
+            case 'integer':
+                return SQLITE3_INTEGER;
+                break;
+            case 'boolean':
+                return SQLITE3_INTEGER;
+                break;
+            case 'NULL':
+                return SQLITE3_NULL;
+                break;
+            case 'string':
+                return SQLITE3_TEXT;
+                break;
             default:
                 throw new \InvalidArgumentException('Argument is of invalid type ' . gettype($arg));
+                break;
             }
         }
-
         // ritorna un songolo record ed eventualmente un singolo campo del record
-        public static function qry_one(string $sql, string $column='', array $params = []) {
+        public static function qry_one(string $sql, string $column = '', array $params = []) {
             $recs = self::qry($sql, $params);
-            if( !isset($recs[0])  ) {
+            if (!isset($recs[0])) {
                 return [];
             }
             $rec = $recs[0];
-            if( empty($column) ) {
+            if (empty($column)) {
                 return $rec;
             } else {
                 return $rec[$column];
             }
         }
-
         //
         // esegue stmt diversi da select, es insert update delete
         //
@@ -181,7 +222,7 @@ namespace DB {
                     $ok = self::$conn->exec($sql);
                     // if insert or update
                     $ret2 = self::$conn->lastInsertRowID();
-                    return [$ok,$ret2];
+                    return [$ok, $ret2];
                 } else {
                     // 'SELECT bar FROM foo WHERE id=:id'
                     $stmt = self::$conn->prepare($sql);
@@ -198,28 +239,29 @@ namespace DB {
             }
         }
         // determina se una string è un select stmt
-        public static function isSelect(string $sql): bool {
-            return 'select' == $sql_begin = strtolower(substr($sql = trim($sql), 0, $l = strlen('select')));
+        public static function isSelect(string $sql): bool{
+            // TODO: gestire linee di commento all'inizio dello statement
+            $a_lines = explode("\n", $sql);
+            $a_lines = array_filter($a_lines, function (string $line): bool {
+                return substr($line, 0, $len = 2) !== '--'; // true retained, false skipped
+            });
+            $str = implode("\n", $a_lines);
+            //
+            $sql = trim($sql);
+            $l = strlen('select');
+            $sql_begin = strtolower(substr($sql, 0, $l));
+            return 'select' == $sql_begin;
         }
-        /*
-        // db creation routine
-        public static function _run_test(): int {
-            return 0;
-        }
-        */
     }
 }
 namespace {
-
-    function db_create(){
+    function db_create() {
         $a_sql = [];
         // test sul db appena aperto
         $a_sql[] = "CREATE TABLE IF NOT EXISTS ORDERS (
             ID INTEGER PRIMARY KEY ,
-
             ORDER_ID     INT NOT NULL,
             ORDER_DATE   INT NOT NULL,
-
             COD_AGENT       INT  NOT NULL,
             CLIENT_ID       INT  NOT NULL,
             DESTINATION_ID  INT,
@@ -232,10 +274,8 @@ namespace {
         //
         $a_sql[] = "CREATE TABLE IF NOT EXISTS ORDER_ROW (
             ID INTEGER PRIMARY KEY ,
-
             ORDER_ID       INT NOT NULL,
             ORDER_DATE     INT NOT NULL,
-
             ITEM_ID        CHAR(50),
             QTA            INT  NOT NULL,
             PRICE          DECIMAL(9,2),
@@ -246,51 +286,47 @@ namespace {
         ); ";
         $a_sql[] = "CREATE UNIQUE INDEX IF NOT EXISTS ORDER_ROW_IDX ON ORDER_ROW (ORDER_ID, ORDER_DATE, ITEM_ID); ";
         //
-        foreach($a_sql as $i => $sql) {
+        foreach ($a_sql as $i => $sql) {
             $ret = \DB\Sqlite::exec($sql);
-            echo "sql $i ",var_dump( $ret ),"\n";
+            echo "sql $i ", var_dump($ret), "\n";
         }
     }
-
-        // test sul db appena aperto
-        public static function _run_test() {
-            $sql = "CREATE TABLE IF NOT EXISTS TEST_TBL (
+    // test sul db appena aperto
+    function _run_test() {
+        $sql = "CREATE TABLE IF NOT EXISTS TEST_TBL (
             ID INTEGER PRIMARY KEY ,
             NAME     TEXT NOT NULL,
             AGE      INT  NOT NULL,
             ADDRESS  CHAR(50),
             NUM      REAL  );";
-
-            $sql = "SELECT count(*) as COUNT from TEST_TBL;";
-            $cnt = self::qry_one($sql, 'COUNT' );
-            echo var_dump( $cnt ), "\n";
-            //
-            $ret = self::exec('delete from TEST_TBL ');
-            //
-            $sql = "
+        $sql = "SELECT count(*) as COUNT from TEST_TBL;";
+        $cnt = \DB\Sqlite::qry_one($sql, 'COUNT');
+        echo var_dump($cnt), "\n";
+        //
+        $ret = \DB\Sqlite::exec('delete from TEST_TBL ');
+        //
+        $sql = "
             INSERT INTO TEST_TBL ( NAME, AGE, ADDRESS, NUM ) VALUES ( 'Paul',  32, 'California', 20000.00 );
             INSERT INTO TEST_TBL ( NAME, AGE, ADDRESS, NUM ) VALUES ( 'Allen', 25, 'Texas',      15000.00 );
             INSERT INTO TEST_TBL ( NAME, AGE, ADDRESS, NUM ) VALUES ( 'Teddy', 23, 'Norway',     20000.00 );
             INSERT INTO TEST_TBL ( NAME, AGE, ADDRESS, NUM ) VALUES ( 'Mark',  25, 'Rich-Mond ', 65000.00 ); ";
-            //
-            $ret = self::exec($sql);
-            //
-            $sql = "UPDATE TEST_TBL set NUM = 25000 where ID=1;";
-            $ret = self::exec($sql);
-            if ($ret) {
-                echo self::$conn->changes(), " Record updated successfully\n";
-            }
-            //
-            $sql = "SELECT * from TEST_TBL;";
-            $a_rows = self::qry($sql);
-            echo var_dump( $a_rows), "\n";
-            // select parameter
-            $sql = "SELECT * from TEST_TBL where AGE = :age;";
-            $a_rows = self::qry($sql, [':age' => 23 ]);
-            echo var_dump(  $a_rows), "\n";
+        //
+        $ret = \DB\Sqlite::exec($sql);
+        //
+        $sql = "UPDATE TEST_TBL set NUM = 25000 where ID=1;";
+        $ret = \DB\Sqlite::exec($sql);
+        if ($ret) {
+            //    echo self::$conn->changes(), " Record updated successfully\n";
         }
-
-
+        //
+        $sql = "SELECT * from TEST_TBL;";
+        $a_rows = \DB\Sqlite::qry($sql);
+        echo var_dump($a_rows), "\n";
+        // select parameter
+        $sql = "SELECT * from TEST_TBL where AGE = :age;";
+        $a_rows = \DB\Sqlite::qry($sql, [':age' => 23]);
+        echo var_dump($a_rows), "\n";
+    }
     // if colled directly, run the tests:
     if (isset($argv) && basename($argv[0]) == basename(__FILE__)) {
         /** @psalm-suppress ForbiddenCode  */

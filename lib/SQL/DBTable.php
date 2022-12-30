@@ -2,107 +2,77 @@
 
 // esegui operazioni comuni su una tabella del db
 class DBTable {
-
-    var $table = '';
-    var $db = null; //oggetto database, a cui postare le richieste
-
-    function __construct($t, $db = null) {
-        if (!empty($t)) {
-            $this->table = $t;
+    public static function insert(string $table, array $data) {
+        $sql = SQL::insert($table, $data);
+        return db_exec($sql);
+    }
+    public static function update(string $table, array $data, string $where = '') {
+        if (empty($where)) {
+            $msg = sprintf('Errore where should be empty %s ', $where);
+            throw new \Exception($msg);
         }
-        if (empty($this->table)) {
-            die(__LINE__ . '#' . __FILE__ . ' DBTable constructed without a table name');
-        }
-        if (!is_null($db)) {
-            $this->db = $db;
-        } else {
-            $msg = sprintf('Errore %s ', 'manca istanza database' );
-            throw new Exception($msg);
-        }
+        $sql = SQL::update($table, $where, $data);
+        return db_exec($sql);
     }
-
-    function count($sql_where = '', $line = '', $file = '') {
-        $sql = "select count(*) from " . $this->table;
-        $sql.= $sql_where != '' ? " where $sql_where" : '';
-        if ($this->db->qry($sql, $line, $file)) {
-            return $this->db->rs2i();
-        } else {
-            return false;
-        }
+    public static function delete(string $table, string $where = '') {
+        $sql = SQL::delete($table, $where);
+        return db_exec($sql);
     }
-
-    /* // ottieni a runtime i valori di un campo enum in un array
-      function get_enum_vals($f, $line='', $file=''){
-      // usa err_object
-      if($this->db->qry('SHOW COLUMNS FROM '.$this->name.' LIKE \''.$f.'\'', $line, $file)){
-      $a = $this->db->rs2a();
-      $str = $a['Type'];
-      $str = substr($str, 6, strlen($str)-8);// tolgo descrizioni
-      $str = str_replace("','",',',$str);
-      return explode(',', $str);
-      } else {
-      return false;
-      }
-      } */
-
-    function insert($a, $line = '', $file = '') {
-        $sql = SQL::insert($this->table, $a) . "\n";
-        // usa err_object
-        return $this->db->qry_cmd($sql, $line, $file);
-    }
-
-    function update($a, $where = '', $line = '', $file = '') {
-        $sql = SQL::update($this->table, $where, $a) . "\n";
-        return $this->db->qry_cmd($sql, $line, $file);
-    }
-
-    function delete($where = '', $line = '', $file = '') {
-        $sql = SQL::delete($this->table, $where) . "\n";
-        return $this->db->qry_cmd($sql, $line, $file);
-    }
-
-    // cerca di eseguire una update del record e se fallisce tenta un inserimento
-    // act=0 significa che sto eseguito un update, 1 un insert
-    function confirm($a, $where, $line = '', $file = '', $act = 0) {
-        $sql = SQL::update($this->table, $where, $a);
-        $result = $this->db->qry_cmd($sql, $line, $file);
-        $act = 0;
-        if ($this->db->lines == 0) {
-            $sql = SQL::insert($this->table, $a);
-            $result = $this->db->qry_cmd($sql, $line, $file);
-            $act = 1;
-        }
-        return $result;
-    }
-
     // se trova il record lo elimina e poi lo inserisce nuovo
     // altrimenti lo inserisce nuovo
-    function replace($a, $line = '', $file = '') {
-        $sql = SQL::replace($this->table, $a) . "\n";
-        return $this->db->qry_cmd($sql, $line, $file);
+    public static function replace(string $table, array $data) {
+        $sql = SQL::replace($table, $data);
+        return db_exec($sql);
     }
-
-    function select($opt = ) {
-        $sql = SQL::select($this->table, $opt);
-        if ($this->db->qry($sql, __LINE__, __FILE__)) {
-            return $this->db->rs;
+    // cerca di eseguire una update del record e se fallisce tenta un inserimento
+    // act=0 significa che sto eseguito un update, 1 un insert
+    public static function confirm(string $table, array $data, string $where) {
+        $count = self::count($table, $where);
+        if (0 === $count) {
+            $sql = SQL::insert($table, $data);
+            $result = db_exec($sql);
+            $act = 1;
         } else {
-            echo $this->db->getErrMsg();
-            return false;
+            $sql = SQL::update($table, $where, $data);
+            $result = db_exec($sql);
+            $act = 0;
         }
+        return $act;
     }
 
-    //function get_fields() {
-    //    $fields = mysql_list_fields($this->table, $this->connection->name, $this->connection->_con_id);
-    //    $fields_num = mysql_num_fields($fields);
+    //----------------------------------------------------------------------------
     //
-    //    for ($i = 0; $i < $fields_num; $i++) {
-    //        // mysql_field_flags(), mysql_field_len(), mysql_field_name(), and mysql_field_type()
-    //        //echo mysql_field_name($fields, $i) . "\n";
-    //    }
+    //----------------------------------------------------------------------------
+    public static function count(string $table, string $sql_where = ''): int{
+        $sql = "select count(*) as count from " . $table;
+        $sql .= $sql_where != '' ? " where $sql_where" : '';
+        $rs = qry($sql);
+        return intval($rs[0]['count']);
+    }
+    public static function select(string $table, string $sql_where = '', array $opt = []) {
+        $sql = SQL::select($table, $opt);
+        return $rs = db_qry($sql);
+    }
+    /*
+    // ottieni a runtime i valori di un campo enum in un array
+    public static function get_enum_vals($f, $line='', $file=''){
+    // usa err_object
+    if(db_qry('SHOW COLUMNS FROM '.$this->name.' LIKE \''.$f.'\'')){
+    $a = $this->db->rs2a();
+    $str = $a['Type'];
+    $str = substr($str, 6, strlen($str)-8);// tolgo descrizioni
+    $str = str_replace("','",',',$str);
+    return explode(',', $str);
+    } else {
+    return false;
+    }
+    }
+     */
+    // get fileds of a table
+    //public static function get_fields() {
     //}
 }
 //
-if( isset($argv[0]) && basename($argv[0]) == basename(__FILE__) ) {
+if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
     require_once __DIR__ . '/../Test.php';
 }

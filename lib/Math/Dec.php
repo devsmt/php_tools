@@ -110,13 +110,13 @@ class Dec {
         return false;
     }
     /** @param string|float|double|int $val */
-    public static function fmt($val, int $d=2): string{
+    public static function fmt($val, int $d = 2): string{
         $f_val = floatval($val);
         return number_format($f_val, $d, '.', '');
     }
     // alias
-    public static function round($val, int $d=2): string{
-       return self::fmt($val,  $d );
+    public static function round($val, int $d = 2): string {
+        return self::fmt($val, $d);
     }
     /**
     calcola $perc % di $v
@@ -138,12 +138,15 @@ class Dec {
     /* dati due valori, ritorna la perc che rappresenta il secondo del primo
      */
     public static function perc_of(string $totale, string $parziale, int $precision = BC_PRECISION): string{
+        if( self::is_zero($parziale) ){
+            return DEC_ZERO;
+        }
         $x = bcdiv($totale, $parziale);
         if (self::empty($x)) {
             return DEC_ZERO;
         } else {
             $x = strval($x);
-            $x = bcdiv('100', (string)$x);
+            $x = bcdiv('100', (string) $x);
             $x = strval($x);
             return $x;
         }
@@ -180,7 +183,10 @@ class Dec {
         return $final_v;
     }
     /** @psalm-suppress ArgumentTypeCoercion  */
-    public static function array_avg(array $a_num): string{
+    public static function array_avg(array $a_num): string {
+        if (empty($a_num)) {
+            return DEC_ZERO;
+        }
         $sum = self::array_sum($a_num);
         $num = count($a_num);
         $avg = bcdiv($sum, (string) $num);

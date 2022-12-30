@@ -517,21 +517,25 @@ function coalesce_l() {
     return $args[$i = count($args) - 1];
 }
 //
-// $a_eq = ($a == $b); // TRUE if $a and $b have the same key/value pairs.
-// $a_eq = ($a === $b); // TRUE if $a and $b have the same key/value pairs in the same order and of the same types.
+// basic comparison === works, but will fail if values are in different order
+//   ( ['x','y'] === ['y','x' ) === false;
 //
-// use array_values($a) == array_values($b)
-// unique values, so remember that exist array_unique()
-// two indexed arrays, which elements are in different order, using $a == $b or $a === $b fails, for example:
-// ( ['x','y'] ==  ['y','x' ) === false;
-// basic comparison works for associative arrays but will not work as expected with indexed arrays
-// to compare either of them
+// all keys and values equal and of same type, irregardless of item order or key order
 function array_equal(array $a, array $b): bool {
-    return (
-        is_array($a) && is_array($b) &&
-        count($a) == count($b) &&
-        array_diff($a, $b) === array_diff($b, $a)
-    );
+    if (count($a) != count($b)) {
+        return false;
+    }
+    $_sort = function (array $a) use (&$_sort): array{
+        if (array_is_list($a)) {
+            sort($a); // sort discarding index association
+            return $a;
+        }
+        ksort($a);
+        // sort keys, multi-dimensional recursive
+        return array_map(fn($v) => is_array($v) ? $_sort($v) : $v, $a);
+    };
+    // === checks that the types and order of the elements are the same
+    return $_sort($a) === $_sort($b);
 }
 // alias:
 function array_is_equal(array $a, array $b): bool {return array_equal($a, $b);}
@@ -668,15 +672,47 @@ if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
     $a = ['a' => 0, 'b' => 1, 'c' => 2];
     ok(array_first($a), 0, 'array first');
     ok(array_last($a), 2, 'array last');
+    //
+    // array_equals() 
+    // 
     ok(array_equals([], []), true, 'empty array equals');
-    ok(array_equals([0, 1, 2, 3, 4], [0, 1, 2, 3, 4]), true, 'num array equals');
-    ok(array_equals(['a' => 'a'], ['a' => 'a']), true, 'associative array equals');
+    assertEquals(array_equal([1], [1]), true, 'simple eq');
+    assertEquals(array_equal([0], [false]), false, 'simple eq');
+    assertEquals(array_equal([0], [null]), false, 'simple eq');
+    assertEquals(array_equal([0, 1], [1, 0]), true, 'simple eq, diff order');
+    assertEquals(array_equal([0, 1, 2], [1, 0]), false, 'diff count');
+    assertEquals(array_equal([0, 1], [0, 1, 2]), false, 'diff count 2');
+    assertEquals(array_equal([1, 2], [1, 2, 'hello']), false, 'diff count 3');
+    //
+    assertEquals(array_equal([1, 2, 2], [2, 1, 1]), false, 'same vals repeated');
+    assertEquals(array_equal([1, 2, 2], [2, 2, 1]), true, 'same vals, different order');
+    //
+    assertEquals(array_equal([1, 2, 3], ['1', '2', '3']), false, 'int should not be eq string');
+    assertEquals(array_equal([0 => 'a', 1 => 'b'], [0 => 'b', 1 => 'a']), true, 'same vals, diff order');
+    assertEquals(array_equal(['a', 'b'], [3 => 'b', 5 => 'a']), true, 'same vals, diff indexes');
+    // associative arrays whose members are ordered differently
+    assertEquals(array_equal(['aa' => 'a', 'bb' => 'b'], ['bb' => 'b', 'aa' => 'a']), true, 'dict with different order');
+    assertEquals(array_equal(['aa' => 'a', 'bb' => 'b'], ['aa' => 'a']), false, 'a key is missing');
+    // nested arrays with keys in different order
+    assertEquals(array_equal(
+        ['aa' => 'a', 'bb' => ['bb' => 'b', 'aa' => 'a']],
+        ['aa' => 'a', 'bb' => ['aa' => 'a', 'bb' => 'b']]
+    ), true, 'dict multi 2 level, keys in different order');
+    assertEquals(array_equal(
+        ['aa' => 'a', 'bb' => ['aa2' => 'a', 'bb2' => ['aa3' => 'a', 'bb3' => 'b']]],
+        ['aa' => 'a', 'bb' => ['aa2' => 'a', 'bb2' => ['aa3' => 'a', 'bb3' => 'b']]]
+    ), true, 'dict multi 3 level');
+    assertEquals(array_equal(
+        ['aa' => 'a', 'bb' => [0, 1]],
+        ['aa' => 'a', 'bb' => [1, 0]]
+    ), true, 'dict multi 2 level, 2^ level sequential in different order');
+    //
     //
     ok(array_contains_all(['a' => 'a', 'b' => 'b'], ['a' => 'a']), true, 'different associative array has all the required values');
     ok(!array_contains_all(['a' => 'a'], ['a' => 'a', 'b' => 'b']), true, 'different associative array (not all the required values)');
     //
     $a = ['a' => 1, 'b' => null];
-    ok(array_equals(array_delete_Empty($a), ['a' => 1]), true, 'delete empty');
+    ok(array_equals(array_delete_Empty($a), ['a' => 1]), true, 'delete empty');    
     //
     $ar = array_append_l([2, 3], 1);
     ok($ar, [1, 2, 3], 'array_append_l');
