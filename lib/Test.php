@@ -18,27 +18,27 @@ function diag(string $l, $data = null): void {
 //  assertions
 //-----------------------------------------------------------------------------------
 /* own test suite:
-        ok(0, 0, 'ok for same value');// should pass
-        ok(0, null, 'type warning');//should pass with type warning
-        ok(['b'=>2,'a'=>1], ['a'=>1,'b'=>'2']);
-        ok([1,2], [2,1]);
-        ok(['a','b'], ['b','a']);
-        // this should be true in all impelemetations
-        ok([1,2], [1,2]);
-        ok(['a'=>1,'b'=>2], ['a'=>1,'b'=>2]);
-        ok('aaa000', '/^[A-Z0-1]*$/i');
- *
+ok(0, 0, 'ok for same value');// should pass
+ok(0, null, 'type warning');//should pass with type warning
+ok(['b'=>2,'a'=>1], ['a'=>1,'b'=>'2']);
+ok([1,2], [2,1]);
+ok(['a','b'], ['b','a']);
+// this should be true in all impelemetations
+ok([1,2], [1,2]);
+ok(['a'=>1,'b'=>2], ['a'=>1,'b'=>2]);
+ok('aaa000', '/^[A-Z0-1]*$/i');
+ */
+/**
  * @param mixed $res
  * @param mixed $expected
- * @return void
  */
-function ok($res, $expected, string $label = ''): void {
+function ok($res, $expected, string $label = ''): void{
     $_colored = (PHP_SAPI == 'cli') ?
-    function ($str, $foreground_color = 'green') {
+    function (string $str, string $foreground_color = 'green') : string {
         static $a_fg = ['red' => '0;31', 'green' => '0;32', 'brown' => '0;33'];
         return sprintf("\e[%sm", $a_fg[$foreground_color]) . $str . "\033[0m";
-    } :
-    function ($str, $foreground_color = 'green') {
+    }:
+    function (string $str, string $foreground_color = 'green'): string {
         static $a_fg = ['red' => '#f74848', 'green' => '#8bc34a', 'brown' => '#9E9E9E'];
         $css_c = $a_fg[$foreground_color];
         return sprintf('<p style="background-color:%s; padding:5px;font-family: monospace;">%s</p>', $css_c, $str);

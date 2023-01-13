@@ -40,7 +40,9 @@ function h_get($h, $k, $def = '') {
             return array_key_exists($k, $h) ? $h[$k] : $def;
         } elseif (is_string($k)) {
             // subkey 'kk.jjj'
-            if (strpos($k, '.') !== false) {
+            // strpos($k, '.') !== false
+            // 1 === preg_match('/^(\w+).(\w+)$/i', $k, $m)
+            if ( strpos($k, '.') !== false ) {
                 foreach (explode('.', $k) as $segment) {
                     if (is_array($h) && array_key_exists($segment, $h)) {
                         $h = $h[$segment];

@@ -224,10 +224,10 @@ class CLI {
     }
     //----- input() function
     // read from the command line
-    public static function prompt($prompt, $_is_valid = null, $_on_invalid = null) {
+    public static function prompt(string $prompt, callable $_is_valid = null, callable $_on_invalid = null):string {
         // default lascia passare tutto
-        $_is_valid = $_is_valid ?? function ($v) {return true;};
-        $_on_invalid = $_on_invalid ?? function ($v) {die("invalid input $v \n");};
+        $_is_valid = $_is_valid ?? function ($v):bool {return true;};
+        $_on_invalid = $_on_invalid ?? function ($v):string {die("invalid input $v \n");};
         // Define STDIN for compatibility
         if (!defined("STDIN")) {
             define("STDIN", fopen('php://stdin', 'rb')); //"b" Here for Binary-Safe
@@ -384,7 +384,7 @@ return parseInt( $str );
         return $_only_printable($num);
     }
 
-// @see https://en.wikipedia.org/wiki/ANSI_escape_code
+    // @see https://en.wikipedia.org/wiki/ANSI_escape_code
     function ansi(string $code, string $text): string {
         static $h_ansi = [];
         if (empty($h_ansi)) {
@@ -707,7 +707,7 @@ if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
     require_once __DIR__ . '/Test.php';
     // testing
     function test_args_parse() {
-        // test str: php myscript.php --user=nobody --password=secret -p --access="host=127.0.0.1 port=456"
+        // test str: php myscript.php --user=nobody --aaa=111 -p --txt="zzz vvv nnn"
         $t_argv = [
             'xxx',
             '--user=nobody',
@@ -718,8 +718,8 @@ if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
         $a = CLI::getConsoleArgs($t_argv);
         echo print_r($a, true);
         ok($a['user'], $expected = 'nobody', 'parse arg 1');
-        ok($a['password'], $expected = 'secret', 'parse arg 2');
-        ok($a['access'], $expected = "host=127.0.0.1 port=890", 'parse arg 3');
+        ok($a['aaa'], $expected = '111', 'parse arg 2');
+        ok($a['txt'], $expected = "zzz vvv nnn", 'parse arg 3');
         ok($a['p'], true, 'test 4');
     }
     test_args_parse();

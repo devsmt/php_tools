@@ -6,12 +6,13 @@ declare(strict_types=1);
 //----------------------------------------------------------------------------
 // semplifica l'individuazione di almeno una occorrenza di una sottostringa
 if (!function_exists('str_contains')) {
+    /** @psalm-suppress DuplicateFunction */
     function str_contains(string $str, string $sub_str, bool $ignore_case = true): bool{
         $result = $ignore_case ? mb_strpos($str, $sub_str) : mb_stripos($str, $sub_str);
         return ($result !== false) ? true : false;
     }
 }
-//
+// stringa contiene almeno una delle array substr?
 function str_contains_any(string $str, array $arr): bool {
     foreach ($arr as $substring) {
         if (stripos($str, $substring) !== false) {
@@ -20,7 +21,6 @@ function str_contains_any(string $str, array $arr): bool {
     }
     return false;
 }
-
 // semplifica l'individuazione del numero di occorrenze di una sottostringa
 function str_count_matches(string $str, string $sub_str): int{
     $result = mb_strpos($str, $sub_str);

@@ -1,6 +1,9 @@
 <?php
 // text helpers/formatters
 class Text {
+    /**
+     * @param list< array<array-key, mixed> > $RS
+     */
     public static function table(array $RS, array $option = []): string{
         $option = array_merge($_opt_def = [
             'delegates' => [],
@@ -42,8 +45,9 @@ class Text {
         };
         // calc max lenght for each key
         $_calc_max_len = function (array $rs) use ($_strlen_u): array{
+            if( empty($rs ) ) { return []; }
             $first_key = array_key_first($rs);
-            $first_rec = false !== $first_key ? $rs[$first_key] : [];
+            $first_rec = !is_null($first_key) ? $rs[$first_key] : [];
             $a_keys = array_keys($first_rec);
             //
             $a_max_len = [];
@@ -123,15 +127,21 @@ class Text {
         }
         return $s_tbl;
     }
-    //
-    // converte un layout RS Aray< Hash > to Array<Array<string> >
-    // da usare con Text::table_cvs() se il formato non è quello opportuno
+    /**
+     * converte un layout RS Aray< Hash > to Array<Array<string> >
+     * da usare con Text::table_cvs() se il formato non è quello opportuno
+     * @param  list< array<string, mixed> >  $rs
+     * @return array<int, list<string> >
+     */
     public static function rs_to_csv(array $rs): array{
+        if( empty($rs ) ) {
+            return [];
+        }
         $a_csv = [];
         $a_csv[0] = array_keys($rs[0]);
         foreach ($rs as $i => $rec) {
             $a_v = array_values($rec);
-            $a_v = array_map(function ($val):string {
+            $a_v = array_map(function ($val): string {
                 return trim(strval($val));
             }, $a_v);
             $a_csv[1 + $i] = $a_v;
@@ -139,7 +149,7 @@ class Text {
         return $a_csv;
     }
     // evidenzia una parola del testo
-    function word_select($text, array $matches, $replace = 'b') {
+    public static function word_select(string $text, array $matches, string $replace = 'b'): string {
         foreach ($matches as $match) {
             switch ($replace) {
             case "u":
@@ -159,7 +169,7 @@ class Text {
     // spezza una stringa in n substr di lunghezza massima $max_len
     // mantenendo le parole complete(non le taglia a metà)
     // return string[]
-    public static function word_wrap($str, $max_len = 14, $s_indent = '  ') {
+    public static function word_wrap(string $str, int $max_len = 14, string $s_indent = '  '): array{
         if (empty($str)) {
             return [];
         }
@@ -197,9 +207,9 @@ class Text {
     // da una stringa molto lunga
     // restituisce array di n substr di lunghezza massina $max_len
     // senza troncare le parole intere
-    function split_multilines($item_descr, $max_len = 40) {
+    public static function split_multilines(string $item_descr, int $max_len = 40): array{
         $item_descr = trim($item_descr);
-        $item_descr = mb_str_replace($sub = '  ', $re = ' ', $item_descr);
+        $item_descr = str_replace($sub = '  ', $re = ' ', $item_descr);
         $len = mb_strlen($item_descr);
         if ($len < $max_len) {
             return [$item_descr];
@@ -232,10 +242,10 @@ class Text {
     }
     // mostra solo n char di un testo lungo, evitando di spezzare le parole
     // brutalmente, ma non fa nulla di particolare per funzionare con html
-    function str_reminder($str, $maxlen = 50, $suffisso = ' [...] ') {
+    public static function str_reminder(string $str, int $maxlen = 50, string $suffisso = ' [...] '): string {
         if (mb_strlen($str) > $maxlen) {
             $result = '';
-            $str = mb_str_replace('  ', ' ', $str);
+            $str = str_replace('  ', ' ', $str);
             $a = explode(' ', mb_substr($str, 0, $maxlen + 10)); // per migliorare le prestazioni vado a fare l'explode di una stringa ragionevolmente ridimensionata
             for ($i = 0; $i < count($a); $i++) {
                 if (mb_strlen($result . $a[$i] . ' ') < $maxlen) {
@@ -266,7 +276,7 @@ class Text {
      *
      * @return string Truncated string
      */
-    function truncate($text, $length = 1024, $ending = '...', $exact = false, $considerHtml = true) {
+    public static function truncate(string $text, int $length = 1024, string $ending = '...', bool $exact = false, bool $considerHtml = true): string{
         $open_tags = [];
         if ($considerHtml) {
             // if the plain text is shorter than the maximum length, return the whole text
@@ -276,7 +286,7 @@ class Text {
             // splits all html-tags to scanable lines
             preg_match_all('/(<.+?>)?([^<>]*)/s', $text, $lines, PREG_SET_ORDER);
             $total_length = mb_strlen($ending);
-            $truncate = '';
+            $ret = '';
             foreach ($lines as $line_matchings) {
                 // if there is any html-tag in this line, handle it and add it (uncounted) to the output
                 if (!empty($line_matchings[1])) {
@@ -295,8 +305,8 @@ class Text {
                         // add tag to the beginning of $open_tags list
                         array_unshift($open_tags, mb_strtolower($tag_matchings[1]));
                     }
-                    // add html-tag to $truncate'd text
-                    $truncate .= $line_matchings[1];
+                    // add html-tag to $ret'd text
+                    $ret .= $line_matchings[1];
                 }
                 // calculate the length of the plain text part of the line; handle entities as one character
                 $content_length = mb_strlen(preg_replace('/&[0-9a-z]{2,8};|&#[0-9]{1,7};|&#x[0-9a-f]{1,6};/i', ' ', $line_matchings[2]));
@@ -317,11 +327,11 @@ class Text {
                             }
                         }
                     }
-                    $truncate .= mb_substr($line_matchings[2], 0, $left + $entities_length);
+                    $ret .= mb_substr($line_matchings[2], 0, $left + $entities_length);
                     // maximum length is reached, so get off the loop
                     break;
                 } else {
-                    $truncate .= $line_matchings[2];
+                    $ret .= $line_matchings[2];
                     $total_length += $content_length;
                 }
                 // if the maximum length is reached, get off the loop
@@ -333,27 +343,27 @@ class Text {
             if (mb_strlen($text) <= $length) {
                 return $text;
             } else {
-                $truncate = mb_substr($text, 0, $length - mb_strlen($ending));
+                $ret = mb_substr($text, 0, $length - mb_strlen($ending));
             }
         }
         // if the words shouldn't be cut in the middle...
         if (!$exact) {
             // ...search the last occurrence of a space...
-            $spacepos = mb_strrpos($truncate, ' ');
-            if (isset($spacepos)) {
+            $spacepos = mb_strrpos($ret, ' ');
+            if (!empty($spacepos)) {
                 // ...and cut the text in this position
-                $truncate = mb_substr($truncate, 0, $spacepos);
+                $ret = mb_substr($ret, 0, $spacepos);
             }
         }
         // add the defined ending to the text
-        $truncate .= $ending;
+        $ret .= $ending;
         if ($considerHtml) {
             // close all unclosed html-tags
             foreach ($open_tags as $tag) {
-                $truncate .= "</$tag>";
+                $ret .= "</$tag>";
             }
         }
-        return $truncate;
+        return $ret;
     }
     /**
      * Search for links inside html attributes
@@ -362,18 +372,20 @@ class Text {
      *
      * @return string[] Array of found links or empty array otherwise
      */
-    function find_links($text) {
+    public static function find_links(string $text): array{
         preg_match_all('/"(http[s]?:\/\/.*)"/Uims', $text, $links);
         return $links[1] ?: [];
     }
-    function text_auto_link($text) {
+    public static function text_auto_link(string $text): string{
         $text = mb_ereg_replace("/([a-zA-Z]+:\/\/[a-z0-9\_\.\-]+" . "[a-z]{2,6}[a-zA-Z0-9\/\*\-\_\?\&\%\=\,\+\.]+)/", " <a href=\"$1\" target=\"_blank\">$1</a>", $text);
         $text = mb_ereg_replace("/[^a-z]+[^:\/\/](www\." . "[^\.]+[\w][\.|\/][a-zA-Z0-9\/\*\-\_\?\&\%\=\,\+\.]+)/", " <a href=\"\" target=\"\">$1</a>", $text);
         $text = mb_ereg_replace("/([\s|\,\>])([a-zA-Z][a-zA-Z0-9\_\.\-]*[a-z" . "A-Z]*\@[a-zA-Z][a-zA-Z0-9\_\.\-]*[a-zA-Z]{2,6})" . "([A-Za-z0-9\!\?\@\#\$\%\^\&\*\(\)\_\-\=\+]*)" . "([\s|\.|\,\<])/i", "$1<a href=\"mailto:$2$3\">$2</a>$4", $text);
         return $text;
     }
-    // $a_links = text_link_extract($page);
-    function text_link_extract($s) {
+    /** $a_links = text_link_extract($page);
+     * @return list<list{string, string}>
+     */
+    public static function text_link_extract(string $s): array{
         $a = [];
         if (preg_match_all('/<a\s+.*?href=[\"\']?([^\"\' >]*)[\"\']?[^>]*>(.*?)<\/a>/i',
             $s, $matches, PREG_SET_ORDER)
@@ -384,6 +396,129 @@ class Text {
         }
         return $a;
     }
+    /** plotta valori
+     * disegna un istogramma orizzontale
+     * @see https://github.com/JuliaPlots/UnicodePlots.jl
+     * @see https://github.com/red-data-tools/unicode_plot.rb
+     * @param array<string, int|float> $data
+     */
+    public static function barplot(array $data, array $opt = []): string {
+        if (empty($data)) {
+            return '';
+        }
+        $option = array_merge([
+            'scale' => 0,
+            'title' => '',
+        ], $opt);
+        $title = '';
+        $scale = -1;
+        extract($option, $flgs = EXTR_OVERWRITE);
+        // get the max len of array keys
+        /** @var list<string> $a_keys */
+        $a_keys = array_keys($data);
+        $a_l = array_map(fn($val) => strlen($val), $a_keys);
+        $max_len = max($a_l);
+        // sort the data
+        arsort($data, SORT_NUMERIC); // &$a;  sort values! returns bool
+        // decide the scale:
+        if (empty($scale)) {
+            // get the max value
+            /** @var  array<int|float> $a_vals */
+            $a_vals = array_values($data);
+            $max_val = max($a_vals);
+            $max_val = floatval($max_val);
+            $unit = ceil(($max_val / 80)); //quanto rappresentiamo per ogni step
+            if ($unit <= 5) {
+                $scale = 5;
+            } elseif ($unit <= 10) {
+                $scale = 10;
+            } elseif ($unit <= 50) {
+                $scale = 10;
+            } elseif ($unit <= 100) {
+                $scale = 100;
+            } elseif ($unit <= 250) {
+                $scale = 250;
+            } elseif ($unit <= 500) {
+                $scale = 500;
+            } elseif ($unit <= 1000) {
+                $scale = 1000;
+            } else {
+                $msg = sprintf('Errore scale:%s too big ', $scale);
+                throw new \Exception($msg);
+            }
+        } else {
+            $scale = (int) $scale;
+        }
+        $ret = '';
+        if (!empty($title)) {
+            $ret .= "------ $title ------- \n";
+        }
+        // plot
+        /** @var string $key
+         * @var int|float $var */
+        foreach ($data as $key => $val) {
+            $key_p = str_pad($key, $max_len, ' ', STR_PAD_RIGHT); //no utf8 support
+            //
+            $inc = (float) (floatval($val) / $scale);
+            $inc = (int) floor($inc);
+            $val_bar = str_repeat('=', $inc);
+            if (($inc * $scale) < $val) { // rimarrebbe un pezzetto non plottato?
+                $val_bar .= '_';
+            }
+            $ret .= "$key_p $val_bar $val \n";
+        }
+        $ret .= "scale: $scale \n";
+        return $ret;
+    }
+    //
+    //
+    public static function panel(int $w, int $h, string $text, array $opt = []): string{
+        $option = array_merge([
+            'title' => '',
+            'style' => 'solid',
+        ], $opt);
+        extract($option);
+        $BORDER_SOLID = [
+            'tl' => '┌',
+            'tr' => '┐',
+            'bl' => '└',
+            'br' => '┘',
+            't' => '─',
+            'l' => '│',
+            'b' => '─',
+            'r' => '│',
+        ];
+        $BORDER_ASCII = [
+            'tl' => '+',
+            'tr' => '+',
+            'bl' => '+',
+            'br' => '+',
+            't' => '-',
+            'l' => '|',
+            'b' => '-',
+            'r' => '|',
+        ];
+        $h_b = $style == 'solid' ? $BORDER_SOLID : $BORDER_ASCII;
+        //
+        $line_top = str_repeat($char = $h_b['t'], $num = (intval($w) - 2));
+        $line_top = $h_b['tl'] . $line_top . $h_b['tr'];
+        //
+        $line_bottom = str_repeat($char = $h_b['b'], $num = (intval($w) - 2));
+        $line_bottom = $h_b['bl'] . $line_bottom . $h_b['br'];
+        //
+        $a_text = explode("\n", "$text");
+        $a_text2 = array_map(function (string $line) use ($w): string {
+            $line = trim($line);
+            $line = str_pad($line, intval($w) - 4, ' ', STR_PAD_RIGHT);
+            return "| $line |";
+        }, $a_text);
+        $txt_p = implode($sep = "\n", $a_text2);
+        //
+        return
+        $line_top . "\n" .
+        $txt_p . "\n" .
+        $line_bottom;
+    }
 }
 if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
     require_once __DIR__ . '/Strings.php';
@@ -391,7 +526,6 @@ if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
     require_once __DIR__ . '/../Test.php';
     $max_len = 14;
     ok(Text::word_wrap(''), [], 'test empty');
-    ok(Text::word_wrap(null), [], 'test empty');
     ok(Text::word_wrap('Berlingo 08>18'), ['Berlingo 08>18'], 'test len 14');
     ok(Text::word_wrap('Berlingo     08>18'), ['Berlingo 08>18'], 'too much spaces');
     ok(Text::word_wrap('Berlingo Multispace 08>18'), ['Berlingo', '  Multispace', '  08>18'], 'test len 25');
@@ -403,4 +537,17 @@ if (isset($argv[0]) && basename($argv[0]) == basename(__FILE__)) {
     Text::word_wrap('Sandero Stepway 13>');
     Text::word_wrap('Logan MCV Stepway 17>');
     Text::word_wrap('Logan MCV 5p 07>13');
+    //
+    $plot = Text::barplot(
+        $data = [
+            "Paris" => 200, //2_244,
+            "New York" => 400, //8_406,
+            "Moskau" => 190, //1_192,
+            "Madrid" => 165, //3_165,
+        ],
+        $opt = [
+            'title' => "Population",
+        ],
+    );
+    echo Text::panel(150, 10, $plot);
 }
